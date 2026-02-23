@@ -4,15 +4,15 @@ services:
     container_name: pfe_postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-strapi}
-      POSTGRES_USER: ${POSTGRES_USER:-strapi}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-strapi}
+      POSTGRES_DB: strapi
+      POSTGRES_USER: strapi
+      POSTGRES_PASSWORD: strapi
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-strapi} -d ${POSTGRES_DB:-strapi}"]
+      test: ["CMD-SHELL", "pg_isready -U strapi -d strapi"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -32,9 +32,9 @@ services:
       DATABASE_CLIENT: postgres
       DATABASE_HOST: postgres
       DATABASE_PORT: 5432
-      DATABASE_NAME: ${POSTGRES_DB:-strapi}
-      DATABASE_USERNAME: ${POSTGRES_USER:-strapi}
-      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-strapi}
+      DATABASE_NAME: strapi
+      DATABASE_USERNAME: strapi
+      DATABASE_PASSWORD: strapi
       DATABASE_SSL: "false"
     ports:
       - "1337:1337"
