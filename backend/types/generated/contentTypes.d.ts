@@ -438,7 +438,7 @@ export interface ApiSkillSkill extends Struct.CollectionTypeSchema {
     singularName: 'skill';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
     increments: true;
     timestamps: true;
   };
