@@ -1,0 +1,44 @@
+### Variables
+@baseUrl = http://localhost:1337/api
+
+### 1. GET - Lister tous les skills
+GET {{baseUrl}}/skills
+
+### 2. GET - Récupérer skill by ID
+GET {{baseUrl}}/skills/1
+
+### 3. POST - Créer un nouveau skill
+POST {{baseUrl}}/skills
+Content-Type: application/json
+
+{
+  "data": {
+    "name": "Angular"
+  }
+}
+
+### 4. POST - Test contrainte UNIQUE (créer même nom - doit échouer 400)
+POST {{baseUrl}}/skills
+Content-Type: application/json
+
+{
+  "data": {
+    "name": "React"
+  }
+}
+
+### 5. PUT - Modifier skill ID 1
+PUT {{baseUrl}}/skills/1
+Content-Type: application/json
+
+{
+  "data": {
+    "name": "React 18"
+  }
+}
+
+### 6. DELETE - Supprimer skill ID 2
+DELETE {{baseUrl}}/skills/2
+
+### 7. GET - Vérifier après suppression
+GET {{baseUrl}}/skills

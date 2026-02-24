@@ -18,6 +18,8 @@ export default {
   async bootstrap({ strapi }: { strapi: Core.Strapi }) {
     // ── Ensure the "public" role has minimal read-only access ───────
     await configurePublicRole(strapi);
+    // ── Ensure the "authenticated" role can CRUD skills ────────────
+    await configureAuthenticatedRole(strapi);
   },
 };
 
@@ -70,4 +72,65 @@ async function configurePublicRole(strapi: Core.Strapi) {
 
   await pluginStore.set({ key: 'permissions_seeded', value: true });
   strapi.log.info('✔  Public-role permissions seeded (auth-only).');
+}
+
+/* ------------------------------------------------------------------ */
+/*  Helper: grant Authenticated role full CRUD on Skills              */
+/* ------------------------------------------------------------------ */
+async function configureAuthenticatedRole(strapi: Core.Strapi) {
+  const pluginStore = strapi.store({
+    type: 'plugin',
+    name: 'users-permissions',
+  });
+
+  // Only run once
+  const isSeeded = await pluginStore.get({ key: 'authenticated_permissions_seeded' });
+  if (isSeeded) return;
+
+  // Find the Authenticated role
+  const authRole = await strapi
+    .query('plugin::users-permissions.role')
+    .findOne({ where: { type: 'authenticated' } });
+
+  if (!authRole) return;
+
+  // Skill actions to enable for authenticated users
+  const skillActions = [
+    'api::skill.skill.find',
+    'api::skill.skill.findOne',
+    'api::skill.skill.create',
+    'api::skill.skill.update',
+    'api::skill.skill.delete',
+  ];
+
+  // Get all permissions for the authenticated role
+  const permissions = await strapi
+    .query('plugin::users-permissions.permission')
+    .findMany({ where: { role: authRole.id } });
+
+  for (const action of skillActions) {
+    const existing = permissions.find((p: any) => p.action === action);
+    if (existing) {
+      // Enable if not already
+      if (!existing.enabled) {
+        await strapi
+          .query('plugin::users-permissions.permission')
+          .update({ where: { id: existing.id }, data: { enabled: true } });
+      }
+    } else {
+      // Create the permission
+      await strapi
+        .query('plugin::users-permissions.permission')
+        .create({
+          data: {
+            action,
+            role: authRole.id,
+            enabled: true,
+          },
+        });
+    }
+  }
+
+  await pluginStore.set({ key: 'authenticated_permissions_seeded', value: true });
+  strapi.log.info('✔  Authenticated-role permissions seeded (skill CRUD).');
 }
