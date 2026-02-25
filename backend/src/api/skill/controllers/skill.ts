@@ -17,7 +17,7 @@ export default factories.createCoreController('api::skill.skill', ({ strapi }) =
                 // vous pouvez aussi gérer la pagination si besoin
             });
             // Retourne au format standard Strapi
-            return this.transformResponse(results);
+            return (this as any).transformResponse(results);
         }
 
         // Sinon, comportement normal (retourne toutes les compétences)
