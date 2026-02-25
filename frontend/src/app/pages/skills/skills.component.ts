@@ -1,15 +1,14 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { Subject, Subscription } from 'rxjs';
-import { debounceTime, distinctUntilChanged, switchMap, filter } from 'rxjs/operators';
 import { SkillService, Skill } from '../../services/skill.service';
+import { SkillAutocompleteComponent } from '../../components/skill-autocomplete/skill-autocomplete.component';
 
 @Component({
   selector: 'app-skills',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, SkillAutocompleteComponent],
   template: `
     <div class="skills-page">
       <div class="header">
@@ -38,26 +37,18 @@ import { SkillService, Skill } from '../../services/skill.service';
         <button class="btn-add" (click)="addSkill()" [disabled]="!newName.trim()">Add</button>
       </div>
 
-      <!-- Search bar -->
+      <!-- Search bar using Reusable Autocomplete -->
       <div class="search-bar">
-        <div class="search-input-wrapper">
-          <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
-               stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
-          </svg>
-          <input
-            type="text"
-            [(ngModel)]="searchQuery"
-            (ngModelChange)="onSearchChange($event)"
-            placeholder="Search skills..."
-            class="search-input"
-          />
-          <button class="clear-btn" *ngIf="searchQuery" (click)="clearSearch()">
-            &times;
-          </button>
-        </div>
-        <span class="search-hint" *ngIf="isSearching">Searching…</span>
-        <span class="search-count" *ngIf="searchQuery && !isSearching">
+        <app-skill-autocomplete
+          [initialValue]="searchQuery"
+          (searchResults)="onSearchResults($event)"
+          (searchCleared)="onSearchCleared()"
+          (queryChange)="onQueryChange($event)"
+          (skillSelected)="onSkillSelected($event)"
+          placeholder="Search skills..."
+        ></app-skill-autocomplete>
+        
+        <span class="search-count" *ngIf="searchQuery && !loading">
           {{ searchResults.length }} result{{ searchResults.length !== 1 ? 's' : '' }}
         </span>
       </div>
@@ -67,11 +58,10 @@ import { SkillService, Skill } from '../../services/skill.service';
 
       <!-- ── SEARCH RESULTS ── -->
       <ng-container *ngIf="searchQuery">
-        <p class="center" *ngIf="isSearching">Searching…</p>
-        <p class="center" *ngIf="!isSearching && searchResults.length === 0">
+        <p class="center" *ngIf="!loading && searchResults.length === 0">
           No skills found for "<strong>{{ searchQuery }}</strong>".
         </p>
-        <div class="list" *ngIf="!isSearching && searchResults.length > 0">
+        <div class="list" *ngIf="!loading && searchResults.length > 0">
           <div class="row search-result-row" *ngFor="let skill of searchResults">
             <span class="name" [innerHTML]="highlight(skill.name, searchQuery)"></span>
             <div class="actions">
@@ -164,42 +154,6 @@ import { SkillService, Skill } from '../../services/skill.service';
       align-items: center;
       gap: 10px;
     }
-    .search-input-wrapper {
-      position: relative;
-      flex: 1;
-      display: flex;
-      align-items: center;
-    }
-    .search-icon {
-      position: absolute;
-      left: 12px;
-      color: #9ca3af;
-      pointer-events: none;
-    }
-    .search-input {
-      width: 100%;
-      padding: 10px 36px 10px 38px;
-      border: 1.5px solid #d1d5db;
-      border-radius: 8px;
-      font-size: 14px;
-      outline: none;
-      background: #f9fafb;
-      transition: border-color 0.2s, box-shadow 0.2s;
-    }
-    .search-input:focus {
-      border-color: #e6331a;
-      background: #fff;
-      box-shadow: 0 0 0 3px rgba(230, 51, 26, 0.10);
-    }
-    .clear-btn {
-      position: absolute; right: 10px;
-      background: none; border: none;
-      font-size: 18px; color: #9ca3af;
-      cursor: pointer; line-height: 1;
-      padding: 0 2px;
-    }
-    .clear-btn:hover { color: #e6331a; }
-    .search-hint { font-size: 13px; color: #9ca3af; white-space: nowrap; }
     .search-count { font-size: 13px; color: #6b7280; white-space: nowrap; }
 
     /* Highlight match */
@@ -250,7 +204,7 @@ import { SkillService, Skill } from '../../services/skill.service';
     .btn-cancel:hover{ background: #e5e7eb; }
   `]
 })
-export class SkillsComponent implements OnInit, OnDestroy {
+export class SkillsComponent implements OnInit {
   skills: Skill[] = [];
   newName = '';
   editingId: string | null = null;
@@ -262,59 +216,31 @@ export class SkillsComponent implements OnInit, OnDestroy {
   // Search state
   searchQuery = '';
   searchResults: Skill[] = [];
-  isSearching = false;
-
-  private searchSubject = new Subject<string>();
-  private subs = new Subscription();
 
   constructor(private skillService: SkillService) { }
 
   ngOnInit(): void {
     this.loadSkills();
-
-    // Wire up debounced search
-    const searchSub = this.searchSubject.pipe(
-      debounceTime(300),
-      distinctUntilChanged(),
-      filter(q => q.trim().length > 0),
-      switchMap(q => {
-        this.isSearching = true;
-        return this.skillService.search(q, 20);
-      })
-    ).subscribe({
-      next: (results) => {
-        this.searchResults = results;
-        this.isSearching = false;
-      },
-      error: () => {
-        this.error = 'Search failed. Please try again.';
-        this.isSearching = false;
-      }
-    });
-
-    this.subs.add(searchSub);
   }
 
-  ngOnDestroy(): void {
-    this.subs.unsubscribe();
+  onSearchResults(results: Skill[]): void {
+    this.searchResults = results;
   }
 
-  onSearchChange(q: string): void {
-    if (!q.trim()) {
-      this.searchResults = [];
-      this.isSearching = false;
-      return;
-    }
-    this.searchSubject.next(q);
+  onQueryChange(q: string): void {
+    this.searchQuery = q;
   }
 
-  clearSearch(): void {
+  onSearchCleared(): void {
     this.searchQuery = '';
     this.searchResults = [];
-    this.isSearching = false;
   }
 
-  /** Wraps the matched portion with a <span class="highlight"> */
+  onSkillSelected(skill: Skill): void {
+    this.searchQuery = skill.name;
+    this.searchResults = [skill];
+  }
+
   highlight(text: string, query: string): string {
     if (!query) return text;
     const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -350,7 +276,7 @@ export class SkillsComponent implements OnInit, OnDestroy {
   startEdit(skill: Skill): void {
     this.editingId = skill.documentId;
     this.editName = skill.name;
-    this.clearSearch();
+    this.onSearchCleared();
     this.clearMessages();
   }
 
