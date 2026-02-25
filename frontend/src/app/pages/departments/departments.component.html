@@ -1,0 +1,48 @@
+<div class="departments-page">
+    <div class="page-header">
+        <h1>Gestion des départements</h1>
+        <a routerLink="/dashboard" class="back-link">&larr; Retour au tableau de bord</a>
+    </div>
+
+    <!-- Messages -->
+    <div class="alert error" *ngIf="error">
+        {{ error }}
+        <button (click)="error = ''">&times;</button>
+    </div>
+    <div class="alert success" *ngIf="success">
+        {{ success }}
+        <button (click)="success = ''">&times;</button>
+    </div>
+
+    <!-- Ajout -->
+    <div class="add-row">
+        <input type="text" [(ngModel)]="newName" placeholder="Nom du département" (keyup.enter)="addDepartment()" />
+        <button class="btn-add" (click)="addDepartment()" [disabled]="!newName.trim()">Ajouter</button>
+    </div>
+
+    <!-- Liste -->
+    <p class="center" *ngIf="loading">Chargement...</p>
+    <p class="center" *ngIf="!loading && departments.length === 0">Aucun département pour l'instant.</p>
+
+    <div class="list" *ngIf="!loading && departments.length > 0">
+        <div class="row" *ngFor="let dept of departments">
+            <!-- Mode visualisation -->
+            <ng-container *ngIf="editingId !== dept.documentId">
+                <span class="name">{{ dept.name }}</span>
+                <div class="actions">
+                    <button class="btn-edit" (click)="startEdit(dept)">Modifier</button>
+                    <button class="btn-delete" (click)="deleteDepartment(dept)">Supprimer</button>
+                </div>
+            </ng-container>
+
+            <!-- Mode édition -->
+            <ng-container *ngIf="editingId === dept.documentId">
+                <input type="text" [(ngModel)]="editName" (keyup.enter)="saveEdit()" class="edit-input" />
+                <div class="actions">
+                    <button class="btn-save" (click)="saveEdit()" [disabled]="!editName.trim()">Sauvegarder</button>
+                    <button class="btn-cancel" (click)="cancelEdit()">Annuler</button>
+                </div>
+            </ng-container>
+        </div>
+    </div>
+</div>
