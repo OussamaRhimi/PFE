@@ -1,25 +1,72 @@
+// === IOVISION Colors - Rouge & Noir ===
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@700;900&display=swap');
+$primary-red: #c62828;
+$primary-dark: #1e1e1e;
+$secondary-red: #b71c1c;
+$text-dark: #212121;
+$text-light: #9ca3af;
+$white: #ffffff;
+
 :host {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell,
-    "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
 }
 
 .navbar {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: linear-gradient(135deg, $primary-red 0%, $primary-dark 100%);
+  color: $white;
   padding: 1rem 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 20px rgba($primary-red, 0.3);
+  position: relative;
+  z-index: 100;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg,
+      rgba($primary-red, 0.2) 0%,
+      rgba($primary-dark, 0.2) 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+
+  &:hover::before {
+    opacity: 1;
+  }
 
   .navbar-brand {
-    h1 {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    animation: slideInLeft 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+
+    .company-logo {
+      width: 40px;
+      height: 40px;
+      object-fit: contain;
+      filter: drop-shadow(0 2px 8px rgba($primary-red, 0.4));
+      transition: transform 0.3s ease;
+
+      &:hover {
+        transform: scale(1.1) rotate(5deg);
+      }
+    }
+
+    .company-name {
       font-size: 24px;
-      font-weight: 700;
-      margin: 0;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     }
   }
 
@@ -27,35 +74,73 @@
     display: flex;
     align-items: center;
     gap: 1.5rem;
+    animation: slideInRight 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 
     .user-info {
       display: flex;
       align-items: center;
-      gap: 1rem;
+      gap: 12px;
+
+      .user-avatar {
+        width: 36px;
+        height: 36px;
+        background: rgba($white, 0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid rgba($white, 0.3);
+        transition: all 0.3s ease;
+
+        &:hover {
+          background: rgba($white, 0.3);
+          transform: scale(1.05);
+        }
+
+        svg {
+          color: $white;
+        }
+      }
 
       .username {
         font-size: 14px;
-        opacity: 0.9;
+        font-weight: 600;
+        opacity: 0.95;
+        text-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
       }
 
       .logout-btn {
         padding: 8px 16px;
-        background-color: rgba(255, 255, 255, 0.2);
-        color: white;
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        border-radius: 4px;
+        background: rgba($white, 0.15);
+        color: $white;
+        border: 1px solid rgba($white, 0.25);
+        border-radius: 8px;
         cursor: pointer;
         font-size: 14px;
         font-weight: 600;
-        transition: all 0.3s ease;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        backdrop-filter: blur(10px);
 
         &:hover {
-          background-color: rgba(255, 255, 255, 0.3);
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+          background: rgba($white, 0.25);
+          box-shadow: 0 4px 12px rgba($primary-red, 0.3);
+          transform: translateY(-2px);
         }
 
         &:active {
-          transform: scale(0.98);
+          transform: translateY(0);
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        svg {
+          transition: transform 0.3s ease;
+        }
+
+        &:hover svg {
+          transform: translateX(2px);
         }
       }
     }
@@ -66,24 +151,100 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  background-color: #f5f5f5;
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  min-height: calc(100vh - 72px);
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 @media (max-width: 768px) {
   .navbar {
-    flex-direction: column;
-    gap: 1rem;
-    text-align: center;
+    padding: 0.875rem 1rem;
 
     .navbar-brand {
-      h1 {
-        font-size: 20px;
+      .company-logo {
+        width: 32px;
+        height: 32px;
+      }
+
+      .company-name {
+        font-size: 18px;
       }
     }
 
     .navbar-end {
-      width: 100%;
-      justify-content: center;
+      gap: 0.75rem;
+
+      .user-info {
+        gap: 8px;
+
+        .user-avatar {
+          width: 32px;
+          height: 32px;
+
+          svg {
+            width: 16px;
+            height: 16px;
+          }
+        }
+
+        .username {
+          display: none;
+        }
+
+        .logout-btn {
+          padding: 6px 12px;
+          font-size: 13px;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .navbar {
+    padding: 0.75rem 0.875rem;
+
+    .navbar-brand {
+      .company-name {
+        font-size: 16px;
+      }
+    }
+
+    .navbar-end {
+      .user-info {
+        .logout-btn {
+          span {
+            display: none;
+          }
+
+          padding: 6px 10px;
+
+          svg {
+            margin: 0;
+          }
+        }
+      }
     }
   }
 }

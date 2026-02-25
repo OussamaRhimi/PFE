@@ -11,9 +11,10 @@ import { AsyncPipe } from '@angular/common';
   styleUrl: './app.scss',
 })
 export class App {
-  protected readonly title = 'AI Hiring Platform';
+  protected readonly logoPath = 'assets/logo/iovision-logo.png';
+  protected readonly companyName = 'IOVISION';
 
-  constructor(public authService: AuthService, private router: Router) {}
+  constructor(public authService: AuthService, private router: Router) { }
 
   logout(): void {
     this.authService.logout();

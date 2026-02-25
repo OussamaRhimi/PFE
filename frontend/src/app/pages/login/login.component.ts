@@ -20,8 +20,10 @@ export class LoginComponent implements OnInit {
   loginForm: FormGroup;
   loading = false;
   submitted = false;
+  showPassword = false;
   returnUrl: string = '/dashboard';
   error: string | null = null;
+  logoPath = 'assets/logo/iovision-logo.png';
 
   constructor(
     private formBuilder: FormBuilder,
@@ -29,7 +31,6 @@ export class LoginComponent implements OnInit {
     private router: Router,
     private authService: AuthService
   ) {
-    // Redirect to dashboard if already logged in
     if (this.authService.isLoggedIn()) {
       this.router.navigate(['/dashboard']);
     }

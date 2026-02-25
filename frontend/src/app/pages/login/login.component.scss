@@ -1,173 +1,825 @@
+// ─────────────────────────────────────────────
+//  DESIGN TOKENS  –  Light + Logo Red accent (version foncée)
+// ─────────────────────────────────────────────
+
+
+$logo-red: #8b1f1f; // rouge principal profond
+$logo-red-mid: #a31a1a; // rouge intense
+$logo-red-deep: #791212; // rouge foncé premium
+$logo-red-darker: #5f1010; // ombre très sombre élégante
+
+// Light neutrals
+$white: #ffffff;
+$bg-page: #f5f6fa;
+$bg-card: rgba(255, 255, 255, 0.85);
+$gray-50: #f9fafb;
+$gray-100: #f1f3f7;
+$gray-200: #e5e8ef;
+$gray-300: #cbd0dc;
+$gray-400: #9aa0b4;
+$gray-600: #5a6278;
+$gray-700: #3d4358;
+$gray-800: #252b3b;
+$gray-900: #111827;
+
+$error: #dc2626;
+$success: #16a34a;
+
+// ─────────────────────────────────────────────
+//  RESET
+// ─────────────────────────────────────────────
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+// ─────────────────────────────────────────────
+//  PAGE WRAPPER  –  taches rouges réparties et plus foncées
+// ─────────────────────────────────────────────
 .login-wrapper {
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  position: relative;
+  overflow: hidden;
+  padding: 28px;
+
+  background:
+    // Taches réparties aux quatre coins et au centre, opacités réduites
+    radial-gradient(ellipse at 10% 10%, rgba($logo-red-deep, 0.06) 0%, transparent 45%),
+    radial-gradient(ellipse at 90% 10%, rgba($logo-red-mid, 0.05) 0%, transparent 40%),
+    radial-gradient(ellipse at 10% 90%, rgba($logo-red-deep, 0.04) 0%, transparent 40%),
+    radial-gradient(ellipse at 90% 90%, rgba($logo-red, 0.03) 0%, transparent 40%),
+    radial-gradient(ellipse at 50% 50%, rgba($logo-red-deep, 0.02) 0%, transparent 50%),
+    linear-gradient(150deg, #ffffff 0%, $bg-page 55%, #eef0f7 100%);
 }
 
-.login-container {
-  width: 100%;
-  max-width: 400px;
-  padding: 20px;
+// ─────────────────────────────────────────────
+//  FLOATING ORBS  –  inchangés
+// ─────────────────────────────────────────────
+.floating-shapes {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: 0;
+  pointer-events: none;
+
+  .shape {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(70px);
+    animation: orbDrift 22s ease-in-out infinite;
+
+    &.shape-1 {
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba($logo-red, 0.15), transparent 70%);
+      top: -180px;
+      left: -150px;
+      animation-duration: 28s;
+    }
+
+    &.shape-2 {
+      width: 350px;
+      height: 350px;
+      background: radial-gradient(circle, rgba($logo-red-deep, 0.12), transparent 70%);
+      top: 50%;
+      right: -120px;
+      animation-duration: 34s;
+      animation-delay: 3s;
+    }
+
+    &.shape-3 {
+      width: 260px;
+      height: 260px;
+      background: radial-gradient(circle, rgba($logo-red, 0.12), transparent 70%);
+      bottom: 0%;
+      left: 15%;
+      animation-duration: 26s;
+      animation-delay: 1.5s;
+    }
+
+    &.shape-4 {
+      width: 180px;
+      height: 180px;
+      background: radial-gradient(circle, rgba($logo-red-mid, 0.1), transparent 70%);
+      top: 25%;
+      right: 20%;
+      animation-duration: 32s;
+      animation-delay: 5s;
+    }
+
+    &.shape-5 {
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba($logo-red-deep, 0.1), transparent 70%);
+      bottom: -80px;
+      right: -80px;
+      animation-duration: 24s;
+      animation-delay: 2s;
+    }
+  }
 }
 
+@keyframes orbDrift {
+
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  25% {
+    transform: translate(22px, -26px) scale(1.1);
+  }
+
+  50% {
+    transform: translate(-16px, 16px) scale(0.95);
+  }
+
+  75% {
+    transform: translate(16px, 22px) scale(1.05);
+  }
+}
+
+// ─────────────────────────────────────────────
+//  FLOATING PARTICLES  –  (déjà améliorées)
+// ─────────────────────────────────────────────
+.particles {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+
+  .particle {
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: rgba($logo-red, 0.5);
+    animation: particleFade 6s ease-in-out infinite;
+
+    &:nth-child(1) {
+      top: 10%;
+      left: 7%;
+      animation-delay: 0s;
+    }
+
+    &:nth-child(2) {
+      top: 22%;
+      left: 87%;
+      animation-delay: 1.3s;
+      background: rgba($logo-red-deep, 0.4);
+    }
+
+    &:nth-child(3) {
+      top: 60%;
+      left: 12%;
+      animation-delay: 2.5s;
+    }
+
+    &:nth-child(4) {
+      top: 75%;
+      left: 70%;
+      animation-delay: 0.7s;
+      background: rgba($logo-red, 0.45);
+    }
+
+    &:nth-child(5) {
+      top: 38%;
+      left: 53%;
+      animation-delay: 3.8s;
+      background: rgba($logo-red-mid, 0.45);
+    }
+
+    &:nth-child(6) {
+      top: 86%;
+      left: 30%;
+      animation-delay: 1.9s;
+    }
+
+    &:nth-child(7) {
+      top: 7%;
+      left: 58%;
+      animation-delay: 4.4s;
+      background: rgba($logo-red-deep, 0.35);
+    }
+
+    &:nth-child(8) {
+      top: 48%;
+      left: 3%;
+      animation-delay: 2.2s;
+    }
+
+    &:nth-child(9) {
+      top: 30%;
+      left: 36%;
+      animation-delay: 1.0s;
+    }
+
+    &:nth-child(10) {
+      top: 70%;
+      left: 90%;
+      animation-delay: 3.1s;
+      background: rgba($logo-red, 0.5);
+    }
+  }
+}
+
+@keyframes particleFade {
+
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(1) translate(0, 0);
+  }
+
+  40% {
+    opacity: 1;
+    transform: scale(2.5) translate(-4px, -6px);
+  }
+
+  70% {
+    opacity: 0.7;
+    transform: scale(1.6) translate(4px, 6px);
+  }
+}
+
+// ─────────────────────────────────────────────
+//  LOGIN CARD  –  semi‑transparente
+// ─────────────────────────────────────────────
 .login-card {
-  background: white;
-  border-radius: 8px;
-  padding: 40px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 480px;
+  padding: 48px 44px 42px;
+
+  background: $bg-card;
+  backdrop-filter: blur(50px) saturate(170%);
+  -webkit-backdrop-filter: blur(50px) saturate(170%);
+
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+
+  box-shadow:
+    0 2px 0 rgba($logo-red, 0.0),
+    0 30px 70px rgba(0, 0, 0, 0.10),
+    0 6px 24px rgba($logo-red, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 1);
+
+  animation: cardEntrance 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 44px;
+    right: 44px;
+    height: 3px;
+    background: linear-gradient(90deg,
+        transparent 0%,
+        $logo-red-deep 20%,
+        $logo-red-mid 55%,
+        rgba($logo-red, 0.4) 80%,
+        transparent 100%);
+    border-radius: 0 0 6px 6px;
+  }
 }
 
-.login-title {
-  font-size: 28px;
-  font-weight: 700;
-  color: #333;
-  margin-bottom: 10px;
-  text-align: center;
+@keyframes cardEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(44px) scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
-.login-subtitle {
-  font-size: 20px;
-  font-weight: 600;
-  color: #667eea;
-  margin-bottom: 30px;
+// ─────────────────────────────────────────────
+//  CARD HEADER (inchangé)
+// ─────────────────────────────────────────────
+.card-header {
   text-align: center;
+  margin-bottom: 32px;
+
+  .logo-wrapper {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 18px;
+
+    .logo-glow {
+      position: absolute;
+      inset: -14px;
+      background: radial-gradient(circle,
+          rgba($logo-red, 0.15) 0%,
+          rgba($logo-red-deep, 0.07) 55%,
+          transparent 75%);
+      border-radius: 50%;
+      filter: blur(18px);
+      animation: logoPulse 3.8s ease-in-out infinite;
+    }
+
+    .brand-logo {
+      position: relative;
+      width: 68px;
+      height: 68px;
+      object-fit: contain;
+      filter: drop-shadow(0 4px 16px rgba($logo-red, 0.25)) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.1));
+      animation: logoFloat 4.5s ease-in-out infinite;
+    }
+  }
+
+  .brand-title {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    margin-bottom: 10px;
+
+    .brand-line {
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 3.5px;
+      text-transform: uppercase;
+      color: $gray-400;
+    }
+
+    .brand-highlight {
+      font-size: 2.5rem;
+      font-weight: 900;
+      letter-spacing: -1px;
+      line-height: 1.05;
+
+      background: linear-gradient(120deg,
+          $gray-900 0%,
+          $logo-red-deep 35%,
+          $logo-red 60%,
+          $gray-900 100%);
+
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+
+      position: relative;
+    }
+  }
+
+  .form-subtitle {
+    font-size: 13.5px;
+    color: $gray-400;
+    font-weight: 400;
+    margin-top: 14px;
+  }
+}
+
+@keyframes logoPulse {
+
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.85;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes logoFloat {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 0% center;
+  }
+
+  100% {
+    background-position: 200% center;
+  }
+}
+
+// ─────────────────────────────────────────────
+//  ERROR ALERT (inchangé)
+// ─────────────────────────────────────────────
+.alert {
+  padding: 12px 16px;
+  border-radius: 12px;
+  margin-bottom: 22px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+  font-weight: 500;
+  animation: slideInAlert 0.35s ease;
+
+  &.alert-error {
+    background: #fff5f5;
+    color: $error;
+    border: 1px solid rgba($error, 0.2);
+  }
+
+  .alert-icon {
+    flex-shrink: 0;
+  }
+}
+
+@keyframes slideInAlert {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// ─────────────────────────────────────────────
+//  FORM
+// ─────────────────────────────────────────────
+.login-form {
+  margin-bottom: 22px;
 }
 
 .form-group {
-  margin-bottom: 20px;
-}
+  margin-bottom: 18px;
 
-.form-label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 500;
-  color: #333;
-  font-size: 14px;
-}
+  .form-label {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: $gray-700;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    margin-bottom: 8px;
 
-.form-control {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
-  transition: border-color 0.3s, box-shadow 0.3s;
-
-  &:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    svg {
+      color: $logo-red;
+    }
   }
 
-  &.is-invalid {
-    border-color: #dc3545;
+  .input-wrapper {
+    position: relative;
 
-    &:focus {
-      box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
+    .form-input {
+      width: 100%;
+      height: 52px;
+      padding: 0 48px 0 18px;
+      background: $white; // fond blanc pur
+      border: 1.5px solid $gray-200;
+      border-radius: 14px;
+      font-size: 15px;
+      font-weight: 500;
+      color: $gray-800; // texte foncé visible
+      outline: none;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+      &::placeholder {
+        color: $gray-400; // placeholder visible
+      }
+
+      &:hover {
+        border-color: rgba($logo-red-deep, 0.35);
+        background: $white;
+      }
+
+      &:focus {
+        border-color: $logo-red-deep;
+        background: $white;
+        box-shadow:
+          0 0 0 4px rgba($logo-red-deep, 0.08),
+          0 2px 12px rgba($logo-red-deep, 0.08);
+        transform: translateY(-1px);
+      }
+
+      &.error {
+        border-color: rgba($error, 0.5);
+        background: #fff5f5;
+      }
+    }
+
+    .input-border {
+      position: absolute;
+      bottom: 0;
+      left: 14px;
+      right: 14px;
+      height: 2px;
+      background: linear-gradient(90deg, $logo-red-deep, $logo-red-mid);
+      transform-origin: left center;
+      transform: scaleX(0);
+      transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+      border-radius: 0 0 4px 4px;
+    }
+
+    .form-input:focus~.input-border {
+      transform: scaleX(1);
+    }
+  }
+
+  .field-error {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: $error;
+    margin-top: 6px;
+    animation: shake 0.38s;
+
+    svg {
+      flex-shrink: 0;
     }
   }
 }
 
-.invalid-feedback {
-  display: block;
-  margin-top: 5px;
-  font-size: 12px;
-  color: #dc3545;
+@keyframes shake {
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  20%,
+  60% {
+    transform: translateX(-4px);
+  }
+
+  40%,
+  80% {
+    transform: translateX(4px);
+  }
 }
 
-.btn {
-  padding: 10px 16px;
+// ─────────────────────────────────────────────
+//  PASSWORD TOGGLE
+// ─────────────────────────────────────────────
+.toggle-password {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
   border: none;
-  border-radius: 4px;
-  font-size: 14px;
-  font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s;
-
-  &.btn-primary {
-    background-color: #667eea;
-    color: white;
-
-    &:hover:not(:disabled) {
-      background-color: #5568d3;
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-    }
-
-    &:disabled {
-      opacity: 0.7;
-      cursor: not-allowed;
-    }
-  }
-}
-
-.w-100 {
-  width: 100%;
-}
-
-.me-2 {
-  margin-right: 8px;
-}
-
-.my-4 {
-  margin: 24px 0;
-  border: none;
-  border-top: 1px solid #ddd;
-}
-
-.text-center {
-  text-align: center;
-}
-
-.text-muted {
-  color: #666;
-  font-size: 14px;
-}
-
-.register-link {
-  color: #667eea;
-  text-decoration: none;
-  font-weight: 600;
+  padding: 4px;
+  color: $gray-300;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s;
+  z-index: 2;
 
   &:hover {
-    text-decoration: underline;
+    color: $logo-red-mid;
   }
 }
 
-.alert {
-  padding: 12px 16px;
-  border-radius: 4px;
-  margin-bottom: 20px;
-  font-size: 14px;
+// ─────────────────────────────────────────────
+//  FORM OPTIONS
+// ─────────────────────────────────────────────
+.form-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 10px;
 
-  &.alert-danger {
-    background-color: #f8d7da;
-    border: 1px solid #f5c6cb;
-    color: #721c24;
+  .checkbox-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+
+    input[type="checkbox"] {
+      display: none;
+    }
+
+    .checkbox-custom {
+      width: 18px;
+      height: 18px;
+      border: 1.5px solid $gray-300;
+      border-radius: 5px;
+      position: relative;
+      background: $white;
+      transition: all 0.25s;
+
+      &::after {
+        content: '';
+        position: absolute;
+        left: 5px;
+        top: 2px;
+        width: 5px;
+        height: 10px;
+        border: solid $white;
+        border-width: 0 2px 2px 0;
+        opacity: 0;
+        transform: scale(0) rotate(45deg);
+        transition: all 0.18s ease;
+      }
+
+      &:hover {
+        border-color: $logo-red-mid;
+      }
+    }
+
+    input:checked+.checkbox-custom {
+      background: linear-gradient(135deg, $logo-red-deep, $logo-red-mid);
+      border-color: $logo-red-mid;
+
+      &::after {
+        opacity: 1;
+        transform: scale(1) rotate(45deg);
+      }
+    }
+
+    .checkbox-label {
+      font-size: 13.5px;
+      color: $gray-600;
+    }
+  }
+
+  .link-forgot {
+    font-size: 13.5px;
+    color: $logo-red;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.25s ease;
+    position: relative;
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -3px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: linear-gradient(90deg,
+          $logo-red-deep,
+          $logo-red-mid );
+      transition: width 0.3s ease;
+    }
+
+    &:hover {
+      color: $logo-red-deep;
+
+      &::after {
+        width: 100%;
+      }
+    }
   }
 }
 
-.spinner-border {
-  display: inline-block;
-  width: 14px;
-  height: 14px;
-  vertical-align: text-bottom;
-  border: 2px solid currentColor;
-  border-right-color: transparent;
-  border-radius: 50%;
-  animation: spinner-border 0.75s linear infinite;
 
-  &.spinner-border-sm {
-    width: 12px;
-    height: 12px;
-    border-width: 1.5px;
+// ─────────────────────────────────────────────
+//  SUBMIT BUTTON – IoVision Premium
+// ─────────────────────────────────────────────
+.btn-submit {
+  width: 100%;
+  height: 52px;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: $white;
+  position: relative;
+  overflow: hidden;
+
+  background: linear-gradient(135deg,
+      $logo-red-deep 0%,
+      $logo-red 50%,
+      $logo-red-mid 100%);
+
+  box-shadow:
+    0 8px 25px rgba($logo-red-deep, 0.35),
+    0 2px 8px rgba(0, 0, 0, 0.08);
+
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-3px);
+    background: linear-gradient(135deg,
+        $logo-red-mid 0%,
+        $logo-red-deep 100%);
+    box-shadow:
+      0 12px 35px rgba($logo-red-darker, 0.45);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .btn-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
   }
 }
 
-@keyframes spinner-border {
+@keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+// ─────────────────────────────────────────────
+//  DIVIDER
+// ─────────────────────────────────────────────
+.form-divider {
+  position: relative;
+  text-align: center;
+  margin: 20px 0;
+  font-size: 13px;
+  color: $gray-300;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg,
+        transparent, $gray-200 25%,
+        $gray-200 75%, transparent);
+    transform: translateY(-50%);
+  }
+
+  span {
+    position: relative;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 0 14px;
+  }
+}
+
+// ─────────────────────────────────────────────
+//  FOOTER
+// ─────────────────────────────────────────────
+.form-footer {
+  text-align: center;
+  font-size: 14px;
+  color: $gray-400;
+
+  p {
+    margin: 0;
+  }
+
+  .link-register {
+    color: $logo-red;
+    text-decoration: none;
+    font-weight: 700;
+    margin-left: 5px;
+    position: relative;
+    transition: all 0.25s ease;
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -3px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: linear-gradient(90deg,
+          $logo-red-mid,
+          $logo-red-deep );
+      transition: width 0.3s ease;
+    }
+
+    &:hover {
+      color: $logo-red-deep;
+
+      &::after {
+        width: 100%;
+      }
+    }
   }
 }
