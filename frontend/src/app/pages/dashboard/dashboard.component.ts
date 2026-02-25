@@ -31,6 +31,12 @@ import { RouterLink } from '@angular/router';
               Skills Management
             </a>
           </div>
+          <!-- Nouveau lien pour les départements -->
+          <div class="nav-item">
+            <a routerLink="/departments" routerLinkActive="active">
+              Departments Management
+            </a>
+          </div>
         </nav>
       </div>
 
@@ -52,6 +58,12 @@ import { RouterLink } from '@angular/router';
               <h4>Skills Management</h4>
               <p>Add, edit, and delete skills by name.</p>
               <a routerLink="/skills" class="btn btn-primary">Go to Skills</a>
+            </div>
+            <!-- Nouvelle carte pour les départements -->
+            <div class="feature-card">
+              <h4>Departments Management</h4>
+              <p>Manage departments: add, edit, delete.</p>
+              <a routerLink="/departments" class="btn btn-primary">Go to Departments</a>
             </div>
           </div>
         </div>
@@ -308,7 +320,7 @@ import { RouterLink } from '@angular/router';
   ],
 })
 export class DashboardComponent {
-  constructor(public authService: AuthService) {}
+  constructor(public authService: AuthService) { }
 
   logout(): void {
     this.authService.logout();
