@@ -1,15 +1,41 @@
-<nav class="navbar">
-  <div class="navbar-brand">
-    <h1>{{ title }}</h1>
-  </div>
-  <div class="navbar-end">
-    <div *ngIf="authService.currentUser$ | async as user" class="user-info">
+<!-- Login page: no shell -->
+<ng-container *ngIf="!isLoggedIn(); else shell">
+  <router-outlet />
+</ng-container>
+
+<!-- Authenticated shell with sidebar -->
+<ng-template #shell>
+  <nav class="topbar">
+    <div class="topbar-brand">
+      <button class="sidebar-toggle" (click)="sidebarCollapsed = !sidebarCollapsed">☰</button>
+      <h1>{{ title }}</h1>
+    </div>
+    <div class="topbar-end" *ngIf="authService.currentUser$ | async as user">
       <span class="username">{{ user.username }}</span>
       <button (click)="logout()" class="logout-btn">Logout</button>
     </div>
-  </div>
-</nav>
+  </nav>
 
-<main class="main-container">
-  <router-outlet />
-</main>
+  <div class="app-body">
+    <aside class="sidebar" [class.collapsed]="sidebarCollapsed">
+      <nav class="sidebar-nav">
+        <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+          <span class="nav-icon">📊</span><span class="nav-label">Dashboard</span>
+        </a>
+        <a routerLink="/skills" routerLinkActive="active">
+          <span class="nav-icon">🛠️</span><span class="nav-label">Skills</span>
+        </a>
+        <a routerLink="/departments" routerLinkActive="active">
+          <span class="nav-icon">🏢</span><span class="nav-label">Departments</span>
+        </a>
+        <a routerLink="/job-postings" routerLinkActive="active">
+          <span class="nav-icon">📋</span><span class="nav-label">Job Postings</span>
+        </a>
+      </nav>
+    </aside>
+
+    <main class="main-content">
+      <router-outlet />
+    </main>
+  </div>
+</ng-template>

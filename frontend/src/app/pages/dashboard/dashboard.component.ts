@@ -9,62 +9,32 @@ import { RouterLink } from '@angular/router';
   imports: [CommonModule, RouterLink],
   template: `
     <div class="dashboard-container">
-      <div class="navbar">
-        <div class="navbar-content">
-          <h1 class="navbar-title">My App</h1>
-          <div class="navbar-actions">
-            <span class="user-name" *ngIf="authService.currentUser$ | async as user">
-              {{ user.username }}
-            </span>
-            <button class="btn-logout" (click)="logout()">Logout</button>
-          </div>
+      <div class="welcome-card">
+        <h2>Welcome to Dashboard</h2>
+        <div *ngIf="authService.currentUser$ | async as user" class="user-details">
+          <p><strong>Username:</strong> {{ user.username }}</p>
+          <p><strong>Email:</strong> {{ user.email }}</p>
         </div>
+        <p class="info-text">You are successfully authenticated!</p>
       </div>
 
-      <div class="sidebar">
-        <nav class="nav-menu">
-          <div class="nav-item active">
-            <a href="#dashboard">Dashboard</a>
+      <div class="features-section">
+        <h3>Quick Access</h3>
+        <div class="features-grid">
+          <div class="feature-card">
+            <h4>Skills Management</h4>
+            <p>Add, edit, and delete skills by name.</p>
+            <a routerLink="/skills" class="btn btn-primary">Go to Skills</a>
           </div>
-          <div class="nav-item">
-            <a routerLink="/skills" routerLinkActive="active">
-              Skills Management
-            </a>
+          <div class="feature-card">
+            <h4>Departments Management</h4>
+            <p>Manage departments: add, edit, delete.</p>
+            <a routerLink="/departments" class="btn btn-primary">Go to Departments</a>
           </div>
-          <!-- Nouveau lien pour les départements -->
-          <div class="nav-item">
-            <a routerLink="/departments" routerLinkActive="active">
-              Departments Management
-            </a>
-          </div>
-        </nav>
-      </div>
-
-      <div class="main-content">
-        <div class="welcome-card">
-          <h2>Welcome to Dashboard</h2>
-          <div *ngIf="authService.currentUser$ | async as user" class="user-details">
-            <p><strong>Username:</strong> {{ user.username }}</p>
-            <p><strong>Email:</strong> {{ user.email }}</p>
-            <p><strong>User ID:</strong> {{ user.id }}</p>
-          </div>
-          <p class="info-text">You are successfully authenticated!</p>
-        </div>
-
-        <div class="features-section">
-          <h3>Available Features</h3>
-          <div class="features-grid">
-            <div class="feature-card">
-              <h4>Skills Management</h4>
-              <p>Add, edit, and delete skills by name.</p>
-              <a routerLink="/skills" class="btn btn-primary">Go to Skills</a>
-            </div>
-            <!-- Nouvelle carte pour les départements -->
-            <div class="feature-card">
-              <h4>Departments Management</h4>
-              <p>Manage departments: add, edit, delete.</p>
-              <a routerLink="/departments" class="btn btn-primary">Go to Departments</a>
-            </div>
+          <div class="feature-card">
+            <h4>Job Postings</h4>
+            <p>Create and manage job openings.</p>
+            <a routerLink="/job-postings" class="btn btn-primary">Go to Job Postings</a>
           </div>
         </div>
       </div>
@@ -73,117 +43,12 @@ import { RouterLink } from '@angular/router';
   styles: [
     `
       .dashboard-container {
-        display: flex;
-        flex-direction: column;
-        height: 100vh;
-        background-color: #f5f5f5;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      }
-
-      /* Navbar */
-      .navbar {
-        background-color: #667eea;
-        color: white;
-        padding: 0;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      }
-
-      .navbar-content {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 1rem 2rem;
-        max-width: 1400px;
-        margin: 0 auto;
-        width: 100%;
-      }
-
-      .navbar-title {
-        margin: 0;
-        font-size: 1.5rem;
-        font-weight: 600;
-      }
-
-      .navbar-actions {
-        display: flex;
-        align-items: center;
-        gap: 1.5rem;
-      }
-
-      .user-name {
-        font-size: 0.95rem;
-        opacity: 0.9;
-      }
-
-      .btn-logout {
-        background-color: rgba(255, 255, 255, 0.2);
-        color: white;
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        padding: 0.5rem 1rem;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 0.9rem;
-        transition: all 0.3s ease;
-
-        &:hover {
-          background-color: rgba(255, 255, 255, 0.3);
-        }
-      }
-
-      /* Layout */
-      .sidebar {
-        background-color: white;
-        border-right: 1px solid #e0e0e0;
-        width: 200px;
-        padding: 1rem 0;
-        display: none;
-
-        @media (min-width: 1024px) {
-          display: block;
-        }
-      }
-
-      .nav-menu {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-      }
-
-      .nav-item {
-        margin: 0;
-
-        a {
-          display: block;
-          padding: 1rem 1.5rem;
-          color: #666;
-          text-decoration: none;
-          transition: all 0.3s ease;
-          border-left: 3px solid transparent;
-
-          &:hover {
-            background-color: #f5f5f5;
-            color: #667eea;
-          }
-        }
-
-        &.active a {
-          color: #667eea;
-          background-color: #f0f4ff;
-          border-left-color: #667eea;
-          font-weight: 500;
-        }
-      }
-
-      .main-content {
-        flex: 1;
-        overflow-y: auto;
         padding: 2rem;
         max-width: 1200px;
         margin: 0 auto;
         width: 100%;
       }
 
-      /* Welcome Card */
       .welcome-card {
         background: white;
         border-radius: 8px;
@@ -217,7 +82,6 @@ import { RouterLink } from '@angular/router';
         }
       }
 
-      /* Features Section */
       .features-section {
         h3 {
           color: #333;
@@ -229,7 +93,7 @@ import { RouterLink } from '@angular/router';
 
       .features-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
         gap: 1.5rem;
       }
 
@@ -285,30 +149,8 @@ import { RouterLink } from '@angular/router';
         }
       }
 
-      /* Responsive */
       @media (max-width: 768px) {
         .dashboard-container {
-          flex-direction: column;
-        }
-
-        .navbar-content {
-          padding: 1rem;
-        }
-
-        .navbar-title {
-          font-size: 1.25rem;
-        }
-
-        .navbar-actions {
-          gap: 0.5rem;
-        }
-
-        .btn-logout {
-          padding: 0.4rem 0.8rem;
-          font-size: 0.8rem;
-        }
-
-        .main-content {
           padding: 1rem;
         }
 
@@ -320,10 +162,5 @@ import { RouterLink } from '@angular/router';
   ],
 })
 export class DashboardComponent {
-  constructor(public authService: AuthService) { }
-
-  logout(): void {
-    this.authService.logout();
-    window.location.href = '/login';
-  }
+  constructor(public authService: AuthService) {}
 }

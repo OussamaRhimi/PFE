@@ -84,7 +84,7 @@ async function configureAuthenticatedRole(strapi: Core.Strapi) {
   });
 
   // Only run once
-  const isSeeded = await pluginStore.get({ key: 'authenticated_permissions_seeded' });
+  const isSeeded = await pluginStore.get({ key: 'authenticated_permissions_seeded_v2' });
   if (isSeeded) return;
 
   // Find the Authenticated role
@@ -95,12 +95,26 @@ async function configureAuthenticatedRole(strapi: Core.Strapi) {
   if (!authRole) return;
 
   // Skill actions to enable for authenticated users
-  const skillActions = [
+  const actionsToEnable = [
+    // Skills
     'api::skill.skill.find',
     'api::skill.skill.findOne',
     'api::skill.skill.create',
     'api::skill.skill.update',
     'api::skill.skill.delete',
+    // Departments
+    'api::department.department.find',
+    'api::department.department.findOne',
+    'api::department.department.create',
+    'api::department.department.update',
+    'api::department.department.delete',
+    // Job Postings
+    'api::job-posting.job-posting.find',
+    'api::job-posting.job-posting.findOne',
+    'api::job-posting.job-posting.create',
+    'api::job-posting.job-posting.update',
+    'api::job-posting.job-posting.delete',
+    'api::job-posting.job-posting.changeStatus',
   ];
 
   // Get all permissions for the authenticated role
@@ -108,7 +122,7 @@ async function configureAuthenticatedRole(strapi: Core.Strapi) {
     .query('plugin::users-permissions.permission')
     .findMany({ where: { role: authRole.id } });
 
-  for (const action of skillActions) {
+  for (const action of actionsToEnable) {
     const existing = permissions.find((p: any) => p.action === action);
     if (existing) {
       // Enable if not already
@@ -131,6 +145,6 @@ async function configureAuthenticatedRole(strapi: Core.Strapi) {
     }
   }
 
-  await pluginStore.set({ key: 'authenticated_permissions_seeded', value: true });
-  strapi.log.info('✔  Authenticated-role permissions seeded (skill CRUD).');
+  await pluginStore.set({ key: 'authenticated_permissions_seeded_v2', value: true });
+  strapi.log.info('✔  Authenticated-role permissions seeded (skills, departments, job-postings).');
 }

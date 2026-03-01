@@ -1,0 +1,34 @@
+{
+  "kind": "collectionType",
+  "collectionName": "job_postings",
+  "info": {
+    "singularName": "job-posting",
+    "pluralName": "job-postings",
+    "displayName": "Job Posting"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true,
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "description": {
+      "type": "text"
+    },
+    "requirements": {
+      "type": "json",
+      "required": false
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["draft", "open", "closed"],
+      "default": "draft",
+      "required": true
+    }
+  }
+}
