@@ -3,16 +3,19 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { DepartmentService, Department } from '../../services/department.service';
+import { DepartmentAutocompleteComponent } from '../../components/department-autocomplete/department-autocomplete.component';
 
 @Component({
     selector: 'app-departments',
     standalone: true,
-    imports: [CommonModule, FormsModule, RouterModule],
+    imports: [CommonModule, FormsModule, RouterModule, DepartmentAutocompleteComponent],
     templateUrl: './departments.component.html',
     styleUrls: ['./departments.component.scss']
 })
 export class DepartmentsComponent implements OnInit {
     departments: Department[] = [];
+    filteredDepartments: Department[] = [];
+    searchQuery = '';
     newName = '';
     editingId: string | null = null;
     editName = '';
@@ -31,6 +34,7 @@ export class DepartmentsComponent implements OnInit {
         this.departmentService.getAll().subscribe({
             next: (data) => {
                 this.departments = data;
+                this.filteredDepartments = data;
                 this.loading = false;
             },
             error: (err) => {
@@ -41,6 +45,22 @@ export class DepartmentsComponent implements OnInit {
         });
     }
 
+    /** Called when the search autocomplete emits results or query changes */
+    onSearch(results: Department[]): void {
+        this.filteredDepartments = results;
+    }
+
+    /** Called when the search is cleared — restore full list */
+    onSearchCleared(): void {
+        this.searchQuery = '';
+        this.filteredDepartments = [...this.departments];
+    }
+
+    /** Called when user picks a specific department — filter to only that one */
+    onDepartmentPicked(dept: Department): void {
+        this.filteredDepartments = [dept];
+    }
+
     addDepartment(): void {
         const name = this.newName.trim();
         if (!name) return;
@@ -48,6 +68,7 @@ export class DepartmentsComponent implements OnInit {
         this.departmentService.create(name).subscribe({
             next: (dept) => {
                 this.departments.push(dept);
+                this.filteredDepartments = [...this.departments];
                 this.newName = '';
                 this.success = `Département "${dept.name}" ajouté.`;
                 this.autoClearSuccess();
@@ -79,6 +100,8 @@ export class DepartmentsComponent implements OnInit {
             next: (updated) => {
                 const index = this.departments.findIndex(d => d.documentId === updated.documentId);
                 if (index !== -1) this.departments[index] = updated;
+                const fIndex = this.filteredDepartments.findIndex(d => d.documentId === updated.documentId);
+                if (fIndex !== -1) this.filteredDepartments[fIndex] = updated;
                 this.success = 'Département mis à jour.';
                 this.cancelEdit();
                 this.autoClearSuccess();
@@ -96,6 +119,7 @@ export class DepartmentsComponent implements OnInit {
         this.departmentService.delete(dept.documentId).subscribe({
             next: () => {
                 this.departments = this.departments.filter(d => d.documentId !== dept.documentId);
+                this.filteredDepartments = this.filteredDepartments.filter(d => d.documentId !== dept.documentId);
                 this.success = `"${dept.name}" supprimé.`;
                 this.autoClearSuccess();
             },

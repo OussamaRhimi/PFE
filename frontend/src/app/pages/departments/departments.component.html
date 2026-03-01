@@ -14,18 +14,31 @@
         <button (click)="success = ''">&times;</button>
     </div>
 
+    <!-- Barre de recherche (autocomplete) -->
+    <div class="search-row">
+        <app-department-autocomplete placeholder="Rechercher un département..." (searchResults)="onSearch($event)"
+            (searchCleared)="onSearchCleared()" (departmentSelected)="onDepartmentPicked($event)">
+        </app-department-autocomplete>
+    </div>
+
     <!-- Ajout -->
     <div class="add-row">
-        <input type="text" [(ngModel)]="newName" placeholder="Nom du département" (keyup.enter)="addDepartment()" />
+        <input type="text" [(ngModel)]="newName" placeholder="Nom du nouveau département"
+            (keyup.enter)="addDepartment()" />
         <button class="btn-add" (click)="addDepartment()" [disabled]="!newName.trim()">Ajouter</button>
     </div>
 
     <!-- Liste -->
     <p class="center" *ngIf="loading">Chargement...</p>
-    <p class="center" *ngIf="!loading && departments.length === 0">Aucun département pour l'instant.</p>
+    <p class="center" *ngIf="!loading && filteredDepartments.length === 0 && departments.length === 0">
+        Aucun département pour l'instant.
+    </p>
+    <p class="center" *ngIf="!loading && filteredDepartments.length === 0 && departments.length > 0">
+        Aucun résultat pour votre recherche.
+    </p>
 
-    <div class="list" *ngIf="!loading && departments.length > 0">
-        <div class="row" *ngFor="let dept of departments">
+    <div class="list" *ngIf="!loading && filteredDepartments.length > 0">
+        <div class="row" *ngFor="let dept of filteredDepartments">
             <!-- Mode visualisation -->
             <ng-container *ngIf="editingId !== dept.documentId">
                 <span class="name">{{ dept.name }}</span>

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 
 export interface Department {
@@ -55,5 +55,16 @@ export class DepartmentService {
     /** Supprime un département */
     delete(documentId: string): Observable<any> {
         return this.http.delete(`${this.apiUrl}/${documentId}`);
+    }
+
+    /**
+     * Recherche des départements par nom (correspondance partielle insensible à la casse).
+     * Appelle GET /api/departments/search?q=<term>&limit=<n>
+     */
+    search(q: string, limit = 10): Observable<Department[]> {
+        const params = new HttpParams()
+            .set('q', q.trim())
+            .set('limit', String(limit));
+        return this.http.get<Department[]>(`${this.apiUrl}/search`, { params });
     }
 }

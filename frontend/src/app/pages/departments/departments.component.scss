@@ -81,6 +81,14 @@ $success: #16a34a;
     }
 }
 
+// === Barre de recherche ===
+.search-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+    position: relative;
+}
+
 // === Ajout ===
 .add-row {
     display: flex;
