@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { DepartmentService, Department } from '../../services/department.service';
 import { DepartmentAutocompleteComponent } from '../../components/department-autocomplete/department-autocomplete.component';
+import { I18nService } from '../../services/i18n.service';
 
 @Component({
     selector: 'app-departments',
@@ -23,7 +24,7 @@ export class DepartmentsComponent implements OnInit {
     success = '';
     loading = false;
 
-    constructor(private departmentService: DepartmentService) { }
+    constructor(private departmentService: DepartmentService, public i18n: I18nService) { }
 
     ngOnInit(): void {
         this.loadDepartments();
@@ -38,7 +39,7 @@ export class DepartmentsComponent implements OnInit {
                 this.loading = false;
             },
             error: (err) => {
-                this.error = 'Erreur lors du chargement des départements.';
+                this.error = this.i18n.t('dept.loadError');
                 console.error(err);
                 this.loading = false;
             }
@@ -70,11 +71,11 @@ export class DepartmentsComponent implements OnInit {
                 this.departments.push(dept);
                 this.filteredDepartments = [...this.departments];
                 this.newName = '';
-                this.success = `Département "${dept.name}" ajouté.`;
+                this.success = this.i18n.t('dept.added');
                 this.autoClearSuccess();
             },
             error: (err) => {
-                this.error = "Erreur à l'ajout. Le nom existe peut-être déjà.";
+                this.error = this.i18n.t('dept.addError');
                 console.error(err);
             }
         });
@@ -102,29 +103,29 @@ export class DepartmentsComponent implements OnInit {
                 if (index !== -1) this.departments[index] = updated;
                 const fIndex = this.filteredDepartments.findIndex(d => d.documentId === updated.documentId);
                 if (fIndex !== -1) this.filteredDepartments[fIndex] = updated;
-                this.success = 'Département mis à jour.';
+                this.success = this.i18n.t('dept.updated');
                 this.cancelEdit();
                 this.autoClearSuccess();
             },
             error: (err) => {
-                this.error = 'Erreur lors de la mise à jour.';
+                this.error = this.i18n.t('dept.updateError');
                 console.error(err);
             }
         });
     }
 
     deleteDepartment(dept: Department): void {
-        if (!confirm(`Supprimer le département "${dept.name}" ?`)) return;
+        if (!confirm(`${this.i18n.t('dept.deleteConfirm')} "${dept.name}" ?`)) return;
         this.clearMessages();
         this.departmentService.delete(dept.documentId).subscribe({
             next: () => {
                 this.departments = this.departments.filter(d => d.documentId !== dept.documentId);
                 this.filteredDepartments = this.filteredDepartments.filter(d => d.documentId !== dept.documentId);
-                this.success = `"${dept.name}" supprimé.`;
+                this.success = `"${dept.name}" ${this.i18n.t('dept.deleted')}`;
                 this.autoClearSuccess();
             },
             error: (err) => {
-                this.error = 'Erreur lors de la suppression.';
+                this.error = this.i18n.t('dept.deleteError');
                 console.error(err);
             }
         });

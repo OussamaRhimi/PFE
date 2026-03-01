@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { RouterOutlet, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from './services/auth.service';
+import { I18nService } from './services/i18n.service';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -13,7 +14,11 @@ export class App {
   protected readonly title = 'AI Hiring Platform';
   sidebarCollapsed = false;
 
-  constructor(public authService: AuthService, private router: Router) {}
+  constructor(
+    public authService: AuthService,
+    public i18n: I18nService,
+    private router: Router,
+  ) {}
 
   isLoggedIn(): boolean {
     return this.authService.isLoggedIn();

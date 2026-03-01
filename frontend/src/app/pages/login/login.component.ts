@@ -7,6 +7,7 @@ import {
 } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { I18nService } from '../../services/i18n.service';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -29,7 +30,8 @@ export class LoginComponent implements OnInit {
     private formBuilder: FormBuilder,
     private route: ActivatedRoute,
     private router: Router,
-    private authService: AuthService
+    private authService: AuthService,
+    public i18n: I18nService,
   ) {
     if (this.authService.isLoggedIn()) {
       this.router.navigate(['/dashboard']);
@@ -65,7 +67,7 @@ export class LoginComponent implements OnInit {
       },
       error: (err) => {
         this.error =
-          err.error?.message || 'Login failed. Please check your credentials.';
+          err.error?.message || this.i18n.t('login.failed');
         this.loading = false;
       },
     });

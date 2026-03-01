@@ -1,1 +1,43 @@
-/* You can add global styles to this file, and also import other style files */
+/* ─────────────────────────────────────────────
+   GLOBAL DESIGN TOKENS – IoHire Premium
+   ───────────────────────────────────────────── */
+
+// Brand reds (matching login page)
+$logo-red: #8b1f1f;
+$logo-red-mid: #a31a1a;
+$logo-red-deep: #791212;
+$logo-red-darker: #5f1010;
+
+// Neutrals
+$white: #ffffff;
+$bg-page: #f5f6fa;
+$gray-50: #f9fafb;
+$gray-100: #f1f3f7;
+$gray-200: #e5e8ef;
+$gray-300: #cbd0dc;
+$gray-400: #9aa0b4;
+$gray-600: #5a6278;
+$gray-700: #3d4358;
+$gray-800: #252b3b;
+$gray-900: #111827;
+
+$error: #dc2626;
+$success: #16a34a;
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell,
+    'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  background: $bg-page;
+  color: $gray-800;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

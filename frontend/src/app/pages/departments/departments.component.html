@@ -1,7 +1,7 @@
 <div class="departments-page">
     <div class="page-header">
-        <h1>Gestion des départements</h1>
-        <a routerLink="/dashboard" class="back-link">&larr; Retour au tableau de bord</a>
+        <h1>{{ i18n.t('dept.title') }}</h1>
+        <a routerLink="/dashboard" class="back-link">{{ i18n.t('dept.backToDashboard') }}</a>
     </div>
 
     <!-- Messages -->
@@ -16,25 +16,25 @@
 
     <!-- Barre de recherche (autocomplete) -->
     <div class="search-row">
-        <app-department-autocomplete placeholder="Rechercher un département..." (searchResults)="onSearch($event)"
+        <app-department-autocomplete [placeholder]="i18n.t('dept.searchPlaceholder')" (searchResults)="onSearch($event)"
             (searchCleared)="onSearchCleared()" (departmentSelected)="onDepartmentPicked($event)">
         </app-department-autocomplete>
     </div>
 
     <!-- Ajout -->
     <div class="add-row">
-        <input type="text" [(ngModel)]="newName" placeholder="Nom du nouveau département"
+        <input type="text" [(ngModel)]="newName" [placeholder]="i18n.t('dept.placeholder')"
             (keyup.enter)="addDepartment()" />
-        <button class="btn-add" (click)="addDepartment()" [disabled]="!newName.trim()">Ajouter</button>
+        <button class="btn-add" (click)="addDepartment()" [disabled]="!newName.trim()">{{ i18n.t('dept.add') }}</button>
     </div>
 
     <!-- Liste -->
-    <p class="center" *ngIf="loading">Chargement...</p>
+    <p class="center" *ngIf="loading">{{ i18n.t('dept.loading') }}</p>
     <p class="center" *ngIf="!loading && filteredDepartments.length === 0 && departments.length === 0">
-        Aucun département pour l'instant.
+        {{ i18n.t('dept.empty') }}
     </p>
     <p class="center" *ngIf="!loading && filteredDepartments.length === 0 && departments.length > 0">
-        Aucun résultat pour votre recherche.
+        {{ i18n.t('dept.noResults') }}
     </p>
 
     <div class="list" *ngIf="!loading && filteredDepartments.length > 0">
@@ -43,8 +43,8 @@
             <ng-container *ngIf="editingId !== dept.documentId">
                 <span class="name">{{ dept.name }}</span>
                 <div class="actions">
-                    <button class="btn-edit" (click)="startEdit(dept)">Modifier</button>
-                    <button class="btn-delete" (click)="deleteDepartment(dept)">Supprimer</button>
+                    <button class="btn-edit" (click)="startEdit(dept)">{{ i18n.t('dept.edit') }}</button>
+                    <button class="btn-delete" (click)="deleteDepartment(dept)">{{ i18n.t('dept.delete') }}</button>
                 </div>
             </ng-container>
 
@@ -52,8 +52,8 @@
             <ng-container *ngIf="editingId === dept.documentId">
                 <input type="text" [(ngModel)]="editName" (keyup.enter)="saveEdit()" class="edit-input" />
                 <div class="actions">
-                    <button class="btn-save" (click)="saveEdit()" [disabled]="!editName.trim()">Sauvegarder</button>
-                    <button class="btn-cancel" (click)="cancelEdit()">Annuler</button>
+                    <button class="btn-save" (click)="saveEdit()" [disabled]="!editName.trim()">{{ i18n.t('dept.save') }}</button>
+                    <button class="btn-cancel" (click)="cancelEdit()">{{ i18n.t('dept.cancel') }}</button>
                 </div>
             </ng-container>
         </div>

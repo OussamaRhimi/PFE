@@ -33,10 +33,10 @@
         <img [src]="logoPath" alt="IoHire Logo" class="brand-logo">
       </div>
       <h1 class="brand-title">
-        <span class="brand-line">Welcome to</span>
+        <span class="brand-line">{{ i18n.t('login.welcomeTo') }}</span>
         <span class="brand-highlight">IoHire</span>
       </h1>
-      <p class="form-subtitle">Connectez-vous à votre espace professionnel</p>
+      <p class="form-subtitle">{{ i18n.t('login.subtitle') }}</p>
     </div>
 
     <!-- Error Alert -->
@@ -57,11 +57,11 @@
             <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
             <circle cx="12" cy="7" r="4" />
           </svg>
-          Email ou nom d'utilisateur
+          {{ i18n.t('login.identifier') }}
         </label>
         <div class="input-wrapper">
           <input type="text" class="form-input" id="identifier" formControlName="identifier"
-            placeholder="Entrez votre identifiant" [class.error]="submitted && f['identifier'].errors"
+            [placeholder]="i18n.t('login.identifierPlaceholder')" [class.error]="submitted && f['identifier'].errors"
             autocomplete="username" />
           <div class="input-border"></div>
         </div>
@@ -70,7 +70,7 @@
             <path
               d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
           </svg>
-          Ce champ est requis
+          {{ i18n.t('login.required') }}
         </div>
       </div>
 
@@ -81,7 +81,7 @@
             <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
             <path d="M7 11V7a5 5 0 0110 0v4" />
           </svg>
-          Mot de passe
+          {{ i18n.t('login.password') }}
         </label>
         <div class="input-wrapper">
           <input [type]="showPassword ? 'text' : 'password'" class="form-input" id="password" formControlName="password"
@@ -107,8 +107,8 @@
             <path
               d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
           </svg>
-          <span *ngIf="f['password'].errors['required']">Ce champ est requis</span>
-          <span *ngIf="f['password'].errors['minlength']">Minimum 6 caractères</span>
+          <span *ngIf="f['password'].errors['required']">{{ i18n.t('login.required') }}</span>
+          <span *ngIf="f['password'].errors['minlength']">{{ i18n.t('login.minLength') }}</span>
         </div>
       </div>
 
@@ -117,22 +117,22 @@
         <label class="checkbox-wrapper">
           <input type="checkbox" />
           <span class="checkbox-custom"></span>
-          <span class="checkbox-label">Se souvenir de moi</span>
+          <span class="checkbox-label">{{ i18n.t('login.rememberMe') }}</span>
         </label>
-        <a href="/forgot-password" class="link-forgot">Mot de passe oublié ?</a>
+        <a href="/forgot-password" class="link-forgot">{{ i18n.t('login.forgotPassword') }}</a>
       </div>
 
       <!-- Submit -->
       <button type="submit" class="btn-submit" [disabled]="loading" [class.loading]="loading">
         <span class="btn-content" *ngIf="!loading">
-          <span>Se connecter</span>
+          <span>{{ i18n.t('login.submit') }}</span>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
             <path d="M5 12h14M12 5l7 7-7 7" />
           </svg>
         </span>
         <span class="btn-loader" *ngIf="loading">
           <span class="spinner"></span>
-          <span>Connexion en cours…</span>
+          <span>{{ i18n.t('login.loading') }}</span>
         </span>
       </button>
 
@@ -141,13 +141,13 @@
     </form>
 
     <!-- Divider -->
-    <div class="form-divider"><span>ou</span></div>
+    <div class="form-divider"><span>{{ i18n.t('login.or') }}</span></div>
 
     <!-- Footer -->
     <div class="form-footer">
       <p>
-        Nouveau sur IoHire ?
-        <a href="/register" class="link-register">Créer un compte</a>
+        {{ i18n.t('login.newUser') }}
+        <a href="/register" class="link-register">{{ i18n.t('login.createAccount') }}</a>
       </p>
     </div>
 
