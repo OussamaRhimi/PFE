@@ -60,6 +60,7 @@ services:
     volumes:
       - ./frontend:/usr/src/app
       - frontend_node_modules:/usr/src/app/node_modules
+      - frontend_angular_cache:/usr/src/app/.angular
     command: >
       sh -c "npm install && npm run start -- --host 0.0.0.0 --poll 2000"
 
@@ -68,3 +69,4 @@ volumes:
   backend_node_modules:
   backend_cache:
   frontend_node_modules:
+  frontend_angular_cache:
