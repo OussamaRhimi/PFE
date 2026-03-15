@@ -1,0 +1,86 @@
+{
+  "kind": "collectionType",
+  "collectionName": "candidates",
+  "info": {
+    "singularName": "candidate",
+    "pluralName": "candidates",
+    "displayName": "Candidate"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "fullName": {
+      "type": "string",
+      "required": true,
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "email": {
+      "type": "email",
+      "required": true
+    },
+    "linkedin": {
+      "type": "string",
+      "maxLength": 300
+    },
+    "portfolio": {
+      "type": "string",
+      "maxLength": 300
+    },
+    "resume": {
+      "type": "media",
+      "multiple": false,
+      "required": true,
+      "allowedTypes": ["files"]
+    },
+    "jobPosting": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::job-posting.job-posting"
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["new", "processing", "processed", "reviewing", "shortlisted", "rejected", "hired", "error"],
+      "default": "new",
+      "required": true
+    },
+    "score": {
+      "type": "decimal",
+      "default": 0
+    },
+    "publicToken": {
+      "type": "string",
+      "unique": true
+    },
+    "trackingCodeHash": {
+      "type": "string",
+      "private": true
+    },
+    "trackingCodeExpiresAt": {
+      "type": "datetime",
+      "private": true
+    },
+    "consent": {
+      "type": "boolean",
+      "default": false,
+      "required": true
+    },
+    "consentAt": {
+      "type": "datetime"
+    },
+    "retentionUntil": {
+      "type": "datetime"
+    },
+    "hrNotes": {
+      "type": "text"
+    },
+    "candidateNotes": {
+      "type": "text"
+    },
+    "selfReportedYearsExperience": {
+      "type": "integer"
+    }
+  }
+}

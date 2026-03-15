@@ -9,11 +9,13 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { I18nService } from '../../services/i18n.service';
 import { CommonModule } from '@angular/common';
+import { PublicNavbarComponent } from '../../components/public-navbar/public-navbar.component';
+import { PublicFooterComponent } from '../../components/public-footer/public-footer.component';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, PublicNavbarComponent, PublicFooterComponent],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss'],
 })

@@ -51,6 +51,15 @@ export class JobPostingService {
     );
   }
 
+  /**
+   * Public endpoint – returns only open job postings (no auth needed).
+   */
+  getPublicJobs(): Observable<JobPosting[]> {
+    return this.http.get<StrapiResponse<JobPosting>>(`${this.apiUrl}/public`).pipe(
+      map(res => res.data)
+    );
+  }
+
   getOne(documentId: string): Observable<JobPosting> {
     return this.http.get<StrapiSingle<JobPosting>>(`${this.apiUrl}/${documentId}`).pipe(
       map(res => res.data)

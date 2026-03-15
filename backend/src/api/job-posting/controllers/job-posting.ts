@@ -8,6 +8,21 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
 
 export default factories.createCoreController('api::job-posting.job-posting', ({ strapi }) => ({
   /**
+   * GET /api/job-postings/public
+   * Returns only job postings with status "open" (no auth required).
+   */
+  async findOpen(ctx) {
+    // Force-filter to status=open, merge with any extra qs the client sends
+    ctx.query = {
+      ...ctx.query,
+      filters: { ...(ctx.query.filters as any || {}), status: { $eq: 'open' } },
+    };
+
+    // Delegate to the default Strapi find() so pagination & populate still work
+    const result = await super.find(ctx);
+    return result;
+  },
+  /**
    * PUT /api/job-postings/:id/status
    * Body: { status: "open" | "closed" | "draft" }
    */

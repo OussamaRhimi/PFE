@@ -1,5 +1,5 @@
-<!-- Login page: no shell -->
-<ng-container *ngIf="!isLoggedIn(); else shell">
+<!-- Public pages: no shell -->
+<ng-container *ngIf="!showShell(); else shell">
   <router-outlet />
 </ng-container>
 
