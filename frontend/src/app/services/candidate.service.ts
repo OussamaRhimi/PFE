@@ -11,6 +11,18 @@ export interface ApplyResponse {
   createdAt: string;
 }
 
+export interface StrapiResponse {
+  data: any[];
+  meta: {
+    pagination: {
+      page: number;
+      pageSize: number;
+      pageCount: number;
+      total: number;
+    }
+  }
+}
+
 export interface TrackResponse {
   fullName: string;
   email: string;
@@ -118,18 +130,23 @@ export class CandidateService {
   }
 
 
-getCandidatesByJob(
-    jobId: string, 
-    page: number = 1, 
-    sort: string = 'name:asc'
-  ): Observable<any> {
-    const params = new HttpParams()
-      .set('filters[job_posting][documentId][$eq]', jobId)
-      .set('pagination[page]', page.toString())
-      .set('pagination[pageSize]', '10')
-      .set('sort', sort)
-      .set('populate', '*'); // Pour récupérer les relations si besoin
+// candidate.service.ts
+getCandidatesByJob(jobId: string, page: number = 1, sort: string = 'fullName:asc') {
+  const params = new HttpParams()
+    // Tente cette syntaxe qui est la norme Strapi v5 pour les relations par Document ID
+    .set('filters[jobPosting][documentId][$eq]', jobId) 
+    
+    // Si ça échoue encore, remplace jobPosting par job_posting :
+    // .set('filters[job_posting][documentId][$eq]', jobId)
 
-    return this.http.get(this.apiUrl, { params });
-  }
+    .set('pagination[page]', page.toString())
+    .set('pagination[pageSize]', '10')
+    .set('sort', sort)
+    .set('populate', '*');
+
+  return this.http.get<StrapiResponse>(this.apiUrl, { params });
 }
+}
+
+
+
