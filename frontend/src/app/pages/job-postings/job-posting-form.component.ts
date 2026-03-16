@@ -363,7 +363,7 @@ export class JobPostingFormComponent implements OnInit {
     private router: Router,
     private route: ActivatedRoute,
     public i18n: I18nService,
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     // Load skills and departments for dropdowns

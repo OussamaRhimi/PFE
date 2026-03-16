@@ -526,7 +526,7 @@ export class ApplyComponent implements OnInit {
     public i18n: I18nService,
     private route: ActivatedRoute,
     private router: Router,
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.jobDocumentId = this.route.snapshot.paramMap.get('jobId') || '';
@@ -596,13 +596,13 @@ export class ApplyComponent implements OnInit {
     const payload: ApplyPayload = {
       fullName: this.form.fullName,
       email: this.form.email,
-      linkedin: this.form.linkedin || undefined,
-      portfolio: this.form.portfolio || undefined,
-      candidateNotes: this.form.candidateNotes || undefined,
+      linkedin: this.form.linkedin,
+      portfolio: this.form.portfolio,
+      candidateNotes: this.form.candidateNotes,
       selfReportedYearsExperience: this.form.selfReportedYearsExperience ?? undefined,
       jobPostingId: this.jobDocumentId,
       consent: this.form.consent,
-      resume: this.selectedFile,
+      resume: this.selectedFile
     };
 
     this.candidateService.apply(payload).subscribe({
@@ -616,6 +616,8 @@ export class ApplyComponent implements OnInit {
         this.submitting = false;
       },
     });
+
+
   }
 
   copyToken(): void {

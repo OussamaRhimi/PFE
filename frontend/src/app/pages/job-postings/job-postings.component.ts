@@ -344,7 +344,7 @@ export class JobPostingsComponent implements OnInit {
   statusConfirm: { job: JobPosting; newStatus: string } | null = null;
   deleteConfirm: { job: JobPosting; candidateCount: number } | null = null;
 
-  constructor(private jobService: JobPostingService, public i18n: I18nService, private router:Router) {}
+  constructor(private jobService: JobPostingService, public i18n: I18nService,private router: Router) {}
 
   ngOnInit(): void { this.load(); }
 

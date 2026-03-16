@@ -1,8 +1,9 @@
 import { factories } from '@strapi/strapi';
 
+
 const VALID_TRANSITIONS: Record<string, string[]> = {
-  draft:  ['open'],
-  open:   ['closed'],
+  draft: ['open'],
+  open: ['closed'],
   closed: ['open'],
 };
 

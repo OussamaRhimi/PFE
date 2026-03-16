@@ -45,7 +45,8 @@ async function sendVerificationCodeEmail(email: string, code: string): Promise<v
   const from = process.env.SMTP_FROM;
 
   if (!host || !from) {
-    throw new Error('SMTP_HOST and SMTP_FROM must be configured.');
+    strapi.log.warn(`SMTP_HOST and SMTP_FROM are not configured. SIMULATING email to ${email} with code ${code}`);
+    return;
   }
 
   const transporter = nodemailer.createTransport({
@@ -115,14 +116,21 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
     }
 
     // ── File validation (US2) ──
-    const resumeFile = files?.resume;
-    if (!resumeFile) {
+    console.log('--- UPLOADED FILES ---');
+    console.log(files);
+    console.log('----------------------');
+
+    const rawResumeFile = files?.resume;
+    if (!rawResumeFile) {
       return ctx.badRequest('A resume file is required.');
     }
 
-    if (!ALLOWED_MIME_TYPES.includes(resumeFile.type)) {
+    const resumeFile = Array.isArray(rawResumeFile) ? rawResumeFile[0] : rawResumeFile;
+    const mimeType = resumeFile.type || resumeFile.mimetype;
+
+    if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
       return ctx.badRequest(
-        `Invalid file type "${resumeFile.type}". Allowed: PDF, DOC, DOCX.`
+        `Invalid file type "${mimeType}". Allowed: PDF, DOC, DOCX.`
       );
     }
 
@@ -135,7 +143,7 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
 
     // ── Upload the file via Strapi upload plugin ──
     const uploadedFiles = await strapi.plugin('upload').service('upload').upload({
-      data: { fileInfo: { name: resumeFile.name } },
+      data: { fileInfo: { name: resumeFile.name || resumeFile.originalFilename } },
       files: resumeFile,
     });
     const uploadedFile = uploadedFiles[0];

@@ -57,7 +57,7 @@ export interface ApplyPayload {
 export class CandidateService {
   private readonly apiUrl = 'http://localhost:1337/api/candidates';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   /**
    * Submit a job application (multipart/form-data).
