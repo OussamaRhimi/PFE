@@ -37,10 +37,19 @@ $success: #16a34a;
 }
 
 // ─────────────────────────────────────────────
+//  HOST  –  flex column for sticky footer
+// ─────────────────────────────────────────────
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+// ─────────────────────────────────────────────
 //  PAGE WRAPPER  –  taches rouges réparties et plus foncées
 // ─────────────────────────────────────────────
 .login-wrapper {
-  min-height: 100vh;
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;

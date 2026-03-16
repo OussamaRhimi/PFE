@@ -20,6 +20,16 @@ export class App {
     private router: Router,
   ) {}
 
+  /** Show sidebar shell only for authenticated users on non-public routes */
+  showShell(): boolean {
+    const url = this.router.url;
+    const publicRoutes = ['/login', '/jobs', '/track', '/withdraw'];
+    if (publicRoutes.some(r => url === r || url.startsWith(r + '?') || url.startsWith(r + '/'))) {
+      return false;
+    }
+    return this.authService.isLoggedIn();
+  }
+
   isLoggedIn(): boolean {
     return this.authService.isLoggedIn();
   }

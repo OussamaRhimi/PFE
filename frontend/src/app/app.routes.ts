@@ -6,8 +6,28 @@ import { authGuard } from './guards/auth.guard';
 import { DepartmentsComponent } from './pages/departments/departments.component';
 import { JobPostingsComponent } from './pages/job-postings/job-postings.component';
 import { JobPostingFormComponent } from './pages/job-postings/job-posting-form.component';
+import { PublicJobListComponent } from './pages/public-jobs/public-job-list.component';
+import { ApplyComponent } from './pages/public-jobs/apply.component';
+import { TrackComponent } from './pages/public-jobs/track.component';
+import { WithdrawComponent } from './pages/public-jobs/withdraw.component';
 
 export const routes: Routes = [
+  {
+    path: 'jobs',
+    component: PublicJobListComponent,
+  },
+  {
+    path: 'jobs/:jobId/apply',
+    component: ApplyComponent,
+  },
+  {
+    path: 'track',
+    component: TrackComponent,
+  },
+  {
+    path: 'withdraw/:token',
+    component: WithdrawComponent,
+  },
   {
     path: 'login',
     component: LoginComponent,
