@@ -101,4 +101,5 @@ export class JobPostingService {
       map(res => res?.meta?.pagination?.total ?? 0)
     );
   }
+
 }

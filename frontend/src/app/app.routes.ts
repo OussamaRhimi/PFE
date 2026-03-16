@@ -10,6 +10,7 @@ import { PublicJobListComponent } from './pages/public-jobs/public-job-list.comp
 import { ApplyComponent } from './pages/public-jobs/apply.component';
 import { TrackComponent } from './pages/public-jobs/track.component';
 import { WithdrawComponent } from './pages/public-jobs/withdraw.component';
+import { CandidateList } from './pages/candidate-list/candidate-list';
 
 export const routes: Routes = [
   {
@@ -60,6 +61,11 @@ export const routes: Routes = [
   {
     path: 'job-postings/:id/edit',
     component: JobPostingFormComponent,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'jobs/:id/candidates',
+    component: CandidateList,
     canActivate: [authGuard],
   },
   {

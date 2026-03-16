@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 
 /* ── Response shapes ── */
@@ -115,5 +115,21 @@ export class CandidateService {
     return this.http.delete<{ data: WithdrawResponse }>(`${this.apiUrl}/withdraw/${token}`).pipe(
       map(res => res.data)
     );
+  }
+
+
+getCandidatesByJob(
+    jobId: string, 
+    page: number = 1, 
+    sort: string = 'name:asc'
+  ): Observable<any> {
+    const params = new HttpParams()
+      .set('filters[job_posting][documentId][$eq]', jobId)
+      .set('pagination[page]', page.toString())
+      .set('pagination[pageSize]', '10')
+      .set('sort', sort)
+      .set('populate', '*'); // Pour récupérer les relations si besoin
+
+    return this.http.get(this.apiUrl, { params });
   }
 }

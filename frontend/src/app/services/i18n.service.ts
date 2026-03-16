@@ -145,7 +145,7 @@ const TRANSLATIONS: Record<string, Record<Lang, string>> = {
   'form.cancel':              { fr: 'Annuler',             en: 'Cancel' },
   'form.loadError':           { fr: 'Erreur lors du chargement de l\'offre.', en: 'Failed to load job posting.' },
   'form.saveError':           { fr: 'Erreur lors de l\'enregistrement.', en: 'Failed to save job posting.' },
-
+  'form.list':       { fr: 'Voir les candidats',          en: 'View Candidates' },
   // ── Public Job Listing ──
   'public.login':             { fr: 'Se connecter',            en: 'Sign in' },
   'public.navJobs':           { fr: 'Offres d\'emploi',        en: 'Job Openings' },
@@ -261,6 +261,18 @@ const TRANSLATIONS: Record<string, Record<Lang, string>> = {
   'withdraw.successTitle':    { fr: 'Candidature retirée',      en: 'Application Withdrawn' },
   'withdraw.successText':     { fr: 'Votre candidature et vos données ont été définitivement supprimées.', en: 'Your application and data have been permanently deleted.' },
   'withdraw.backToJobs':      { fr: 'Voir les offres d\'emploi', en: 'View Job Openings' },
+  // ── Candidate ── 
+  'candidate.title':          { fr: 'Candidats pour :',                en: 'Candidates for:' },
+  'candidate.name':           { fr: 'Nom',                      en: 'Name' },
+  'candidate.email':          { fr: 'Email',                    en: 'Email' },
+  'candidate.createdAt':      { fr: 'Date d\'inscription',      en: 'Application Date' },
+  'candidate.status':         { fr: 'Statut',                   en: 'Status' },
+  'candidate.retour':         { fr: 'Retour à la page précédente',  en: 'Back' },
+  'candidate.message':        { fr: 'Aucun candidat n\a postulé pour cette offre.', en: 'No candidates have applied for this position.' },
+  'candidate.btnback':          { fr: 'Précédent',                 en: 'Previous' },
+  'candidate.btnnext':          { fr: 'Suivant',                   en: 'Next' },
+
+
 };
 
 @Injectable({ providedIn: 'root' })

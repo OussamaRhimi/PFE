@@ -1,0 +1,141 @@
+/* Conteneur principal */
+.container {
+  padding: 2rem;
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  color: #333;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+h2 {
+  margin-bottom: 1.5rem;
+  color: #2c3e50;
+  font-weight: 600;
+}
+
+/* Style de la table */
+.candidate-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #fff;
+  border-radius: 8px;
+  overflow: hidden; /* Pour que les coins arrondis fonctionnent */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.candidate-table therapeutic {
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.candidate-table th {
+  padding: 12px 15px;
+  text-align: left;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  user-select: none;
+}
+
+.candidate-table th:hover {
+  background-color: #e9ecef;
+}
+
+.candidate-table td {
+  padding: 12px 15px;
+  border-bottom: 1px solid #eee;
+  vertical-align: middle;
+}
+
+.candidate-table tbody tr:hover {
+  background-color: #f1f4f9;
+}
+
+/* Style des badges de statut */
+.badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  background-color: #e2e8f0;
+  color: #475569;
+}
+
+/* Optionnel : Couleurs dynamiques selon le texte du statut */
+/* (Nécessite [ngClass] dans le HTML pour être parfait, 
+   mais fonctionne si tu as des classes spécifiques) */
+
+/* Pagination */
+.pagination {
+  margin-top: 1.5rem;
+  display: flex;
+  align-items: center;
+  /* Change 'center' par 'flex-start' pour aligner à gauche */
+  justify-content: flex-end; 
+  gap: 12px;
+}
+
+.pagination button {
+  padding: 8px 16px;
+  border: 1px solid #007bff;
+  background-color: transparent;
+  color: #007bff;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pagination button:hover:not(:disabled) {
+  background-color: #007bff;
+  color: #fff;
+}
+
+.pagination button:disabled {
+  border-color: #ccc;
+  color: #999;
+  cursor: not-allowed;
+}
+
+.pagination span {
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+.header-row {
+  display: flex;
+  align-items: center; // Aligne verticalement le bouton et le texte au centre
+  gap: 20px;           // Espace entre le bouton et le titre
+  margin-bottom: 30px;
+  flex-wrap: wrap;     // Permet de passer à la ligne sur mobile si besoin
+}
+
+h2 {
+  margin: 0;           // Important : enlève la marge par défaut qui décale le titre
+  font-size: 1.5rem;
+  color: #252b3b;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 16px;
+  background-color: #7a1103;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  color: #f2ecec;
+  white-space: nowrap; // Empêche le texte du bouton de se couper
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: #e5e8ef;
+    transform: translateX(-4px);
+  }
+}
+

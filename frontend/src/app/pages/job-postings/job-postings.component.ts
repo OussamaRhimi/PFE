@@ -1,8 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterLink, RouterModule } from '@angular/router';
 import { JobPostingService, JobPosting } from '../../services/job-posting.service';
 import { I18nService } from '../../services/i18n.service';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-job-postings',
@@ -88,6 +89,11 @@ import { I18nService } from '../../services/i18n.service';
                 <button *ngIf="job.status === 'closed'" class="btn-sm btn-reopen" (click)="askStatusChange(job, 'open')">{{ i18n.t('jobs.reopen') }}</button>
 
                 <button class="btn-icon btn-del" (click)="askDelete(job)" [title]="i18n.t('jobs.deleteTooltip')">🗑️</button>
+                <button class="btn-sm btn-candidates" 
+                        (click)="goToCandidates(job.documentId)"
+                        [title]="i18n.t('jobs.viewCandidatesTooltip')">
+                  👥 {{ i18n.t('form.list') }}
+                </button>
               </td>
             </tr>
           </tbody>
@@ -338,7 +344,7 @@ export class JobPostingsComponent implements OnInit {
   statusConfirm: { job: JobPosting; newStatus: string } | null = null;
   deleteConfirm: { job: JobPosting; candidateCount: number } | null = null;
 
-  constructor(private jobService: JobPostingService, public i18n: I18nService) {}
+  constructor(private jobService: JobPostingService, public i18n: I18nService, private router:Router) {}
 
   ngOnInit(): void { this.load(); }
 
@@ -406,4 +412,11 @@ export class JobPostingsComponent implements OnInit {
 
   private clearMessages(): void { this.error = ''; this.success = ''; }
   private autoClear(): void { setTimeout(() => this.success = '', 3000); }
+
+  goToCandidates(documentId: string): void {
+    if (documentId) {
+      this.router.navigate(['/jobs', documentId, 'candidates']);
+    }
+  }
+  
 }

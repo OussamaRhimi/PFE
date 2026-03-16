@@ -1,0 +1,47 @@
+<div class="container">
+  <div class="header-row">
+    <button class="btn-back" routerLink="/job-postings">
+      ← {{ i18n.t('candidate.retour')}}
+    </button>
+  <h2>{{ i18n.t('candidate.title')}}<span class="highlight-title">{{ jobTitle() }}</span></h2>
+  </div>
+  @if (meta()) {
+    <div class="pagination">
+      <button [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">{{ i18n.t('candidate.btnprev')}}</button>
+      <span>Page {{ meta().page }} sur {{ meta().pageCount }}</span>
+      <button [disabled]="currentPage === meta().pageCount" (click)="changePage(currentPage + 1)">{{ i18n.t('candidate.btnnext')}}</button>
+    </div>
+}
+  <br>
+
+  <table class="candidate-table">
+    <thead>
+      <tr>
+        <th (click)="toggleSort('name')" style="cursor: pointer;">{{ i18n.t('candidate.name')}}</th>
+        <th (click)="toggleSort('createdAt')" style="cursor: pointer;">{{ i18n.t('candidate.createdAt')}}</th>
+        <th>{{ i18n.t('candidate.email')}}</th>
+        <th>{{ i18n.t('candidate.status')}}</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (cand of candidates(); track cand.id) {
+        <tr>
+          <td>{{ cand.attributes.name }}</td>
+          <td>{{ cand.attributes.createdAt | date:'shortDate' }}</td>
+          <td>{{ cand.attributes.email }}</td>
+          <td>
+            <span class="badge" [ngClass]="'badge-' + cand.attributes.status">
+              {{ cand.attributes.status }}
+            </span>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="4" style="text-align: center; padding: 20px;">
+            {{ i18n.t('candidate.message')}}
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
