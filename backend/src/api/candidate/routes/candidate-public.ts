@@ -1,5 +1,29 @@
 export default {
   routes: [
+    // ── S2-US7: HR candidate detail & resume download (JWT required) ──
+    {
+      method: 'GET',
+      path: '/candidates/hr/:id/resume',
+      handler: 'candidate.downloadResume',
+      config: {
+        auth: { scope: [] },
+        policies: [],
+        middlewares: [],
+        description: 'HR endpoint – download candidate resume (JWT required)',
+      },
+    },
+    {
+      method: 'GET',
+      path: '/candidates/hr/:id',
+      handler: 'candidate.getDetail',
+      config: {
+        auth: { scope: [] },
+        policies: [],
+        middlewares: [],
+        description: 'HR endpoint – candidate detail (JWT required)',
+      },
+    },
+
     {
       method: 'POST',
       path: '/candidates/track/request-code',

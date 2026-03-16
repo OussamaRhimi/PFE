@@ -40,6 +40,47 @@ export interface WithdrawResponse {
   message: string;
 }
 
+/* ── S2-US7: HR Candidate detail shape ── */
+export interface CandidateResume {
+  id: number;
+  name: string;
+  url: string;
+  mime: string;
+  size: number;
+}
+
+export interface CandidateDetail {
+  documentId: string;
+  fullName: string;
+  email: string;
+  linkedin: string | null;
+  portfolio: string | null;
+  selfReportedYearsExperience: number | null;
+  status: string;
+  score: number;
+  hrNotes: string | null;
+  candidateNotes: string | null;
+  consent: boolean;
+  consentAt: string | null;
+  retentionUntil: string | null;
+  jobTitle: string | null;
+  jobPostingId: string | null;
+  resume: CandidateResume | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/* ── HR candidate list item (from Strapi core find) ── */
+export interface CandidateListItem {
+  documentId: string;
+  fullName: string;
+  email: string;
+  status: string;
+  score: number;
+  createdAt: string;
+  jobPosting?: { documentId: string; title: string } | null;
+}
+
 /* ── Payload for the application form ── */
 export interface ApplyPayload {
   fullName: string;
@@ -116,4 +157,49 @@ export class CandidateService {
       map(res => res.data)
     );
   }
+
+  /* ── S2-US7: HR endpoints ── */
+
+  /**
+   * HR: Get paginated list of all candidates (requires JWT via interceptor).
+   */
+  getAllHr(page = 1, pageSize = 20): Observable<CandidateListItem[]> {
+    return this.http
+      .get<{ data: any[] }>(
+        `${this.apiUrl}?populate=jobPosting&sort=createdAt:desc&pagination[page]=${page}&pagination[pageSize]=${pageSize}`
+      )
+      .pipe(
+        map(res =>
+          res.data.map(item => ({
+            documentId: item.documentId,
+            fullName: item.fullName,
+            email: item.email,
+            status: item.status,
+            score: item.score ?? 0,
+            createdAt: item.createdAt,
+            jobPosting: item.jobPosting
+              ? { documentId: item.jobPosting.documentId, title: item.jobPosting.title }
+              : null,
+          }))
+        )
+      );
+  }
+
+  /**
+   * US7: Get full candidate detail for HR view (requires JWT via interceptor).
+   */
+  getHrDetail(id: string): Observable<CandidateDetail> {
+    return this.http
+      .get<{ data: CandidateDetail }>(`${this.apiUrl}/hr/${id}`)
+      .pipe(map(res => res.data));
+  }
+
+  /**
+   * US7: Open resume download URL in a new tab (browser handles the download).
+   * The server returns Content-Disposition: attachment so it triggers a save dialog.
+   */
+  getResumeDownloadUrl(id: string): string {
+    return `${this.apiUrl}/hr/${id}/resume`;
+  }
 }
+

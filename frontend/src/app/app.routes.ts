@@ -10,6 +10,9 @@ import { PublicJobListComponent } from './pages/public-jobs/public-job-list.comp
 import { ApplyComponent } from './pages/public-jobs/apply.component';
 import { TrackComponent } from './pages/public-jobs/track.component';
 import { WithdrawComponent } from './pages/public-jobs/withdraw.component';
+import { CandidatesListComponent } from './pages/candidates/candidates-list.component';
+import { CandidateDetailComponent } from './pages/candidates/candidate-detail.component';
+
 
 export const routes: Routes = [
   {
@@ -60,6 +63,17 @@ export const routes: Routes = [
   {
     path: 'job-postings/:id/edit',
     component: JobPostingFormComponent,
+    canActivate: [authGuard],
+  },
+  // ── S2-US7: HR candidate list & detail ──
+  {
+    path: 'candidates',
+    component: CandidatesListComponent,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'candidates/:id',
+    component: CandidateDetailComponent,
     canActivate: [authGuard],
   },
   {

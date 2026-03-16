@@ -1,6 +1,8 @@
 import { factories } from '@strapi/strapi';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
+import path from 'path';
+import fs from 'fs';
 
 /** GDPR retention period: 24 months from consent date */
 const RETENTION_MONTHS = 24;
@@ -351,6 +353,103 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
         retentionUntil: (candidate as any).retentionUntil,
       },
     });
+  },
+
+  // ─────────────────────────────────────────────────────────────
+  //  GET /api/candidates/hr/:id   (HR – JWT required)
+  //  US7 – Candidate detail endpoint
+  // ─────────────────────────────────────────────────────────────
+  async getDetail(ctx) {
+    const { id } = ctx.params;
+
+    if (!id) {
+      return ctx.badRequest('Candidate ID is required.');
+    }
+
+    const candidate = await strapi.documents('api::candidate.candidate').findOne({
+      documentId: id,
+      populate: ['jobPosting', 'resume'],
+    });
+
+    if (!candidate) {
+      return ctx.notFound('Candidate not found.');
+    }
+
+    const resume = (candidate as any).resume;
+
+    return ctx.send({
+      data: {
+        documentId: candidate.documentId,
+        fullName: candidate.fullName,
+        email: candidate.email,
+        linkedin: (candidate as any).linkedin || null,
+        portfolio: (candidate as any).portfolio || null,
+        selfReportedYearsExperience: (candidate as any).selfReportedYearsExperience ?? null,
+        status: candidate.status,
+        score: candidate.score,
+        hrNotes: (candidate as any).hrNotes || null,
+        candidateNotes: (candidate as any).candidateNotes || null,
+        consent: (candidate as any).consent,
+        consentAt: (candidate as any).consentAt || null,
+        retentionUntil: (candidate as any).retentionUntil || null,
+        jobTitle: (candidate as any).jobPosting?.title || null,
+        jobPostingId: (candidate as any).jobPosting?.documentId || null,
+        resume: resume
+          ? {
+              id: resume.id,
+              name: resume.name,
+              url: resume.url,
+              mime: resume.mime,
+              size: resume.size,
+            }
+          : null,
+        createdAt: candidate.createdAt,
+        updatedAt: candidate.updatedAt,
+      },
+    });
+  },
+
+  // ─────────────────────────────────────────────────────────────
+  //  GET /api/candidates/hr/:id/resume   (HR – JWT required)
+  //  US7 – Resume download (streams file with attachment header)
+  // ─────────────────────────────────────────────────────────────
+  async downloadResume(ctx) {
+    const { id } = ctx.params;
+
+    if (!id) {
+      return ctx.badRequest('Candidate ID is required.');
+    }
+
+    const candidate = await strapi.documents('api::candidate.candidate').findOne({
+      documentId: id,
+      populate: ['resume'],
+    });
+
+    if (!candidate) {
+      return ctx.notFound('Candidate not found.');
+    }
+
+    const resume = (candidate as any).resume;
+
+    if (!resume) {
+      return ctx.notFound('No resume attached to this candidate.');
+    }
+
+    // Build the file path from Strapi uploads directory
+    const uploadsDir = strapi.dirs.static.public;
+    const filePath = path.join(uploadsDir, 'uploads', resume.hash + resume.ext);
+
+    if (!fs.existsSync(filePath)) {
+      return ctx.notFound('Resume file not found on disk.');
+    }
+
+    const fileBuffer = fs.readFileSync(filePath);
+    const filename = encodeURIComponent(resume.name || `resume${resume.ext}`);
+
+    ctx.set('Content-Type', resume.mime || 'application/octet-stream');
+    ctx.set('Content-Disposition', `attachment; filename="${filename}"`);
+    ctx.set('Content-Length', String(fileBuffer.length));
+    ctx.body = fileBuffer;
   },
 
   // ─────────────────────────────────────────────────────────────
