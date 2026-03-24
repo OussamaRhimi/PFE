@@ -76,6 +76,25 @@ function addMonths(date: Date, months: number): Date {
 }
 
 export default factories.createCoreController('api::candidate.candidate', ({ strapi }) => ({
+  //  GET /api/candidates/by-job/:documentId   (public)
+  //  Return candidates linked to a job posting (by documentId)
+// src/api/candidate/controllers/candidate.ts
+
+async findByJob(ctx) {
+  const { documentId } = ctx.params;
+
+  // On récupère les résultats via le Document Service
+  const entities = await strapi.documents('api::candidate.candidate').findMany({
+    filters: {
+      job_posting: {
+        documentId: documentId
+      }
+    },
+    ...ctx.query // On garde la pagination et le tri d'Angular
+  });
+
+  return this.transformResponse(entities);
+},
   // ─────────────────────────────────────────────────────────────
   //  POST /api/candidates/apply   (public – multipart/form-data)
   //  US2 – candidate creation with resume upload + file validation
@@ -165,7 +184,7 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
         portfolio: portfolio?.trim() || null,
         candidateNotes: candidateNotes?.trim() || null,
         selfReportedYearsExperience: yearsExp,
-        jobPosting: jobPostingId,
+        job_posting: jobPostingId,
         status: 'new',
         score: 0,
         consent: true,
@@ -280,7 +299,7 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
         trackingCodeHash: { $eq: codeHash },
         trackingCodeExpiresAt: { $gte: nowIso },
       },
-      populate: ['jobPosting'],
+      populate: ['job_posting'],
     });
 
     if (!candidates || candidates.length === 0) {
@@ -303,7 +322,7 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
     const applications = candidates.map((candidate) => ({
       publicToken: candidate.publicToken,
       status: candidate.status,
-      jobTitle: (candidate as any).jobPosting?.title || null,
+      jobTitle: (candidate as any).job_posting?.title || null,
       createdAt: candidate.createdAt,
       updatedAt: candidate.updatedAt,
       retentionUntil: (candidate as any).retentionUntil,
@@ -330,7 +349,7 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
 
     const results = await strapi.documents('api::candidate.candidate').findMany({
       filters: { publicToken: { $eq: token } },
-      populate: ['jobPosting'],
+      populate: ['job_posting'],
     });
 
     if (!results || results.length === 0) {
@@ -345,7 +364,7 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
         email: candidate.email,
         status: candidate.status,
         score: candidate.score,
-        jobTitle: (candidate as any).jobPosting?.title || null,
+        jobTitle: (candidate as any).job_posting?.title || null,
         createdAt: candidate.createdAt,
         updatedAt: candidate.updatedAt,
         retentionUntil: (candidate as any).retentionUntil,

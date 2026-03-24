@@ -14,7 +14,7 @@ export default {
     try {
       // Find all candidates linked to this job posting
       const candidates: any[] = await (strapi.documents as any)('api::candidate.candidate').findMany({
-        filters: { jobPosting: { documentId } },
+        filters: { job_posting: { documentId } },
         populate: ['resume'],
       });
 

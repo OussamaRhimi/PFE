@@ -26,12 +26,12 @@
     <tbody>
       @for (cand of candidates(); track cand.id) {
         <tr>
-          <td>{{ cand.attributes.fullName }}</td>
-          <td>{{ cand.attributes.createdAt | date:'shortDate' }}</td>
-          <td>{{ cand.attributes.email }}</td>
+          <td>{{ cand ?.fullName }}</td>
+          <td>{{ cand ?.createdAt | date:'shortDate' }}</td>
+          <td>{{ cand ?.email }}</td>
           <td>
-            <span class="badge" [ngClass]="'badge-' + cand.attributes.status">
-              {{ cand.attributes.status }}
+            <span class="badge" [ngClass]="'badge-' + (cand?.status || 'default')">
+              {{ cand ?.status }}
             </span>
           </td>
         </tr>

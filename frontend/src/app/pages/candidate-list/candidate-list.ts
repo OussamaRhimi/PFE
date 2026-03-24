@@ -29,7 +29,7 @@ candidates = signal<any[]>([]);
   
   // Signal pour stocker le titre du job
   jobTitle = signal<string>('Chargement...'); 
-  selectedJobId = signal<string>('');
+  selectedJobDocumentId = signal<string>('');
 
   currentPage = 1;
   currentSort = 'fullName:asc';
@@ -43,27 +43,31 @@ candidates = signal<any[]>([]);
   ) {}
 
   ngOnInit(): void {
-    const idFromUrl = this.route.snapshot.paramMap.get('id');
-    if (idFromUrl) {
-      this.selectedJobId.set(idFromUrl);
-      this.loadJobTitle(idFromUrl); // <--- Charger le titre
+    const documentId = this.route.snapshot.paramMap.get('id');
+    if (documentId) {
+      this.selectedJobDocumentId.set(documentId);
+      this.loadJobTitle(documentId);
       this.loadData();
     }
   }
 
-  loadJobTitle(id: string): void {
-  this.jobService.getOne(id).subscribe({
-    next: (job) => {
-      // ✅ Si tu as bien configuré ton service, le titre est direct
-      this.jobTitle.set(job.title); 
-    },
-    error: () => this.jobTitle.set('Poste introuvable')
-  });
-}
+  loadJobTitle(documentId: string): void {
+    this.jobService.getOne(documentId).subscribe({
+      next: (job) => {
+        this.jobTitle.set(job.title);
+      },
+      error: () => {
+        this.jobTitle.set('Poste introuvable');
+      }
+    });
+  }
 
 loadData(): void {
+  const documentId = this.selectedJobDocumentId();
+  if (!documentId) return;
+
   // On ajoute "as Observable<any>" pour lever la restriction de type
-  (this.candidateService.getCandidatesByJob(this.selectedJobId(), this.currentPage, this.currentSort) as Observable<any>)
+  (this.candidateService.getCandidatesByJob(documentId, this.currentPage, this.currentSort) as Observable<any>)
     .subscribe({
       next: (response: StrapiResponse) => { 
         this.candidates.set(response.data);

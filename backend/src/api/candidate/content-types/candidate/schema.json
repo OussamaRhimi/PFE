@@ -13,9 +13,9 @@
   "attributes": {
     "fullName": {
       "type": "string",
-      "required": true,
       "minLength": 1,
-      "maxLength": 200
+      "maxLength": 200,
+      "required": true
     },
     "email": {
       "type": "email",
@@ -33,18 +33,31 @@
       "type": "media",
       "multiple": false,
       "required": true,
-      "allowedTypes": ["files"]
+      "allowedTypes": [
+        "files"
+      ]
     },
-    "jobPosting": {
+    "job_posting": {
       "type": "relation",
       "relation": "manyToOne",
-      "target": "api::job-posting.job-posting"
+      "target": "api::job-posting.job-posting",
+      "inversedBy": "candidate",
+      "filterable": true
     },
     "status": {
       "type": "enumeration",
-      "enum": ["new", "processing", "processed", "reviewing", "shortlisted", "rejected", "hired", "error"],
+      "required": true,
       "default": "new",
-      "required": true
+      "enum": [
+        "new",
+        "processing",
+        "processed",
+        "reviewing",
+        "shortlisted",
+        "rejected",
+        "hired",
+        "error"
+      ]
     },
     "score": {
       "type": "decimal",
@@ -64,8 +77,8 @@
     },
     "consent": {
       "type": "boolean",
-      "default": false,
-      "required": true
+      "required": true,
+      "default": false
     },
     "consentAt": {
       "type": "datetime"

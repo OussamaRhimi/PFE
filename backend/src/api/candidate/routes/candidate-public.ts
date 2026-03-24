@@ -1,6 +1,17 @@
 export default {
   routes: [
     {
+      method: 'GET',
+      path: '/candidates/by-job/:documentId',
+      handler: 'candidate.findByJob',
+      config: {
+        auth: false,
+        policies: [],
+        middlewares: [],
+        description: 'Public endpoint – list candidates by job posting documentId',
+      },
+    },
+    {
       method: 'POST',
       path: '/candidates/track/request-code',
       handler: 'candidate.requestTrackingCode',

@@ -131,22 +131,19 @@ export class CandidateService {
 
 
 // candidate.service.ts
-getCandidatesByJob(jobId: string, page: number = 1, sort: string = 'fullName:asc') {
-  const params = new HttpParams()
-    // Tente cette syntaxe qui est la norme Strapi v5 pour les relations par Document ID
-    .set('filters[jobPosting][documentId][$eq]', jobId) 
-    
-    // Si ça échoue encore, remplace jobPosting par job_posting :
-    // .set('filters[job_posting][documentId][$eq]', jobId)
 
+// candidate.service.ts
+getCandidatesByJob(jobId: string, page: number = 1, sort: string = 'fullName:asc') {
+  // L'URL change pour correspondre à ta nouvelle route
+  const url = `${this.apiUrl}/by-job/${jobId}`; 
+  const params = new HttpParams()
     .set('pagination[page]', page.toString())
     .set('pagination[pageSize]', '10')
     .set('sort', sort)
-    .set('populate', '*');
+    .set('populate', '*'); 
 
-  return this.http.get<StrapiResponse>(this.apiUrl, { params });
+  return this.http.get<StrapiResponse>(url, { params });
 }
+
+
 }
-
-
-
