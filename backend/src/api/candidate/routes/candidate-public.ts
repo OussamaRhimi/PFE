@@ -1,27 +1,27 @@
 export default {
   routes: [
-    // ── S2-US6: HR candidate listing with pagination (JWT required) ──
+    // ── S2-US6: HR candidate listing with pagination ──
     {
       method: 'GET',
       path: '/candidates/hr',
       handler: 'candidate.listForHr',
       config: {
-        auth: { scope: [] },
+        auth: false,
         policies: [],
         middlewares: [],
-        description: 'HR endpoint – list candidates with pagination (JWT required)',
+        description: 'HR endpoint – list candidates with pagination',
       },
     },
-    // ── S2-US7: HR candidate detail & resume download (JWT required) ──
+    // ── S2-US7: HR candidate detail & resume download ──
     {
       method: 'GET',
       path: '/candidates/hr/:id/resume',
       handler: 'candidate.downloadResume',
       config: {
-        auth: { scope: [] },
+        auth: false,
         policies: [],
         middlewares: [],
-        description: 'HR endpoint – download candidate resume (JWT required)',
+        description: 'HR endpoint – download candidate resume',
       },
     },
     {
@@ -29,34 +29,34 @@ export default {
       path: '/candidates/hr/:id',
       handler: 'candidate.getDetail',
       config: {
-        auth: { scope: [] },
+        auth: false,
         policies: [],
         middlewares: [],
-        description: 'HR endpoint – candidate detail (JWT required)',
+        description: 'HR endpoint – candidate detail',
       },
     },
-    // ── S2-US8: HR status update with transition validation (JWT required) ──
+    // ── S2-US8: HR status update with transition validation ──
     {
       method: 'PUT',
       path: '/candidates/hr/:id/status',
       handler: 'candidate.updateStatus',
       config: {
-        auth: { scope: [] },
+        auth: false,
         policies: [],
         middlewares: [],
-        description: 'HR endpoint – update candidate status with transition validation (JWT required)',
+        description: 'HR endpoint – update candidate status with transition validation',
       },
     },
-    // ── S2-US9: HR notes update (JWT required) ──
+    // ── S2-US9: HR notes update ──
     {
       method: 'PUT',
       path: '/candidates/hr/:id/notes',
       handler: 'candidate.updateHrNotes',
       config: {
-        auth: { scope: [] },
+        auth: false,
         policies: [],
         middlewares: [],
-        description: 'HR endpoint – update HR notes for candidate (JWT required)',
+        description: 'HR endpoint – update HR notes for candidate',
       },
     },
 
