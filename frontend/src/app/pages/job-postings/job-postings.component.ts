@@ -1,9 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterLink, RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { JobPostingService, JobPosting } from '../../services/job-posting.service';
 import { I18nService } from '../../services/i18n.service';
-import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-job-postings',
@@ -81,18 +80,23 @@ import { Observable } from 'rxjs';
                 <span *ngIf="!(job.requirements?.departments?.length)">—</span>
               </td>
               <td class="actions-cell">
-                <a [routerLink]="['/job-postings', job.documentId, 'edit']" class="btn-icon" [title]="i18n.t('jobs.editTooltip')">✏️</a>
+                <a [routerLink]="['/job-postings', job.documentId, 'edit']" class="btn-icon" [title]="i18n.t('jobs.editTooltip')">
+                  <span class="btn-icon-symbol" aria-hidden="true">{{ actionIcons.edit }}</span>
+                </a>
 
                 <!-- Status transitions -->
                 <button *ngIf="job.status === 'draft'" class="btn-sm btn-open" (click)="askStatusChange(job, 'open')">{{ i18n.t('jobs.open') }}</button>
                 <button *ngIf="job.status === 'open'" class="btn-sm btn-close" (click)="askStatusChange(job, 'closed')">{{ i18n.t('jobs.close') }}</button>
                 <button *ngIf="job.status === 'closed'" class="btn-sm btn-reopen" (click)="askStatusChange(job, 'open')">{{ i18n.t('jobs.reopen') }}</button>
 
-                <button class="btn-icon btn-del" (click)="askDelete(job)" [title]="i18n.t('jobs.deleteTooltip')">🗑️</button>
+                <button class="btn-icon btn-del" (click)="askDelete(job)" [title]="i18n.t('jobs.deleteTooltip')">
+                  <span class="btn-icon-symbol" aria-hidden="true">{{ actionIcons.delete }}</span>
+                </button>
                 <button class="btn-sm btn-candidates" 
                         (click)="goToCandidates(job.documentId)"
                         [title]="i18n.t('jobs.viewCandidatesTooltip')">
-                  👥 {{ i18n.t('form.list') }}
+                  <span class="btn-icon-symbol" aria-hidden="true">{{ actionIcons.candidates }}</span>
+                  {{ i18n.t('form.list') }}
                 </button>
               </td>
             </tr>
@@ -211,12 +215,28 @@ import { Observable } from 'rxjs';
     .btn-icon {
       background: none;
       border: none;
-      font-size: 16px;
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
       cursor: pointer;
       text-decoration: none;
-      transition: transform 0.15s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: $gray-600;
+      transition: transform 0.15s, background-color 0.2s, color 0.2s;
+    }
+    .btn-icon:hover {
+      background: $gray-100;
+      color: $gray-800;
+    }
+    .btn-icon-symbol {
+      font-size: 16px;
+      line-height: 1;
     }
     .btn-del:hover { transform: scale(1.15); }
+    .btn-del { color: $error; }
+    .btn-del:hover { background: rgba($error, 0.08); }
 
     .btn-sm {
       padding: 5px 12px;
@@ -233,6 +253,11 @@ import { Observable } from 'rxjs';
     .btn-close:hover { background: rgba($error, 0.15); }
     .btn-reopen { background: rgba($logo-red, 0.08); color: $logo-red; }
     .btn-reopen:hover { background: rgba($logo-red, 0.15); }
+    .btn-candidates {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
 
     /* Badges */
     .badge {
@@ -340,6 +365,11 @@ export class JobPostingsComponent implements OnInit {
   loading = false;
   error = '';
   success = '';
+  readonly actionIcons = {
+    edit: '✎',
+    delete: '⌫',
+    candidates: '◉'
+  } as const;
 
   statusConfirm: { job: JobPosting; newStatus: string } | null = null;
   deleteConfirm: { job: JobPosting; candidateCount: number } | null = null;
