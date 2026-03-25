@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { CandidateService, CandidateDetail } from '../../services/candidate.service';
 import { AuthService } from '../../services/auth.service';
@@ -7,7 +8,7 @@ import { AuthService } from '../../services/auth.service';
 @Component({
   selector: 'app-candidate-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, FormsModule],
   template: `
     <div class="page">
       <!-- Back navigation -->
@@ -75,7 +76,7 @@ import { AuthService } from '../../services/auth.service';
               <svg class="score-ring" viewBox="0 0 80 80">
                 <circle cx="40" cy="40" r="34" fill="none" stroke="#f1f3f7" stroke-width="8"/>
                 <circle cx="40" cy="40" r="34" fill="none" stroke="url(#scoreGrad)" stroke-width="8"
-                  stroke-dasharray="{{ (candidate.score / 100) * 213.6 }} 213.6"
+                  [attr.stroke-dasharray]="(candidate.score / 100) * 213.6 + ' 213.6'"
                   stroke-linecap="round"
                   transform="rotate(-90 40 40)"/>
                 <defs>
@@ -97,7 +98,21 @@ import { AuthService } from '../../services/auth.service';
               Application Status
             </div>
             <div class="stat-value">
-              <span class="status-badge large-badge" [ngClass]="'badge-' + candidate.status">{{ candidate.status }}</span>
+              <ng-container *ngIf="!editingStatus">
+                <span class="status-badge large-badge" [ngClass]="'badge-' + candidate.status">{{ candidate.status }}</span>
+                <button class="btn-edit" (click)="startEditStatus()" title="Edit status">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+              </ng-container>
+              <ng-container *ngIf="editingStatus">
+                <select [(ngModel)]="candidate.status" class="status-select" [disabled]="statusSaving">
+                  <option *ngFor="let status of statusOptions" [value]="status">{{ status }}</option>
+                </select>
+                <button class="btn-save" (click)="saveStatus(candidate.status)" [disabled]="statusSaving">
+                  {{ statusSaving ? 'Saving...' : 'Save' }}
+                </button>
+                <button class="btn-cancel" (click)="cancelEdit()" [disabled]="statusSaving">Cancel</button>
+              </ng-container>
             </div>
             <div class="card-sub">Applied {{ candidate.createdAt | date:'dd MMM yyyy' }}</div>
             <div class="card-sub" *ngIf="candidate.updatedAt !== candidate.createdAt">
@@ -156,20 +171,40 @@ import { AuthService } from '../../services/auth.service';
             <p class="note-text">{{ candidate.candidateNotes }}</p>
           </div>
 
-          <div class="note-card note-card-hr" *ngIf="candidate.hrNotes">
+          <div class="note-card note-card-hr" *ngIf="candidate.hrNotes && !editingNotes">
             <div class="note-header">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
               HR Notes
+              <button class="btn-edit-notes" (click)="startEditNotes()" title="Edit notes">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
             </div>
             <p class="note-text">{{ candidate.hrNotes }}</p>
           </div>
 
-          <div class="note-card note-placeholder" *ngIf="!candidate.hrNotes">
+          <div class="note-card note-card-hr" *ngIf="editingNotes">
+            <div class="note-header">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              HR Notes (Editing)
+            </div>
+            <textarea [(ngModel)]="notesDraft" class="notes-textarea" [disabled]="notesSaving" placeholder="Add or update HR notes..."></textarea>
+            <div class="notes-actions">
+              <button class="btn-save" (click)="saveNotes()" [disabled]="notesSaving">
+                {{ notesSaving ? 'Saving...' : 'Save Notes' }}
+              </button>
+              <button class="btn-cancel" (click)="cancelEdit()" [disabled]="notesSaving">Cancel</button>
+            </div>
+          </div>
+
+          <div class="note-card note-placeholder" *ngIf="!candidate.hrNotes && !editingNotes">
             <div class="note-header">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
               HR Notes
+              <button class="btn-edit-notes" (click)="startEditNotes()" title="Add notes">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </button>
             </div>
-            <p class="note-text placeholder">No HR notes yet. Notes can be added via S2-US9.</p>
+            <p class="note-text placeholder">No HR notes yet. Click the + button to add one.</p>
           </div>
         </div>
 
@@ -522,6 +557,107 @@ import { AuthService } from '../../services/auth.service';
       color: $gray-400;
       font-size: 14px;
     }
+
+    /* Edit buttons and forms */
+    .btn-edit, .btn-edit-notes {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: $gray-400;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .btn-edit:hover, .btn-edit-notes:hover {
+      background: rgba($red, 0.08);
+      color: $red;
+    }
+
+    .btn-save, .btn-cancel {
+      padding: 10px 18px;
+      border: none;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-save {
+      background: linear-gradient(135deg, $red-deep, $red);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba($red, 0.2);
+    }
+    .btn-save:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba($red, 0.3);
+    }
+    .btn-save:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .btn-cancel {
+      background: $gray-100;
+      color: $gray-600;
+      margin-left: 8px;
+    }
+    .btn-cancel:hover:not(:disabled) {
+      background: $gray-200;
+    }
+    .btn-cancel:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .status-select {
+      padding: 8px 12px;
+      border: 1px solid $gray-300;
+      border-radius: 10px;
+      font-size: 14px;
+      color: $gray-800;
+      background: #fff;
+      cursor: pointer;
+      margin-right: 8px;
+    }
+    .status-select:focus {
+      outline: none;
+      border-color: $red;
+      box-shadow: 0 0 0 3px rgba($red, 0.1);
+    }
+    .status-select:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .notes-textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid $gray-300;
+      border-radius: 10px;
+      font-size: 14px;
+      font-family: inherit;
+      color: $gray-800;
+      resize: vertical;
+      min-height: 100px;
+      margin-bottom: 12px;
+    }
+    .notes-textarea:focus {
+      outline: none;
+      border-color: $red;
+      box-shadow: 0 0 0 3px rgba($red, 0.1);
+    }
+    .notes-textarea:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .notes-actions {
+      display: flex;
+      gap: 8px;
+    }
   `]
 })
 export class CandidateDetailComponent implements OnInit {
@@ -529,6 +665,16 @@ export class CandidateDetailComponent implements OnInit {
   loading = false;
   error = '';
   downloadUrl = '';
+
+  // S2-US8: Status edit state
+  editingStatus = false;
+  statusOptions = ['new', 'processing', 'processed', 'reviewing', 'shortlisted', 'rejected', 'hired'];
+  statusSaving = false;
+
+  // S2-US9: Notes edit state
+  editingNotes = false;
+  notesDraft = '';
+  notesSaving = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -576,5 +722,78 @@ export class CandidateDetailComponent implements OnInit {
     if (!kb) return '';
     if (kb < 1024) return `${kb.toFixed(0)} KB`;
     return `${(kb / 1024).toFixed(1)} MB`;
+  }
+
+  /**
+   * S2-US8: Enter status edit mode
+   */
+  startEditStatus(): void {
+    this.editingStatus = true;
+  }
+
+  /**
+   * S2-US8: Save new status
+   */
+  saveStatus(newStatus: string): void {
+    if (!this.candidate || newStatus === this.candidate.status) {
+      this.editingStatus = false;
+      return;
+    }
+
+    this.statusSaving = true;
+    this.candidateService.updateStatus(this.candidate.documentId, newStatus).subscribe({
+      next: (res) => {
+        if (this.candidate) {
+          this.candidate.status = res.status;
+          this.candidate.updatedAt = res.updatedAt;
+        }
+        this.editingStatus = false;
+        this.statusSaving = false;
+      },
+      error: (err) => {
+        this.error = err?.error?.error?.message || 'Failed to update status.';
+        this.statusSaving = false;
+      }
+    });
+  }
+
+  /**
+   * S2-US9: Enter notes edit mode
+   */
+  startEditNotes(): void {
+    this.editingNotes = true;
+    this.notesDraft = this.candidate?.hrNotes || '';
+  }
+
+  /**
+   * S2-US9: Save HR notes
+   */
+  saveNotes(): void {
+    if (!this.candidate) return;
+
+    this.notesSaving = true;
+    this.candidateService.updateHrNotes(this.candidate.documentId, this.notesDraft).subscribe({
+      next: (res) => {
+        if (this.candidate) {
+          this.candidate.hrNotes = res.hrNotes;
+          this.candidate.updatedAt = res.updatedAt;
+        }
+        this.editingNotes = false;
+        this.notesSaving = false;
+      },
+      error: (err) => {
+        this.error = err?.error?.error?.message || 'Failed to update notes.';
+        this.notesSaving = false;
+      }
+    });
+  }
+
+  /**
+   * Cancel any edit mode
+   */
+  cancelEdit(): void {
+    this.editingStatus = false;
+    this.editingNotes = false;
+    this.notesDraft = '';
   }
 }

@@ -96,9 +96,10 @@ export class JobPostingService {
    */
   getCandidateCount(documentId: string): Observable<number> {
     return this.http.get<any>(
-      `http://localhost:1337/api/candidates?filters[jobPosting][documentId][$eq]=${documentId}&pagination[pageSize]=0`
+      `http://localhost:1337/api/candidates/by-job/${documentId}?pagination[pageSize]=0`
     ).pipe(
       map(res => res?.meta?.pagination?.total ?? 0)
     );
   }
+
 }

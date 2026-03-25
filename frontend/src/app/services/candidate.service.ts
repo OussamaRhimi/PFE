@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 
 /* ── Response shapes ── */
@@ -9,6 +9,18 @@ export interface ApplyResponse {
   email: string;
   status: string;
   createdAt: string;
+}
+
+export interface StrapiResponse {
+  data: any[];
+  meta: {
+    pagination: {
+      page: number;
+      pageSize: number;
+      pageCount: number;
+      total: number;
+    }
+  }
 }
 
 export interface TrackResponse {
@@ -70,7 +82,7 @@ export interface CandidateDetail {
   updatedAt: string;
 }
 
-/* ── HR candidate list item (from Strapi core find) ── */
+/* ── HR candidate list item (from dedicated HR endpoint) ── */
 export interface CandidateListItem {
   documentId: string;
   fullName: string;
@@ -78,7 +90,38 @@ export interface CandidateListItem {
   status: string;
   score: number;
   createdAt: string;
+  updatedAt?: string;
+  jobTitle?: string | null;
+  jobPostingId?: string | null;
   jobPosting?: { documentId: string; title: string } | null;
+}
+
+/* ── HR list response with pagination ── */
+export interface HrListResponse {
+  data: CandidateListItem[];
+  meta: {
+    pagination: {
+      page: number;
+      pageSize: number;
+      pageCount: number;
+      total: number;
+    };
+  };
+}
+
+/* ── Status update response ── */
+export interface StatusUpdateResponse {
+  documentId: string;
+  status: string;
+  previousStatus: string;
+  updatedAt: string;
+}
+
+/* ── HR notes update response ── */
+export interface HrNotesUpdateResponse {
+  documentId: string;
+  hrNotes: string | null;
+  updatedAt: string;
 }
 
 /* ── Payload for the application form ── */
@@ -158,31 +201,33 @@ export class CandidateService {
     );
   }
 
-  /* ── S2-US7: HR endpoints ── */
+  /* ── S2-US6/US7: HR endpoints ── */
 
   /**
-   * HR: Get paginated list of all candidates (requires JWT via interceptor).
+   * US6: HR candidate listing with pagination, filtering, and sorting.
    */
-  getAllHr(page = 1, pageSize = 20): Observable<CandidateListItem[]> {
-    return this.http
-      .get<{ data: any[] }>(
-        `${this.apiUrl}?populate=jobPosting&sort=createdAt:desc&pagination[page]=${page}&pagination[pageSize]=${pageSize}`
-      )
-      .pipe(
-        map(res =>
-          res.data.map(item => ({
-            documentId: item.documentId,
-            fullName: item.fullName,
-            email: item.email,
-            status: item.status,
-            score: item.score ?? 0,
-            createdAt: item.createdAt,
-            jobPosting: item.jobPosting
-              ? { documentId: item.jobPosting.documentId, title: item.jobPosting.title }
-              : null,
-          }))
-        )
-      );
+  getAllHr(
+    page = 1,
+    pageSize = 25,
+    sort = 'createdAt:desc',
+    filters?: { status?: string; jobPostingId?: string; search?: string }
+  ): Observable<HrListResponse> {
+    let params = new HttpParams()
+      .set('page', String(page))
+      .set('pageSize', String(pageSize))
+      .set('sort', sort);
+
+    if (filters?.status) {
+      params = params.set('status', filters.status);
+    }
+    if (filters?.jobPostingId) {
+      params = params.set('jobPostingId', filters.jobPostingId);
+    }
+    if (filters?.search) {
+      params = params.set('search', filters.search);
+    }
+
+    return this.http.get<HrListResponse>(`${this.apiUrl}/hr`, { params });
   }
 
   /**
@@ -201,5 +246,42 @@ export class CandidateService {
   getResumeDownloadUrl(id: string): string {
     return `${this.apiUrl}/hr/${id}/resume`;
   }
-}
 
+  /**
+   * S2-US8: Update candidate status with transition validation.
+   */
+  updateStatus(id: string, status: string): Observable<StatusUpdateResponse> {
+    return this.http
+      .put<{ data: StatusUpdateResponse }>(`${this.apiUrl}/hr/${id}/status`, { status })
+      .pipe(map(res => res.data));
+  }
+
+  /**
+   * S2-US9: Update HR notes for a candidate.
+   */
+  updateHrNotes(id: string, hrNotes: string): Observable<HrNotesUpdateResponse> {
+    return this.http
+      .put<{ data: HrNotesUpdateResponse }>(`${this.apiUrl}/hr/${id}/notes`, { hrNotes })
+      .pipe(map(res => res.data));
+  }
+
+  // Compatibility methods used by legacy pages added during merge.
+  getCandidatesByJob(jobId: string, page = 1, sort = 'fullName:asc'): Observable<StrapiResponse> {
+    const params = new HttpParams()
+      .set('filters[job_posting][documentId][$eq]', jobId)
+      .set('pagination[page]', String(page))
+      .set('pagination[pageSize]', '10')
+      .set('sort', sort)
+      .set('populate', '*');
+
+    return this.http.get<StrapiResponse>(`${this.apiUrl}`, { params });
+  }
+
+  getCandidateById(documentId: string): Observable<{ data: CandidateDetail }> {
+    return this.getHrDetail(documentId).pipe(map(data => ({ data })));
+  }
+
+  changeStatus(documentId: string, newStatus: string): Observable<StatusUpdateResponse> {
+    return this.updateStatus(documentId, newStatus);
+  }
+}

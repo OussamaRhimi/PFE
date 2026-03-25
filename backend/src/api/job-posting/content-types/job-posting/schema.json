@@ -13,9 +13,9 @@
   "attributes": {
     "title": {
       "type": "string",
-      "required": true,
       "minLength": 1,
-      "maxLength": 255
+      "maxLength": 255,
+      "required": true
     },
     "description": {
       "type": "text"
@@ -26,9 +26,19 @@
     },
     "status": {
       "type": "enumeration",
-      "enum": ["draft", "open", "closed"],
+      "required": true,
       "default": "draft",
-      "required": true
+      "enum": [
+        "draft",
+        "open",
+        "closed"
+      ]
+    },
+    "candidate": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::candidate.candidate",
+      "mappedBy": "job_posting"
     }
   }
 }

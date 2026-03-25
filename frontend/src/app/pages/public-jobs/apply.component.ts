@@ -31,14 +31,6 @@ import { PublicFooterComponent } from '../../components/public-footer/public-foo
         </div>
         <h2>{{ i18n.t('apply.successTitle') }}</h2>
         <p>{{ i18n.t('apply.successText') }}</p>
-        <div class="token-box">
-          <label>{{ i18n.t('apply.tokenLabel') }}</label>
-          <div class="token-value">
-            <code>{{ trackingToken }}</code>
-            <button class="btn-copy" (click)="copyToken()">{{ copied ? '✓' : i18n.t('apply.copy') }}</button>
-          </div>
-          <p class="token-warning">{{ i18n.t('apply.tokenWarning') }}</p>
-        </div>
         <div class="success-actions">
           <a routerLink="/jobs" class="btn-secondary">{{ i18n.t('apply.backToJobs') }}</a>
           <a [routerLink]="['/track']" [queryParams]="{ email: form.email }" class="btn-primary">{{ i18n.t('apply.trackNow') }}</a>
@@ -618,12 +610,5 @@ export class ApplyComponent implements OnInit {
     });
 
 
-  }
-
-  copyToken(): void {
-    navigator.clipboard.writeText(this.trackingToken).then(() => {
-      this.copied = true;
-      setTimeout(() => (this.copied = false), 2000);
-    });
   }
 }

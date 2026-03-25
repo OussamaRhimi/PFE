@@ -8,6 +8,21 @@ import fs from 'fs';
 const RETENTION_MONTHS = 24;
 
 /**
+ * US8 – Valid candidate status transitions
+ * Defines which status transitions are allowed for candidates.
+ */
+const VALID_STATUS_TRANSITIONS: Record<string, string[]> = {
+  new: ['processing', 'rejected'],
+  processing: ['processed', 'error'],
+  processed: ['reviewing', 'rejected'],
+  reviewing: ['shortlisted', 'rejected'],
+  shortlisted: ['hired', 'rejected'],
+  rejected: [], // Terminal state - no transitions allowed
+  hired: [], // Terminal state - no transitions allowed
+  error: ['processing'], // Allow retry
+};
+
+/**
  * Allowed MIME types for resume upload.
  * Strapi's upload plugin handles the actual file, but we validate on our side too.
  */
@@ -78,6 +93,45 @@ function addMonths(date: Date, months: number): Date {
 }
 
 export default factories.createCoreController('api::candidate.candidate', ({ strapi }) => ({
+  //  GET /api/candidates/by-job/:documentId   (public)
+  //  Return candidates linked to a job posting (by documentId)
+// src/api/candidate/controllers/candidate.ts
+
+  async findByJob(ctx) {
+    const { documentId } = ctx.params;
+
+  // On récupère les résultats via le Document Service
+  const entities = await strapi.documents('api::candidate.candidate').findMany({
+    filters: {
+      job_posting: {
+        documentId: documentId
+      }
+    },
+    ...ctx.query // On garde la pagination et le tri d'Angular
+  });
+
+  return this.transformResponse(entities);
+},
+
+  //  GET /api/candidates/detail/:documentId   (public)
+  //  Return single candidate with populated relations
+  async findDetail(ctx) {
+    const { documentId } = ctx.params;
+    if (!documentId) {
+      return ctx.badRequest('Candidate documentId is required.');
+    }
+
+    const candidate = await strapi.documents('api::candidate.candidate').findOne({
+      documentId,
+      populate: ['job_posting', 'resume'],
+    });
+
+    if (!candidate) {
+      return ctx.notFound('Candidate not found.');
+    }
+
+    return this.transformResponse(candidate);
+  },
   // ─────────────────────────────────────────────────────────────
   //  POST /api/candidates/apply   (public – multipart/form-data)
   //  US2 – candidate creation with resume upload + file validation
@@ -167,7 +221,7 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
         portfolio: portfolio?.trim() || null,
         candidateNotes: candidateNotes?.trim() || null,
         selfReportedYearsExperience: yearsExp,
-        jobPosting: jobPostingId,
+        job_posting: jobPostingId,
         status: 'new',
         score: 0,
         consent: true,
@@ -282,7 +336,7 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
         trackingCodeHash: { $eq: codeHash },
         trackingCodeExpiresAt: { $gte: nowIso },
       },
-      populate: ['jobPosting'],
+      populate: ['job_posting'],
     });
 
     if (!candidates || candidates.length === 0) {
@@ -305,7 +359,7 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
     const applications = candidates.map((candidate) => ({
       publicToken: candidate.publicToken,
       status: candidate.status,
-      jobTitle: (candidate as any).jobPosting?.title || null,
+      jobTitle: (candidate as any).job_posting?.title || null,
       createdAt: candidate.createdAt,
       updatedAt: candidate.updatedAt,
       retentionUntil: (candidate as any).retentionUntil,
@@ -332,7 +386,7 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
 
     const results = await strapi.documents('api::candidate.candidate').findMany({
       filters: { publicToken: { $eq: token } },
-      populate: ['jobPosting'],
+      populate: ['job_posting'],
     });
 
     if (!results || results.length === 0) {
@@ -347,7 +401,7 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
         email: candidate.email,
         status: candidate.status,
         score: candidate.score,
-        jobTitle: (candidate as any).jobPosting?.title || null,
+        jobTitle: (candidate as any).job_posting?.title || null,
         createdAt: candidate.createdAt,
         updatedAt: candidate.updatedAt,
         retentionUntil: (candidate as any).retentionUntil,
@@ -368,7 +422,7 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
 
     const candidate = await strapi.documents('api::candidate.candidate').findOne({
       documentId: id,
-      populate: ['jobPosting', 'resume'],
+      populate: ['job_posting', 'resume'],
     });
 
     if (!candidate) {
@@ -392,8 +446,8 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
         consent: (candidate as any).consent,
         consentAt: (candidate as any).consentAt || null,
         retentionUntil: (candidate as any).retentionUntil || null,
-        jobTitle: (candidate as any).jobPosting?.title || null,
-        jobPostingId: (candidate as any).jobPosting?.documentId || null,
+        jobTitle: (candidate as any).job_posting?.title || null,
+        jobPostingId: (candidate as any).job_posting?.documentId || null,
         resume: resume
           ? {
               id: resume.id,
@@ -492,6 +546,171 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
 
     return ctx.send({
       data: { message: 'Your application and all associated data have been deleted.' },
+    });
+  },
+
+  // ─────────────────────────────────────────────────────────────
+  //  GET /api/candidates/hr   (HR – JWT required)
+  //  US6 – HR candidate listing with pagination, filtering, sorting
+  // ─────────────────────────────────────────────────────────────
+  async listForHr(ctx) {
+    const {
+      page = 1,
+      pageSize = 25,
+      sort = 'createdAt:desc',
+      status,
+      jobPostingId,
+      search,
+    } = ctx.query;
+
+    // Build filters
+    const filters: any = {};
+
+    if (status) {
+      filters.status = { $eq: status };
+    }
+
+    if (jobPostingId) {
+      filters.job_posting = { documentId: jobPostingId };
+    }
+
+    if (search) {
+      filters.$or = [
+        { fullName: { $containsi: search } },
+        { email: { $containsi: search } },
+      ];
+    }
+
+    // Parse sort parameter (e.g., "createdAt:desc" or "score:asc")
+    const [sortField, sortOrder] = (sort as string).split(':');
+    const sortConfig: any = {};
+    sortConfig[sortField] = sortOrder || 'desc';
+
+    const candidates = await strapi.documents('api::candidate.candidate').findMany({
+      filters,
+      sort: sortConfig,
+      populate: ['job_posting'],
+      limit: Number(pageSize),
+      start: (Number(page) - 1) * Number(pageSize),
+    });
+
+    // Get total count for pagination
+    const total = await strapi.documents('api::candidate.candidate').count({ filters });
+
+    const data = candidates.map((candidate) => ({
+      documentId: candidate.documentId,
+      fullName: candidate.fullName,
+      email: candidate.email,
+      status: candidate.status,
+      score: candidate.score,
+      jobTitle: (candidate as any).job_posting?.title || null,
+      jobPostingId: (candidate as any).job_posting?.documentId || null,
+      createdAt: candidate.createdAt,
+      updatedAt: candidate.updatedAt,
+    }));
+
+    return ctx.send({
+      data,
+      meta: {
+        pagination: {
+          page: Number(page),
+          pageSize: Number(pageSize),
+          pageCount: Math.ceil(total / Number(pageSize)),
+          total,
+        },
+      },
+    });
+  },
+
+  // ─────────────────────────────────────────────────────────────
+  //  PUT /api/candidates/hr/:id/status   (HR – JWT required)
+  //  US8 – Status update with transition validation
+  // ─────────────────────────────────────────────────────────────
+  async updateStatus(ctx) {
+    const { id } = ctx.params;
+    const { status: newStatus } = ctx.request.body as any;
+
+    if (!id) {
+      return ctx.badRequest('Candidate ID is required.');
+    }
+
+    if (!newStatus) {
+      return ctx.badRequest('New status is required.');
+    }
+
+    // Fetch current candidate
+    const candidate = await strapi.documents('api::candidate.candidate').findOne({
+      documentId: id,
+    });
+
+    if (!candidate) {
+      return ctx.notFound('Candidate not found.');
+    }
+
+    const currentStatus = candidate.status;
+
+    // Validate transition
+    const allowedTransitions = VALID_STATUS_TRANSITIONS[currentStatus] || [];
+    if (!allowedTransitions.includes(newStatus)) {
+      return ctx.badRequest(
+        `Cannot transition from "${currentStatus}" to "${newStatus}". Allowed transitions: ${allowedTransitions.join(', ') || 'none (terminal state)'}.`
+      );
+    }
+
+    // Update status
+    const updated = await strapi.documents('api::candidate.candidate').update({
+      documentId: id,
+      data: { status: newStatus },
+    });
+
+    return ctx.send({
+      data: {
+        documentId: updated.documentId,
+        status: updated.status,
+        previousStatus: currentStatus,
+        updatedAt: updated.updatedAt,
+      },
+    });
+  },
+
+  // ─────────────────────────────────────────────────────────────
+  //  PUT /api/candidates/hr/:id/notes   (HR – JWT required)
+  //  US9 – HR notes update endpoint
+  // ─────────────────────────────────────────────────────────────
+  async updateHrNotes(ctx) {
+    const { id } = ctx.params;
+    const { hrNotes } = ctx.request.body as any;
+
+    if (!id) {
+      return ctx.badRequest('Candidate ID is required.');
+    }
+
+    // Allow empty string to clear notes, but require the field to be present
+    if (hrNotes === undefined) {
+      return ctx.badRequest('hrNotes field is required.');
+    }
+
+    // Fetch current candidate to verify it exists
+    const candidate = await strapi.documents('api::candidate.candidate').findOne({
+      documentId: id,
+    });
+
+    if (!candidate) {
+      return ctx.notFound('Candidate not found.');
+    }
+
+    // Update HR notes
+    const updated = await strapi.documents('api::candidate.candidate').update({
+      documentId: id,
+      data: { hrNotes: hrNotes?.trim() || null },
+    });
+
+    return ctx.send({
+      data: {
+        documentId: updated.documentId,
+        hrNotes: (updated as any).hrNotes,
+        updatedAt: updated.updatedAt,
+      },
     });
   },
 }));

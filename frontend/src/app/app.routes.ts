@@ -13,7 +13,6 @@ import { WithdrawComponent } from './pages/public-jobs/withdraw.component';
 import { CandidatesListComponent } from './pages/candidates/candidates-list.component';
 import { CandidateDetailComponent } from './pages/candidates/candidate-detail.component';
 
-
 export const routes: Routes = [
   {
     path: 'jobs',

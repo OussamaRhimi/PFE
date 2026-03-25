@@ -69,7 +69,7 @@ import { CandidateService, CandidateListItem } from '../../services/candidate.se
                   <span class="score-num">{{ c.score | number:'1.0-0' }}</span>
                 </div>
               </td>
-              <td class="job-title">{{ c.jobPosting?.title || '—' }}</td>
+              <td class="job-title">{{ c.jobTitle || c.jobPosting?.title || '—' }}</td>
               <td class="date-cell">{{ c.createdAt | date:'dd MMM yyyy' }}</td>
               <td class="actions-cell">
                 <a [routerLink]="['/candidates', c.documentId]" class="btn-view" (click)="$event.stopPropagation()">
@@ -290,7 +290,7 @@ export class CandidatesListComponent implements OnInit {
   load(): void {
     this.loading = true;
     this.candidateService.getAllHr().subscribe({
-      next: (data) => { this.candidates = data; this.loading = false; },
+      next: (res) => { this.candidates = res.data; this.loading = false; },
       error: () => { this.error = 'Failed to load candidates.'; this.loading = false; }
     });
   }

@@ -457,7 +457,7 @@ export interface ApiCandidateCandidate extends Struct.CollectionTypeSchema {
         minLength: 1;
       }>;
     hrNotes: Schema.Attribute.Text;
-    jobPosting: Schema.Attribute.Relation<
+    job_posting: Schema.Attribute.Relation<
       'manyToOne',
       'api::job-posting.job-posting'
     >;
@@ -542,6 +542,10 @@ export interface ApiJobPostingJobPosting extends Struct.CollectionTypeSchema {
     draftAndPublish: false;
   };
   attributes: {
+    candidate: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::candidate.candidate'
+    >;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;

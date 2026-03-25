@@ -145,7 +145,7 @@ const TRANSLATIONS: Record<string, Record<Lang, string>> = {
   'form.cancel':              { fr: 'Annuler',             en: 'Cancel' },
   'form.loadError':           { fr: 'Erreur lors du chargement de l\'offre.', en: 'Failed to load job posting.' },
   'form.saveError':           { fr: 'Erreur lors de l\'enregistrement.', en: 'Failed to save job posting.' },
-
+  'form.list':       { fr: 'Voir les candidats',          en: 'View Candidates' },
   // ── Public Job Listing ──
   'public.login':             { fr: 'Se connecter',            en: 'Sign in' },
   'public.navJobs':           { fr: 'Offres d\'emploi',        en: 'Job Openings' },
@@ -197,9 +197,7 @@ const TRANSLATIONS: Record<string, Record<Lang, string>> = {
   'apply.cancel':             { fr: 'Annuler',                  en: 'Cancel' },
   'apply.submitError':        { fr: 'Erreur lors de l\'envoi. Veuillez réessayer.', en: 'Submission failed. Please try again.' },
   'apply.successTitle':       { fr: 'Candidature envoyée !',    en: 'Application Submitted!' },
-  'apply.successText':        { fr: 'Votre candidature a bien été enregistrée. Conservez votre jeton pour suivre votre candidature.', en: 'Your application has been recorded. Save your tracking token to follow up.' },
-  'apply.tokenLabel':         { fr: 'Jeton de suivi',           en: 'Tracking Token' },
-  'apply.tokenWarning':       { fr: '⚠ Conservez ce jeton précieusement. Il est nécessaire pour suivre ou retirer votre candidature.', en: '⚠ Save this token carefully. It is needed to track or withdraw your application.' },
+  'apply.successText':        { fr: 'Votre candidature a bien été enregistrée. ', en: 'Your application has been recorded.' },
   'apply.copy':               { fr: 'Copier',                   en: 'Copy' },
   'apply.backToJobs':         { fr: '← Retour aux offres',      en: '← Back to Jobs' },
   'apply.trackNow':           { fr: 'Suivre ma candidature →',  en: 'Track My Application →' },
@@ -261,6 +259,18 @@ const TRANSLATIONS: Record<string, Record<Lang, string>> = {
   'withdraw.successTitle':    { fr: 'Candidature retirée',      en: 'Application Withdrawn' },
   'withdraw.successText':     { fr: 'Votre candidature et vos données ont été définitivement supprimées.', en: 'Your application and data have been permanently deleted.' },
   'withdraw.backToJobs':      { fr: 'Voir les offres d\'emploi', en: 'View Job Openings' },
+  // ── Candidate ── 
+  'candidate.title':          { fr: 'Candidats pour :',                en: 'Candidates for:' },
+  'candidate.name':           { fr: 'Nom',                      en: 'Name' },
+  'candidate.email':          { fr: 'Email',                    en: 'Email' },
+  'candidate.createdAt':      { fr: 'Date d\'inscription',      en: 'Application Date' },
+  'candidate.status':         { fr: 'Statut',                   en: 'Status' },
+  'candidate.retour':         { fr: 'Retour à la page précédente',  en: 'Back' },
+  'candidate.message':        { fr: 'Aucun candidat n\a postulé pour cette offre.', en: 'No candidates have applied for this position.' },
+  'candidate.btnback':          { fr: 'Précédent',                 en: 'Previous' },
+  'candidate.btnnext':          { fr: 'Suivant',                   en: 'Next' },
+
+
 };
 
 @Injectable({ providedIn: 'root' })
