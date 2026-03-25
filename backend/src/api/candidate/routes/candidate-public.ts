@@ -3,18 +3,29 @@ export default {
     {
       method: 'GET',
       path: '/candidates/by-job/:documentId',
-      handler: 'candidate.findByJob',
+      handler: 'api::candidate.candidate.findByJob',
       config: {
         auth: false,
         policies: [],
         middlewares: [],
-        description: 'Public endpoint – list candidates by job posting documentId',
+        description: 'Public endpoint - list candidates by job posting documentId',
+      },
+    },
+    {
+      method: 'GET',
+      path: '/candidates/detail/:documentId',
+      handler: 'api::candidate.candidate.findDetail',
+      config: {
+        auth: false,
+        policies: [],
+        middlewares: [],
+        description: 'Public endpoint - get candidate detail with relations',
       },
     },
     {
       method: 'POST',
       path: '/candidates/track/request-code',
-      handler: 'candidate.requestTrackingCode',
+      handler: 'api::candidate.candidate.requestTrackingCode',
       config: {
         auth: false,
         policies: [],
@@ -25,7 +36,7 @@ export default {
     {
       method: 'POST',
       path: '/candidates/track/verify-code',
-      handler: 'candidate.verifyTrackingCode',
+      handler: 'api::candidate.candidate.verifyTrackingCode',
       config: {
         auth: false,
         policies: [],
@@ -36,34 +47,34 @@ export default {
     {
       method: 'POST',
       path: '/candidates/apply',
-      handler: 'candidate.apply',
+      handler: 'api::candidate.candidate.apply',
       config: {
         auth: false,
         policies: [],
         middlewares: [],
-        description: 'Public endpoint – submit a job application with resume upload',
+        description: 'Public endpoint - submit a job application with resume upload',
       },
     },
     {
       method: 'GET',
       path: '/candidates/track/:token',
-      handler: 'candidate.track',
+      handler: 'api::candidate.candidate.track',
       config: {
         auth: false,
         policies: [],
         middlewares: [],
-        description: 'Public endpoint – track application status by token',
+        description: 'Public endpoint - track application status by token',
       },
     },
     {
       method: 'DELETE',
       path: '/candidates/withdraw/:token',
-      handler: 'candidate.withdraw',
+      handler: 'api::candidate.candidate.withdraw',
       config: {
         auth: false,
         policies: [],
         middlewares: [],
-        description: 'Public GDPR endpoint – delete application and data by token',
+        description: 'Public GDPR endpoint - delete application and data by token',
       },
     },
   ],

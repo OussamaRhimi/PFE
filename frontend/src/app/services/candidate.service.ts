@@ -146,4 +146,14 @@ getCandidatesByJob(jobId: string, page: number = 1, sort: string = 'fullName:asc
 }
 
 
+getCandidateById(documentId: string) {
+    // Utilise la route dédiée pour éviter les erreurs de query populate
+    return this.http.get(`${this.apiUrl}/detail/${documentId}`);
 }
+
+
+}
+
+
+
+

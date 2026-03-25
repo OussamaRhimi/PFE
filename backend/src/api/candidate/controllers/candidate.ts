@@ -80,8 +80,8 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
   //  Return candidates linked to a job posting (by documentId)
 // src/api/candidate/controllers/candidate.ts
 
-async findByJob(ctx) {
-  const { documentId } = ctx.params;
+  async findByJob(ctx) {
+    const { documentId } = ctx.params;
 
   // On récupère les résultats via le Document Service
   const entities = await strapi.documents('api::candidate.candidate').findMany({
@@ -95,6 +95,26 @@ async findByJob(ctx) {
 
   return this.transformResponse(entities);
 },
+
+  //  GET /api/candidates/detail/:documentId   (public)
+  //  Return single candidate with populated relations
+  async findDetail(ctx) {
+    const { documentId } = ctx.params;
+    if (!documentId) {
+      return ctx.badRequest('Candidate documentId is required.');
+    }
+
+    const candidate = await strapi.documents('api::candidate.candidate').findOne({
+      documentId,
+      populate: ['job_posting', 'resume'],
+    });
+
+    if (!candidate) {
+      return ctx.notFound('Candidate not found.');
+    }
+
+    return this.transformResponse(candidate);
+  },
   // ─────────────────────────────────────────────────────────────
   //  POST /api/candidates/apply   (public – multipart/form-data)
   //  US2 – candidate creation with resume upload + file validation

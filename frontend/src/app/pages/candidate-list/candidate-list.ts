@@ -9,8 +9,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { JobPosting, JobPostingService } from '../../services/job-posting.service';
 import { I18nService } from '../../services/i18n.service';
 import { Observable } from 'rxjs/internal/Observable';
-
-
+import { Router } from '@angular/router'; 
 @Component({
   selector: 'app-candidate-list',
   standalone: true,
@@ -39,6 +38,7 @@ candidates = signal<any[]>([]);
     private jobService: JobPostingService, // <--- Injecter le service Job
     private route: ActivatedRoute,
     public i18n: I18nService,
+    private router: Router
     
   ) {}
 
@@ -86,5 +86,11 @@ loadData(): void {
     this.currentSort = this.currentSort.includes('asc') ? `${field}:desc` : `${field}:asc`;
     this.loadData();
   }
+
+
+goToDetail(documentId: string) {
+  // Navigation directe sans surcharge de directives HTML
+  this.router.navigate(['/candidate-detail', documentId]);
+}
 
 }

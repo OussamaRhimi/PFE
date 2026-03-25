@@ -1,0 +1,99 @@
+<div class="detail-container" *ngIf="candidate">
+  <div class="header">
+    <div>
+      <h2>{{ candidate.attributes?.fullName || candidate.fullName }}</h2>
+      <p class="subtle">{{ candidate.attributes?.email || candidate.email }}</p>
+    </div>
+    <span class="status-pill" [ngClass]="'status-' + (candidate.attributes?.status || candidate.status || 'default')">
+      {{ candidate.attributes?.status || candidate.status }}
+    </span>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h3>Informations</h3>
+      <div class="row">
+        <span class="label">Nom</span>
+        <span class="value">{{ candidate.attributes?.fullName || candidate.fullName }}</span>
+      </div>
+      <div class="row">
+        <span class="label">Email</span>
+        <span class="value">{{ candidate.attributes?.email || candidate.email }}</span>
+      </div>
+      <div class="row">
+        <span class="label">LinkedIn</span>
+        <span class="value">
+          <a *ngIf="candidate.attributes?.linkedin || candidate.linkedin"
+             [href]="candidate.attributes?.linkedin || candidate.linkedin"
+             target="_blank" rel="noopener">
+            {{ candidate.attributes?.linkedin || candidate.linkedin }}
+          </a>
+          <span *ngIf="!(candidate.attributes?.linkedin || candidate.linkedin)" class="muted">ï¿½</span>
+        </span>
+      </div>
+      <div class="row">
+        <span class="label">Portfolio</span>
+        <span class="value">
+          <a *ngIf="candidate.attributes?.portfolio || candidate.portfolio"
+             [href]="candidate.attributes?.portfolio || candidate.portfolio"
+             target="_blank" rel="noopener">
+            {{ candidate.attributes?.portfolio || candidate.portfolio }}
+          </a>
+          <span *ngIf="!(candidate.attributes?.portfolio || candidate.portfolio)" class="muted">ï¿½</span>
+        </span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Candidature</h3>
+      <div class="row">
+        <span class="label">Poste</span>
+        <span class="value">
+          {{ jobTitle || '—' }}
+        </span>
+      </div>
+      <div class="row">
+        <span class="label">Statut</span>
+        <span class="value">
+          <span class="status-chip" [ngClass]="'status-' + (candidate.attributes?.status || candidate.status || 'default')">
+            {{ candidate.attributes?.status || candidate.status }}
+          </span>
+        </span>
+      </div>
+      <div class="row">
+        <span class="label">ExpÃ©rience</span>
+        <span class="value">
+          {{ candidate.attributes?.selfReportedYearsExperience ?? candidate.selfReportedYearsExperience ?? 'ï¿½' }}
+        </span>
+      </div>
+      <div class="row">
+        <span class="label">Score</span>
+        <span class="value">
+          {{ candidate.attributes?.score ?? candidate.score ?? 'ï¿½' }}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card notes">
+    <h3>Notes du candidat</h3>
+    <p class="value">
+      {{ candidate.attributes?.candidateNotes || candidate.candidateNotes || 'ï¿½' }}
+    </p>
+  </div>
+
+  <div class="actions">
+    <button *ngIf="candidate.attributes?.resume?.data || candidate.resume"
+            (click)="downloadResume()"
+            class="btn-download">
+      Telecharger le CV
+    </button>
+  </div>
+</div>
+
+<div class="loading" *ngIf="!candidate">
+  <p>Recuperation des informations du candidat...</p>
+</div>
+
+
+

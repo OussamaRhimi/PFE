@@ -11,6 +11,7 @@ import { ApplyComponent } from './pages/public-jobs/apply.component';
 import { TrackComponent } from './pages/public-jobs/track.component';
 import { WithdrawComponent } from './pages/public-jobs/withdraw.component';
 import { CandidateList } from './pages/candidate-list/candidate-list';
+import { CandidateDetail } from './pages/candidate-detail/candidate-detail';
 
 export const routes: Routes = [
   {
@@ -67,6 +68,10 @@ export const routes: Routes = [
     path: 'jobs/:id/candidates',
     component: CandidateList,
     canActivate: [authGuard],
+  },
+  { 
+    path: 'candidate-detail/:id', 
+    component:CandidateDetail 
   },
   {
     path: '',

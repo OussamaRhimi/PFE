@@ -24,8 +24,8 @@
       </tr>
     </thead>
     <tbody>
-      @for (cand of candidates(); track cand.id) {
-        <tr>
+      @for (cand of candidates(); track cand.documentId) {
+        <tr (click)="goToDetail(cand.documentId)" class="clickable-row">
           <td>{{ cand ?.fullName }}</td>
           <td>{{ cand ?.createdAt | date:'shortDate' }}</td>
           <td>{{ cand ?.email }}</td>
