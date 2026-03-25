@@ -1,3 +1,7 @@
+<div class="back-row" *ngIf="candidate">
+  <button class="btn-back" (click)="goBack()">Retour</button>
+</div>
+
 <div class="detail-container" *ngIf="candidate">
   <div class="header">
     <div>
@@ -9,11 +13,14 @@
     </span>
   </div>
 
+  <div class="alert success" *ngIf="statusMessage">{{ statusMessage }}</div>
+  <div class="alert error" *ngIf="statusError">{{ statusError }}</div>
+
   <div class="grid">
     <div class="card">
-      <h3>Informations</h3>
+      <h3>Information</h3>
       <div class="row">
-        <span class="label">Nom</span>
+        <span class="label">Name</span>
         <span class="value">{{ candidate.attributes?.fullName || candidate.fullName }}</span>
       </div>
       <div class="row">
@@ -28,7 +35,7 @@
              target="_blank" rel="noopener">
             {{ candidate.attributes?.linkedin || candidate.linkedin }}
           </a>
-          <span *ngIf="!(candidate.attributes?.linkedin || candidate.linkedin)" class="muted">ï¿½</span>
+          <span *ngIf="!(candidate.attributes?.linkedin || candidate.linkedin)" class="muted">-</span>
         </span>
       </div>
       <div class="row">
@@ -39,21 +46,21 @@
              target="_blank" rel="noopener">
             {{ candidate.attributes?.portfolio || candidate.portfolio }}
           </a>
-          <span *ngIf="!(candidate.attributes?.portfolio || candidate.portfolio)" class="muted">ï¿½</span>
+          <span *ngIf="!(candidate.attributes?.portfolio || candidate.portfolio)" class="muted">-</span>
         </span>
       </div>
     </div>
 
     <div class="card">
-      <h3>Candidature</h3>
+      <h3>Application</h3>
       <div class="row">
-        <span class="label">Poste</span>
+        <span class="label">Position</span>
         <span class="value">
-          {{ jobTitle || '—' }}
+          {{ jobTitle || '-' }}
         </span>
       </div>
       <div class="row">
-        <span class="label">Statut</span>
+        <span class="label">Status</span>
         <span class="value">
           <span class="status-chip" [ngClass]="'status-' + (candidate.attributes?.status || candidate.status || 'default')">
             {{ candidate.attributes?.status || candidate.status }}
@@ -61,39 +68,62 @@
         </span>
       </div>
       <div class="row">
-        <span class="label">ExpÃ©rience</span>
+        <span class="label">Change Status</span>
         <span class="value">
-          {{ candidate.attributes?.selfReportedYearsExperience ?? candidate.selfReportedYearsExperience ?? 'ï¿½' }}
+          <select class="status-select" [value]="currentStatus" (change)="onStatusChange($event)">
+            <option *ngFor="let s of statusOptions" [value]="s">{{ s }}</option>
+          </select>
+        </span>
+      </div>
+      <div class="row">
+        <span class="label">Experience</span>
+        <span class="value">
+          {{ candidate.attributes?.selfReportedYearsExperience ?? candidate.selfReportedYearsExperience ?? '-' }}
         </span>
       </div>
       <div class="row">
         <span class="label">Score</span>
         <span class="value">
-          {{ candidate.attributes?.score ?? candidate.score ?? 'ï¿½' }}
+          {{ candidate.attributes?.score ?? candidate.score ?? '-' }}
         </span>
       </div>
     </div>
   </div>
 
   <div class="card notes">
-    <h3>Notes du candidat</h3>
-    <p class="value">
-      {{ candidate.attributes?.candidateNotes || candidate.candidateNotes || 'ï¿½' }}
-    </p>
+    <div class="notes-header">
+      <h3>HR Notes</h3>
+      <button class="btn-save" (click)="saveNotes()" [disabled]="notesSaving">
+        {{ notesSaving ? 'Saving...' : 'Save Notes' }}
+      </button>
+    </div>
+    <textarea class="notes-textarea" rows="6" [(ngModel)]="notesDraft"></textarea>
+    <div class="notes-meta">
+      <span class="notes-success" *ngIf="notesMessage">{{ notesMessage }}</span>
+      <span class="notes-error" *ngIf="notesError">{{ notesError }}</span>
+    </div>
   </div>
 
   <div class="actions">
     <button *ngIf="candidate.attributes?.resume?.data || candidate.resume"
             (click)="downloadResume()"
             class="btn-download">
-      Telecharger le CV
+      Download Resume
     </button>
+  </div>
+
+  <div class="modal-overlay" *ngIf="statusDialogOpen" (click)="cancelStatusChange()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <h3>Confirm status change</h3>
+      <p>Change from <strong>{{ currentStatus }}</strong> to <strong>{{ pendingStatus }}</strong>?</p>
+      <div class="modal-actions">
+        <button class="btn-confirm" (click)="confirmStatusChange()">Confirm</button>
+        <button class="btn-cancel" (click)="cancelStatusChange()">Cancel</button>
+      </div>
+    </div>
   </div>
 </div>
 
 <div class="loading" *ngIf="!candidate">
-  <p>Recuperation des informations du candidat...</p>
+  <p>Loading candidate details...</p>
 </div>
-
-
-
