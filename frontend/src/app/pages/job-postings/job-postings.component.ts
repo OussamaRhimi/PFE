@@ -415,7 +415,7 @@ export class JobPostingsComponent implements OnInit {
 
   goToCandidates(documentId: string): void {
     if (documentId) {
-      this.router.navigate(['/jobs', documentId, 'candidates']);
+      this.router.navigate(['/candidates'], { queryParams: { jobPostingId: documentId } });
     }
   }
   

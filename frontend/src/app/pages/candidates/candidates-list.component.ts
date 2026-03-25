@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CandidateService, CandidateListItem } from '../../services/candidate.service';
 
@@ -430,6 +430,7 @@ export class CandidatesListComponent implements OnInit {
   // Filtering
   searchQuery = '';
   statusFilter = '';
+  jobPostingFilter = '';
   statusOptions = ['new', 'processing', 'processed', 'reviewing', 'shortlisted', 'rejected', 'hired', 'error'];
 
   // Pagination
@@ -438,22 +439,32 @@ export class CandidatesListComponent implements OnInit {
   totalCount = 0;
   totalPages = 1;
 
-  constructor(private candidateService: CandidateService) {}
+  constructor(
+    private candidateService: CandidateService,
+    private route: ActivatedRoute
+  ) {}
 
   ngOnInit(): void {
-    this.load();
+    // Read jobPostingId from query params if present
+    this.route.queryParams.subscribe(params => {
+      this.jobPostingFilter = params['jobPostingId'] || '';
+      this.load();
+    });
   }
 
   load(): void {
     this.loading = true;
     const sortParam = `${this.sortField}:${this.sortOrder}`;
-    const filters: { status?: string; search?: string } = {};
+    const filters: { status?: string; search?: string; jobPostingId?: string } = {};
 
     if (this.statusFilter) {
       filters.status = this.statusFilter;
     }
     if (this.searchQuery.trim()) {
       filters.search = this.searchQuery.trim();
+    }
+    if (this.jobPostingFilter) {
+      filters.jobPostingId = this.jobPostingFilter;
     }
 
     this.candidateService.getAllHr(this.currentPage, this.pageSize, sortParam, filters).subscribe({
