@@ -1,12 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { CandidateService, CandidateListItem } from '../../services/candidate.service';
 
 @Component({
   selector: 'app-candidates-list',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, FormsModule],
   template: `
     <div class="page">
       <div class="header">
@@ -17,7 +18,21 @@ import { CandidateService, CandidateListItem } from '../../services/candidate.se
           </svg>
           Candidates
         </h1>
-        <span class="count-badge" *ngIf="!loading">{{ candidates.length }} applicants</span>
+        <span class="count-badge" *ngIf="!loading && totalCount > 0">{{ totalCount }} applicants</span>
+      </div>
+
+      <!-- Filters row -->
+      <div class="filters-row">
+        <div class="search-box">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+          </svg>
+          <input type="text" [(ngModel)]="searchQuery" (keyup.enter)="load()" placeholder="Search by name or email..." />
+        </div>
+        <select [(ngModel)]="statusFilter" (change)="load()" class="status-filter">
+          <option value="">All statuses</option>
+          <option *ngFor="let s of statusOptions" [value]="s">{{ s }}</option>
+        </select>
       </div>
 
       <div class="alert error" *ngIf="error">
@@ -39,11 +54,31 @@ import { CandidateService, CandidateListItem } from '../../services/candidate.se
         <table>
           <thead>
             <tr>
-              <th>Candidate</th>
-              <th>Status</th>
-              <th>Score</th>
+              <th class="sortable" (click)="toggleSort('fullName')">
+                Candidate
+                <span class="sort-icon" *ngIf="sortField === 'fullName'">
+                  {{ sortOrder === 'asc' ? '▲' : '▼' }}
+                </span>
+              </th>
+              <th class="sortable" (click)="toggleSort('status')">
+                Status
+                <span class="sort-icon" *ngIf="sortField === 'status'">
+                  {{ sortOrder === 'asc' ? '▲' : '▼' }}
+                </span>
+              </th>
+              <th class="sortable" (click)="toggleSort('score')">
+                Score
+                <span class="sort-icon" *ngIf="sortField === 'score'">
+                  {{ sortOrder === 'asc' ? '▲' : '▼' }}
+                </span>
+              </th>
               <th>Job Posting</th>
-              <th>Applied</th>
+              <th class="sortable" (click)="toggleSort('createdAt')">
+                Applied
+                <span class="sort-icon" *ngIf="sortField === 'createdAt'">
+                  {{ sortOrder === 'asc' ? '▲' : '▼' }}
+                </span>
+              </th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -80,6 +115,21 @@ import { CandidateService, CandidateListItem } from '../../services/candidate.se
           </tbody>
         </table>
       </div>
+
+      <!-- Pagination -->
+      <div class="pagination" *ngIf="!loading && totalPages > 1">
+        <button class="page-btn" [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+        </button>
+        <span class="page-info">Page {{ currentPage }} of {{ totalPages }}</span>
+        <button class="page-btn" [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </button>
+      </div>
     </div>
   `,
   styles: [`
@@ -107,7 +157,7 @@ import { CandidateService, CandidateListItem } from '../../services/candidate.se
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 28px;
+      margin-bottom: 20px;
     }
     .header h1 {
       margin: 0;
@@ -125,6 +175,50 @@ import { CandidateService, CandidateListItem } from '../../services/candidate.se
       border-radius: 20px;
       font-size: 13px;
       font-weight: 600;
+    }
+
+    /* Filters */
+    .filters-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .search-box {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #fff;
+      border: 1px solid $gray-200;
+      border-radius: 10px;
+      padding: 8px 14px;
+      flex: 1;
+      min-width: 200px;
+      max-width: 360px;
+    }
+    .search-box svg { color: $gray-400; flex-shrink: 0; }
+    .search-box input {
+      border: none;
+      outline: none;
+      font-size: 14px;
+      width: 100%;
+      color: $gray-800;
+    }
+    .search-box input::placeholder { color: $gray-300; }
+
+    .status-filter {
+      padding: 8px 14px;
+      border: 1px solid $gray-200;
+      border-radius: 10px;
+      font-size: 14px;
+      color: $gray-700;
+      background: #fff;
+      cursor: pointer;
+      min-width: 140px;
+    }
+    .status-filter:focus {
+      outline: none;
+      border-color: $red;
     }
 
     .alert.error {
@@ -185,6 +279,19 @@ import { CandidateService, CandidateListItem } from '../../services/candidate.se
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.8px;
+    }
+    th.sortable {
+      cursor: pointer;
+      user-select: none;
+      transition: color 0.2s;
+    }
+    th.sortable:hover {
+      color: $red;
+    }
+    .sort-icon {
+      margin-left: 4px;
+      font-size: 9px;
+      color: $red;
     }
     td {
       padding: 14px 18px;
@@ -274,12 +381,62 @@ import { CandidateService, CandidateListItem } from '../../services/candidate.se
       background: rgba($red, 0.14);
       transform: translateX(2px);
     }
+
+    /* Pagination */
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      margin-top: 24px;
+    }
+    .page-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border: 1px solid $gray-200;
+      border-radius: 10px;
+      background: #fff;
+      color: $gray-600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .page-btn:hover:not(:disabled) {
+      border-color: $red;
+      color: $red;
+    }
+    .page-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .page-info {
+      font-size: 13px;
+      color: $gray-600;
+      font-weight: 500;
+    }
   `]
 })
 export class CandidatesListComponent implements OnInit {
   candidates: CandidateListItem[] = [];
   loading = false;
   error = '';
+
+  // Sorting
+  sortField = 'createdAt';
+  sortOrder: 'asc' | 'desc' = 'desc';
+
+  // Filtering
+  searchQuery = '';
+  statusFilter = '';
+  statusOptions = ['new', 'processing', 'processed', 'reviewing', 'shortlisted', 'rejected', 'hired', 'error'];
+
+  // Pagination
+  currentPage = 1;
+  pageSize = 25;
+  totalCount = 0;
+  totalPages = 1;
 
   constructor(private candidateService: CandidateService) {}
 
@@ -289,9 +446,45 @@ export class CandidatesListComponent implements OnInit {
 
   load(): void {
     this.loading = true;
-    this.candidateService.getAllHr().subscribe({
-      next: (res) => { this.candidates = res.data; this.loading = false; },
-      error: () => { this.error = 'Failed to load candidates.'; this.loading = false; }
+    const sortParam = `${this.sortField}:${this.sortOrder}`;
+    const filters: { status?: string; search?: string } = {};
+
+    if (this.statusFilter) {
+      filters.status = this.statusFilter;
+    }
+    if (this.searchQuery.trim()) {
+      filters.search = this.searchQuery.trim();
+    }
+
+    this.candidateService.getAllHr(this.currentPage, this.pageSize, sortParam, filters).subscribe({
+      next: (res) => {
+        this.candidates = res.data;
+        this.totalCount = res.meta.pagination.total;
+        this.totalPages = res.meta.pagination.pageCount;
+        this.loading = false;
+      },
+      error: () => {
+        this.error = 'Failed to load candidates.';
+        this.loading = false;
+      }
     });
+  }
+
+  toggleSort(field: string): void {
+    if (this.sortField === field) {
+      this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortField = field;
+      this.sortOrder = 'desc';
+    }
+    this.currentPage = 1;
+    this.load();
+  }
+
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+      this.load();
+    }
   }
 }
