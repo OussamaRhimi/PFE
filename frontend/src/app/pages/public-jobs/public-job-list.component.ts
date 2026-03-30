@@ -85,9 +85,9 @@ import { PublicFooterComponent } from '../../components/public-footer/public-foo
     <app-public-footer />
   `,
   styles: [`
-    $logo-red: #8b1f1f;
-    $logo-red-mid: #a31a1a;
-    $logo-red-deep: #791212;
+    $logo-red: #c41e3a;
+    $logo-red-mid: #d32f2f;
+    $logo-red-deep: #a51c30;
     $gray-50: #f9fafb;
     $gray-100: #f1f3f7;
     $gray-200: #e5e8ef;
@@ -106,20 +106,27 @@ import { PublicFooterComponent } from '../../components/public-footer/public-foo
 
     /* ── Hero ── */
     .hero {
-      background: linear-gradient(135deg, $logo-red-deep 0%, $logo-red 60%, $logo-red-mid 100%);
+      background: url('/assets/bg1.png') center/cover no-repeat;
       color: #fff;
-      text-align: center;
-      padding: 56px 24px 48px;
+      text-align: left;
+      padding: 80px 24px 60px;
+      min-height: 220px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-start;
+      padding-left: 8%;
     }
     .hero h1 {
-      font-size: 2rem;
+      font-size: 2.2rem;
       font-weight: 800;
       margin: 0 0 12px;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     }
     .hero p {
-      font-size: 1.05rem;
-      opacity: 0.9;
+      font-size: 1.1rem;
       margin: 0;
+      text-shadow: 0 1px 6px rgba(0, 0, 0, 0.3);
     }
 
     /* ── Content ── */
