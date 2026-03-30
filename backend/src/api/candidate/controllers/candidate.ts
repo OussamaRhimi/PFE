@@ -261,6 +261,7 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
 
     const candidates = await strapi.documents('api::candidate.candidate').findMany({
       filters: { email: { $eq: email } },
+      limit: 100, // Ensure all applications for this email are found
     });
 
     // Always return a generic success message to avoid leaking whether the email exists.
@@ -337,6 +338,7 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
         trackingCodeExpiresAt: { $gte: nowIso },
       },
       populate: ['job_posting'],
+      limit: 100, // Ensure all applications are returned
     });
 
     if (!candidates || candidates.length === 0) {
