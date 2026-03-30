@@ -1,13 +1,14 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
+import { LucideAngularModule, Pencil, Trash2, Users, TriangleAlert } from 'lucide-angular';
 import { JobPostingService, JobPosting } from '../../services/job-posting.service';
 import { I18nService } from '../../services/i18n.service';
 
 @Component({
   selector: 'app-job-postings',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, LucideAngularModule],
   template: `
     <div class="page">
       <div class="header">
@@ -42,7 +43,8 @@ import { I18nService } from '../../services/i18n.service';
           <h3>{{ i18n.t('jobs.deleteTitle') }}</h3>
           <p>{{ i18n.t('jobs.deleteText') }} <strong>{{ deleteConfirm.job.title }}</strong> ?</p>
           <div class="cascade-warning" *ngIf="deleteConfirm.candidateCount > 0">
-            ⚠️ {{ i18n.t('jobs.cascadeWarning') }}
+            <lucide-angular class="warning-icon" [img]="icons.warning" [size]="16" [strokeWidth]="2" aria-hidden="true"></lucide-angular>
+            {{ i18n.t('jobs.cascadeWarning') }}
             <strong>{{ deleteConfirm.candidateCount }}</strong>
             {{ i18n.t('jobs.candidates') }}
           </div>
@@ -80,22 +82,22 @@ import { I18nService } from '../../services/i18n.service';
                 <span *ngIf="!(job.requirements?.departments?.length)">—</span>
               </td>
               <td class="actions-cell">
-                <a [routerLink]="['/job-postings', job.documentId, 'edit']" class="btn-icon" [title]="i18n.t('jobs.editTooltip')">
-                  <span class="btn-icon-symbol" aria-hidden="true">{{ actionIcons.edit }}</span>
+                <a [routerLink]="['/job-postings', job.documentId, 'edit']" class="btn-action btn-action-icon" [title]="i18n.t('jobs.editTooltip')">
+                  <lucide-angular class="btn-icon-symbol" [img]="icons.edit" [size]="16" [strokeWidth]="2" aria-hidden="true"></lucide-angular>
                 </a>
 
                 <!-- Status transitions -->
-                <button *ngIf="job.status === 'draft'" class="btn-sm btn-open" (click)="askStatusChange(job, 'open')">{{ i18n.t('jobs.open') }}</button>
-                <button *ngIf="job.status === 'open'" class="btn-sm btn-close" (click)="askStatusChange(job, 'closed')">{{ i18n.t('jobs.close') }}</button>
-                <button *ngIf="job.status === 'closed'" class="btn-sm btn-reopen" (click)="askStatusChange(job, 'open')">{{ i18n.t('jobs.reopen') }}</button>
+                <button *ngIf="job.status === 'draft'" class="btn-action btn-action-label btn-open" (click)="askStatusChange(job, 'open')">{{ i18n.t('jobs.open') }}</button>
+                <button *ngIf="job.status === 'open'" class="btn-action btn-action-label btn-close" (click)="askStatusChange(job, 'closed')">{{ i18n.t('jobs.close') }}</button>
+                <button *ngIf="job.status === 'closed'" class="btn-action btn-action-label btn-reopen" (click)="askStatusChange(job, 'open')">{{ i18n.t('jobs.reopen') }}</button>
 
-                <button class="btn-icon btn-del" (click)="askDelete(job)" [title]="i18n.t('jobs.deleteTooltip')">
-                  <span class="btn-icon-symbol" aria-hidden="true">{{ actionIcons.delete }}</span>
+                <button class="btn-action btn-action-icon btn-del" (click)="askDelete(job)" [title]="i18n.t('jobs.deleteTooltip')">
+                  <lucide-angular class="btn-icon-symbol" [img]="icons.delete" [size]="16" [strokeWidth]="2" aria-hidden="true"></lucide-angular>
                 </button>
-                <button class="btn-sm btn-candidates" 
+                <button class="btn-action btn-action-label btn-candidates"
                         (click)="goToCandidates(job.documentId)"
                         [title]="i18n.t('jobs.viewCandidatesTooltip')">
-                  <span class="btn-icon-symbol" aria-hidden="true">{{ actionIcons.candidates }}</span>
+                  <lucide-angular class="btn-icon-symbol" [img]="icons.candidates" [size]="15" [strokeWidth]="2" aria-hidden="true"></lucide-angular>
                   {{ i18n.t('form.list') }}
                 </button>
               </td>
@@ -212,7 +214,7 @@ import { I18nService } from '../../services/i18n.service';
     .title-cell { font-weight: 600; }
 
     .actions-cell { white-space: nowrap; display: flex; align-items: center; gap: 6px; }
-    .btn-icon {
+    .btn-action {
       background: none;
       border: none;
       width: 34px;
@@ -225,28 +227,31 @@ import { I18nService } from '../../services/i18n.service';
       justify-content: center;
       color: $gray-600;
       transition: transform 0.15s, background-color 0.2s, color 0.2s;
+      box-sizing: border-box;
     }
-    .btn-icon:hover {
+    .btn-action:hover {
       background: $gray-100;
       color: $gray-800;
     }
+    .btn-action-icon { padding: 0; }
+    .btn-action-label {
+      width: auto;
+      min-width: 34px;
+      padding: 0 12px;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1;
+    }
     .btn-icon-symbol {
-      font-size: 16px;
+      width: 16px;
+      height: 16px;
       line-height: 1;
     }
     .btn-del:hover { transform: scale(1.15); }
     .btn-del { color: $error; }
     .btn-del:hover { background: rgba($error, 0.08); }
 
-    .btn-sm {
-      padding: 5px 12px;
-      border: none;
-      border-radius: 8px;
-      font-size: 12px;
-      cursor: pointer;
-      font-weight: 600;
-      transition: all 0.2s;
-    }
     .btn-open   { background: rgba($success, 0.08); color: $success; }
     .btn-open:hover { background: rgba($success, 0.15); }
     .btn-close  { background: rgba($error, 0.08); color: $error; }
@@ -327,6 +332,14 @@ import { I18nService } from '../../services/i18n.service';
       border-radius: 10px;
       font-size: 13px;
       margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .warning-icon {
+      flex: 0 0 auto;
+      width: 16px;
+      height: 16px;
     }
     .danger-text { color: $error; font-weight: 600; font-size: 13px; }
 
@@ -365,10 +378,11 @@ export class JobPostingsComponent implements OnInit {
   loading = false;
   error = '';
   success = '';
-  readonly actionIcons = {
-    edit: '✎',
-    delete: '⌫',
-    candidates: '◉'
+  readonly icons = {
+    edit: Pencil,
+    delete: Trash2,
+    candidates: Users,
+    warning: TriangleAlert
   } as const;
 
   statusConfirm: { job: JobPosting; newStatus: string } | null = null;
