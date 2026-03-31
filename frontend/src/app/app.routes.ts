@@ -13,7 +13,18 @@ import { WithdrawComponent } from './pages/public-jobs/withdraw.component';
 import { CandidatesListComponent } from './pages/candidates/candidates-list.component';
 import { CandidateDetailComponent } from './pages/candidates/candidate-detail.component';
 
+// ✅ Importation correcte selon votre fichier homepage.ts
+import { HomePage } from './pages/public-jobs/homepage/homepage';
+
 export const routes: Routes = [
+  // 1. PAGE D'ACCUEIL : L'application s'ouvre ici par défaut
+  {
+    path: '',
+    component: HomePage,
+    pathMatch: 'full',
+  },
+
+  // 2. ROUTES PUBLIQUES
   {
     path: 'jobs',
     component: PublicJobListComponent,
@@ -34,6 +45,8 @@ export const routes: Routes = [
     path: 'login',
     component: LoginComponent,
   },
+
+  // 3. ROUTES PRIVÉES (RH / ADMIN)
   {
     path: 'dashboard',
     component: DashboardComponent,
@@ -64,7 +77,6 @@ export const routes: Routes = [
     component: JobPostingFormComponent,
     canActivate: [authGuard],
   },
-  // ── S2-US7: HR candidate list & detail ──
   {
     path: 'candidates',
     component: CandidatesListComponent,
@@ -75,13 +87,10 @@ export const routes: Routes = [
     component: CandidateDetailComponent,
     canActivate: [authGuard],
   },
-  {
-    path: '',
-    redirectTo: '/dashboard',
-    pathMatch: 'full',
-  },
+
+  // 4. REDIRECTION SI L'URL N'EXISTE PAS
   {
     path: '**',
-    redirectTo: '/login',
+    redirectTo: '', // On retourne à la Home Page
   },
 ];
