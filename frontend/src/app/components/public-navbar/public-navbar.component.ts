@@ -10,7 +10,7 @@ import { I18nService } from '../../services/i18n.service';
   template: `
     <header class="pub-header">
       <div class="pub-header-inner">
-        <a routerLink="/jobs" class="brand">
+        <a routerLink="/home-page" class="brand">
           <img src="assets/logo/iovision-logo.png" alt="IoHire" class="brand-logo" />
           <span class="brand-name">IoHire</span>
         </a>
@@ -43,8 +43,10 @@ import { I18nService } from '../../services/i18n.service';
     :host { display: block; }
 
     .pub-header {
-      background: #fff;
-      border-bottom: 1px solid $gray-200;
+      background: rgba(255, 255, 255, 0.65);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.4);
       position: sticky;
       top: 0;
       z-index: 100;
@@ -135,5 +137,5 @@ import { I18nService } from '../../services/i18n.service';
   `],
 })
 export class PublicNavbarComponent {
-  constructor(public i18n: I18nService) {}
+  constructor(public i18n: I18nService) { }
 }

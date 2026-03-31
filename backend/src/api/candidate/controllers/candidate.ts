@@ -79,9 +79,66 @@ async function sendVerificationCodeEmail(email: string, code: string): Promise<v
     subject: 'Your application tracking verification code',
     text: `Your verification code is ${code}. It expires in ${TRACKING_CODE_TTL_MINUTES} minutes.`,
     html: `
-      <p>Your verification code is:</p>
-      <p style="font-size: 28px; font-weight: 700; letter-spacing: 4px;">${code}</p>
-      <p>This code expires in ${TRACKING_CODE_TTL_MINUTES} minutes.</p>
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Verification Code</title>
+      </head>
+      <body style="margin: 0; padding: 0; background-color: #f5f6fa; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6;">
+        <!-- Wrapper container for email clients that don't support body background color -->
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f5f6fa; padding: 40px 0;">
+          <tr>
+            <td align="center">
+              <!-- Main Email Content -->
+              <table width="600" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05); margin: 0 auto; max-width: 600px;">
+                <!-- Header -->
+                <tr>
+                  <td align="center" style="background: linear-gradient(135deg, #8b1f1f 0%, #5f1010 100%); padding: 35px 20px;">
+                    <h2 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600; letter-spacing: 0.5px;">Verification Code</h2>
+                  </td>
+                </tr>
+                
+                <!-- Body -->
+                <tr>
+                  <td align="center" style="padding: 40px 30px;">
+                    <p style="margin: 0 0 20px; font-size: 16px; color: #3d4358;">
+                      Use the following security code to access your application tracking dashboard.
+                    </p>
+                    
+                    <!-- Code Block -->
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 30px auto; max-width: 320px;">
+                      <tr>
+                        <td align="center" style="background-color: #f9fafb; border: 2px dashed #cbd0dc; border-radius: 12px; padding: 24px;">
+                          <span style="font-size: 36px; font-weight: 800; letter-spacing: 8px; color: #8b1f1f;">${code}</span>
+                        </td>
+                      </tr>
+                    </table>
+                    
+                    <p style="margin: 0; font-size: 15px; color: #5a6278;">
+                      This code expires in <strong style="color: #252b3b;">${TRACKING_CODE_TTL_MINUTES} minutes</strong>.<br>Please do not share it with anyone.
+                    </p>
+                  </td>
+                </tr>
+                
+                <!-- Footer -->
+                <tr>
+                  <td align="center" style="background-color: #f9fafb; border-top: 1px solid #e5e8ef; padding: 24px;">
+                    <p style="margin: 0; font-size: 13px; color: #9aa0b4;">
+                      If you didn't request this code, you can safely ignore this email.<br>
+                      &copy; ${new Date().getFullYear()} Recruitment Team. All rights reserved.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+              <p style="text-align: center; margin-top: 20px; font-size: 12px; color: #9aa0b4;">
+                This is an automated message, please do not reply.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
     `,
   });
 }

@@ -1,0 +1,341 @@
+<app-public-navbar></app-public-navbar>
+
+<section class="landing">
+  <div class="landing-bg">
+    <div class="landing-bg__gradient" [style.transform]="'translateY(' + scrollY() * 0.25 + 'px)'"></div>
+    <div class="landing-bg__blob landing-bg__blob--a"></div>
+    <div class="landing-bg__blob landing-bg__blob--b"></div>
+    <div class="landing-bg__blob landing-bg__blob--c"></div>
+    <div class="landing-bg__blob landing-bg__blob--d"></div>
+    <div class="landing-bg__blob landing-bg__blob--e"></div>
+
+    <!-- Floating shapes & particles (Login style) -->
+    <div class="floating-shapes" [style.transform]="'translateY(' + scrollY() * -0.15 + 'px)'">
+      <div class="shape shape-1"></div>
+      <div class="shape shape-2"></div>
+      <div class="shape shape-3"></div>
+      <div class="shape shape-4"></div>
+      <div class="shape shape-5"></div>
+    </div>
+    <div class="particles" [style.transform]="'translateY(' + scrollY() * -0.1 + 'px)'">
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+    </div>
+  </div>
+
+  <div class="landing-section container container--wide">
+    <div class="landing-hero">
+      <div class="landing-badge landing-animate landing-animate--1">
+        <lucide-icon [img]="iconBuilding2" [size]="14" />
+        <span>{{ i18n.t('home.hero.poweredBy') }} {{ companyName }}</span>
+        <span class="dot">.</span>
+        <lucide-icon [img]="iconMapPin" [size]="14" />
+        <span>{{ i18n.t(companyLocation) }}</span>
+      </div>
+
+      <div class="landing-logo-wrap landing-animate landing-animate--2">
+        <div class="landing-logo-glow"></div>
+        <div class="landing-logo">
+          <img src="assets/logo/iovision-logo.png" alt="{{ productName }} logo" width="54" height="54" decoding="async" />
+        </div>
+      </div>
+
+      <h1 class="landing-title landing-animate landing-animate--3">
+        {{ productName }}
+        <span>{{ typedText() }}</span><span class="cursor">|</span>
+      </h1>
+
+      <p class="landing-subtitle landing-animate landing-animate--4">
+        {{ i18n.t('home.hero.subtitle') }}
+      </p>
+
+      <div class="landing-cta landing-animate landing-animate--5">
+        <a class="btn btn--primary landing-cta__btn" routerLink="/dashboard">
+          <lucide-icon [img]="iconBarChart3" [size]="16" />
+          <span>{{ i18n.t('home.hero.cta.dashboard') }}</span>
+          <lucide-icon [img]="iconArrowRight" [size]="16" />
+        </a>
+        <a class="btn landing-cta__btn" routerLink="/jobs">
+          <lucide-icon [img]="iconUpload" [size]="16" />
+          <span>{{ i18n.t('home.hero.cta.portal') }}</span>
+          <lucide-icon [img]="iconArrowRight" [size]="16" />
+        </a>
+      </div>
+
+      <div class="landing-stats landing-animate landing-animate--6">
+        @for (stat of stats(); track stat.label; let idx = $index) {
+        <article class="landing-stat card" appRevealOnScroll [revealDelay]="idx * 80">
+          <div class="landing-stat__value">{{ stat.displayValue }}</div>
+          <div class="landing-stat__label">{{ i18n.t(stat.label) }}</div>
+        </article>
+        }
+      </div>
+    </div>
+  </div>
+
+  @defer (on viewport) {
+  <div class="landing-section landing-section--solid">
+    <div class="container container--wide">
+      <div class="landing-heading" appRevealOnScroll>
+        <h2>{{ i18n.t('home.obj.title') }}</h2>
+        <p>{{ i18n.t('home.obj.subtitle') }}</p>
+      </div>
+      <div class="feature-grid">
+        @for (feature of features; track feature.title; let i = $index) {
+        <article class="feature-card card" appRevealOnScroll [revealDelay]="i * 80" (mouseenter)="setActiveFeature(i)"
+          [class.is-active]="activeFeature() === i">
+          <div class="feature-icon">
+            <lucide-icon [img]="feature.icon" [size]="26" />
+          </div>
+          <h3>{{ i18n.t(feature.title) }}</h3>
+          <p>{{ i18n.t(feature.description) }}</p>
+        </article>
+        }
+      </div>
+    </div>
+  </div>
+  } @placeholder {
+  <div class="landing-section landing-section--solid">
+    <div class="container container--wide">
+      <div class="card landing-skeleton"></div>
+    </div>
+  </div>
+  }
+
+  @defer (on viewport) {
+  <div class="landing-section">
+    <div class="container container--wide">
+      <!-- Glassmorphic Company Section -->
+      <div class="company company-glass" appRevealOnScroll>
+
+        <div class="company__left">
+          <!-- Phone mockup wrapper -->
+          <div class="phone-mockup">
+            <div class="phone-notch"></div>
+            <div class="phone-screen">
+
+              <!-- iOS Status Bar -->
+              <div class="phone-status-bar">
+                <span class="time">9:41</span>
+                <div class="status-icons">
+                  <lucide-icon [img]="iconSignal" [size]="14"></lucide-icon>
+                  <lucide-icon [img]="iconWifi" [size]="14"></lucide-icon>
+                  <lucide-icon [img]="iconBatteryFull" [size]="14"></lucide-icon>
+                </div>
+              </div>
+
+              <!-- App Header -->
+              <div class="phone-app-header">
+                <div class="back-btn">
+                  <lucide-icon [img]="iconArrowRight" [size]="16" style="transform: rotate(180deg);" />
+                  <span>{{ i18n.t('home.company.about') }}</span>
+                </div>
+                <div class="app-profile">
+                  <lucide-icon [img]="iconBuilding2" [size]="18" />
+                </div>
+              </div>
+
+              <!-- Main Title -->
+              <div class="phone-app-title">
+                <h2>{{ companyName }} 🚀</h2>
+                <p class="phone-app-subtitle">{{ i18n.t('home.company.reach') }}</p>
+              </div>
+
+              <!-- Content Cards -->
+              <div class="phone-app-cards">
+                <div class="phone-card emphasis-card">
+                  <div class="card-header">
+                    <span class="pulse-dot"></span> {{ i18n.t('home.company.card1.title') }}
+                  </div>
+                  <h3>{{ i18n.t('home.company.card1.sub') }}</h3>
+                  <div class="fake-graph">
+                    <div class="bar h-60"></div>
+                    <div class="bar h-40"></div>
+                    <div class="bar h-80">
+                    </div>
+                    <div class="bar h-100"></div>
+                    <div class="bar h-30"></div>
+                    <div class="bar h-70"></div>
+                  </div>
+                </div>
+
+                <div class="stats-grid-card">
+                  <div class="stat-mini primary-tint">
+                    <div class="icon-wrap"><lucide-icon [img]="iconMapPin" [size]="16" /></div>
+                    <div class="info">
+                      <span class="label">{{ i18n.t('home.company.stat.location') }}</span>
+                      <span class="value">Sfax, TN</span>
+                    </div>
+                  </div>
+                  <div class="stat-mini secondary-tint">
+                    <div class="icon-wrap"><lucide-icon [img]="iconGlobe" [size]="16" /></div>
+                    <div class="info">
+                      <span class="label">{{ i18n.t('home.company.stat.reach') }}</span>
+                      <span class="value">{{ i18n.t('home.company.stat.reachVal') }}</span>
+                    </div>
+                  </div>
+                  <div class="stat-mini team-tint">
+                    <div class="icon-wrap"><lucide-icon [img]="iconUsers" [size]="16" /></div>
+                    <div class="info">
+                      <span class="label">{{ i18n.t('home.company.stat.team') }}</span>
+                      <span class="value">15+</span>
+                    </div>
+                  </div>
+                  <div class="stat-mini uptime-tint">
+                    <div class="icon-wrap"><lucide-icon [img]="iconActivity" [size]="16" /></div>
+                    <div class="info">
+                      <span class="label">{{ i18n.t('home.company.stat.uptime') }}</span>
+                      <span class="value">99.9%</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="phone-card list-card">
+                  <h4 class="list-title">{{ i18n.t('home.company.contacts') }} 😎</h4>
+                  <div class="list-item">
+                    <div class="icon-bubble contact-mail"><lucide-icon [img]="iconMail" [size]="14" /></div>
+                    <span>contact&#64;iovision.tn</span>
+                  </div>
+                  <div class="list-item">
+                    <div class="icon-bubble contact-phone"><lucide-icon [img]="iconPhone" [size]="14" /></div>
+                    <span>+216 74 XXX XXX</span>
+                  </div>
+                  <div class="list-item">
+                    <div class="icon-bubble contact-web"><lucide-icon [img]="iconGlobe" [size]="14" /></div>
+                    <span>iovision.tn</span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <div class="company__right">
+          <h3>{{ i18n.t('home.expertise.title') }}</h3>
+          <p>{{ i18n.t('home.expertise.subtitle') }}</p>
+          <div class="expertise-list">
+            @for (item of expertise; track item; let idx = $index) {
+            <div class="expertise-item glass-item" appRevealOnScroll [revealDelay]="120 + idx * 60">
+              <div class="expertise-icon-wrap">
+                <lucide-icon [img]="iconCheckCircle" [size]="16" />
+              </div>
+              <span>{{ i18n.t(item) }}</span>
+            </div>
+            }
+          </div>
+          <div class="innovation-box glass-accent" appRevealOnScroll [revealDelay]="300">
+            <div class="innovation-icon-wrap">
+              <lucide-icon [img]="iconAward" [size]="18" />
+            </div>
+            <div>
+              <strong>{{ i18n.t('home.expert.hub.title') }}</strong>
+              <p>{{ i18n.t('home.expert.hub.desc') }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  } @placeholder {
+  <div class="landing-section">
+    <div class="container container--wide">
+      <div class="card landing-skeleton"></div>
+    </div>
+  </div>
+  }
+
+  @defer (on viewport) {
+  <div class="landing-section landing-section--solid">
+    <div class="container container--wide">
+      <div class="landing-heading" appRevealOnScroll>
+        <h2>{{ i18n.t('home.stack.title') }}</h2>
+        <p>{{ i18n.t('home.stack.subtitle') }}</p>
+      </div>
+      <div class="stack-grid">
+        @for (stack of techStack; track stack.name; let idx = $index) {
+        <article class="stack-card card" appRevealOnScroll [revealDelay]="idx * 80">
+          <div class="stack-icon">
+            <lucide-icon [img]="stack.icon" [size]="22" />
+          </div>
+          <h3>{{ i18n.t(stack.category) }}</h3>
+          <p>{{ stack.name }}</p>
+        </article>
+        }
+      </div>
+    </div>
+  </div>
+  } @placeholder {
+  <div class="landing-section landing-section--solid">
+    <div class="container container--wide">
+      <div class="card landing-skeleton"></div>
+    </div>
+  </div>
+  }
+
+  @defer (on viewport) {
+  <div class="landing-section">
+    <div class="container container--wide">
+      <div class="landing-final card" appRevealOnScroll>
+        <!-- Élément 3D dans le footer (CV assis) -->
+        <div class="footer-3d-object">
+          <div class="cv-3d">
+            <div class="cv-face cv-front">
+              <div class="cv-header">
+                <div class="cv-avatar"></div>
+                <div class="cv-lines">
+                  <div class="cv-line title"></div>
+                  <div class="cv-line short"></div>
+                </div>
+              </div>
+              <div class="cv-body-lines">
+                <div class="cv-line long"></div>
+                <div class="cv-line medium"></div>
+                <div class="cv-line long"></div>
+                <div class="cv-line short"></div>
+                <div class="cv-line section"></div>
+                <div class="cv-line long"></div>
+                <div class="cv-line medium"></div>
+              </div>
+            </div>
+            <div class="cv-face cv-back"></div>
+            <div class="cv-face cv-right"></div>
+            <div class="cv-face cv-left"></div>
+            <div class="cv-face cv-top"></div>
+            <div class="cv-face cv-bottom"></div>
+          </div>
+        </div>
+
+        <h2>{{ i18n.t('home.final.title') }}</h2>
+        <p>{{ i18n.t('home.final.subtitle') }}</p>
+        <div class="landing-cta">
+          <a class="btn landing-final__btn" routerLink="/dashboard">
+            <span>{{ i18n.t('home.final.cta.start') }}</span>
+            <lucide-icon [img]="iconArrowRight" [size]="16" />
+          </a>
+          <a class="btn btn--primary landing-final__btn" routerLink="/jobs">
+            <span>{{ i18n.t('home.final.cta.submit') }}</span>
+            <lucide-icon [img]="iconArrowRight" [size]="16" />
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+  } @placeholder {
+  <div class="landing-section">
+    <div class="container container--wide">
+      <div class="card landing-skeleton"></div>
+    </div>
+  </div>
+  }
+</section>
+
+<app-public-footer></app-public-footer>

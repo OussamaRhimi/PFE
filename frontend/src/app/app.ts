@@ -23,7 +23,7 @@ export class App {
   /** Show sidebar shell only for authenticated users on non-public routes */
   showShell(): boolean {
     const url = this.router.url;
-    const publicRoutes = ['/login', '/jobs', '/track', '/withdraw'];
+    const publicRoutes = ['/login', '/', '/jobs', '/track', '/withdraw'];
     if (publicRoutes.some(r => url === r || url.startsWith(r + '?') || url.startsWith(r + '/'))) {
       return false;
     }

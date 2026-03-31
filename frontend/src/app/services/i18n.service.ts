@@ -11,6 +11,74 @@ const TRANSLATIONS: Record<string, Record<Lang, string>> = {
   'nav.jobPostings':     { fr: 'Offres d\'emploi', en: 'Job Postings' },
   'nav.logout':          { fr: 'Déconnexion',     en: 'Logout' },
 
+  // ── Home Page ──
+  'home.hero.poweredBy':      { fr: 'Propulsé par', en: 'Powered by' },
+  'home.hero.subtitle':       { fr: 'Transformez le recrutement avec l\'analyse de CV et le scoring basés sur l\'IA. Réduisez le temps de recrutement et améliorez la qualité de décision avec des données fiables et structurées.', en: 'Transform recruitment with AI-powered CV parsing and candidate scoring. Reduce hiring cycle time and improve decision quality with structured, reliable profile data.' },
+  'home.hero.cta.dashboard':  { fr: 'Tableau de bord RH', en: 'HR Dashboard' },
+  'home.hero.cta.portal':     { fr: 'Portail Candidat', en: 'Candidate Portal' },
+  'home.hero.typedText':      { fr: 'Analyseur de CV et d\'Évaluation', en: 'CV Parser and Evaluation Platform' },
+
+  'home.stats.cvProcessed':   { fr: 'CV Traités', en: 'CVs Processed' },
+  'home.stats.accuracy':      { fr: 'Précision d\'Analyse', en: 'Parsing Accuracy' },
+  'home.stats.timeSaved':     { fr: 'Temps Gagné', en: 'Time Saved' },
+  'home.stats.availability':  { fr: 'Disponibilité', en: 'Availability' },
+
+  'home.obj.title':           { fr: 'Objectifs de la Plateforme', en: 'Platform Objectives' },
+  'home.obj.subtitle':        { fr: 'Tout ce qu\'il faut pour moderniser les flux de recrutement de bout en bout.', en: 'Everything needed to modernize recruitment workflows end to end.' },
+  
+  'home.feat.easyUpload.title': { fr: 'Dépôt de CV Facile', en: 'Easy CV Upload' },
+  'home.feat.easyUpload.desc':  { fr: 'Les candidats soumettent leurs CV directement avec possibilité de pré-remplissage.', en: 'Candidates submit CVs directly with optional pre-filling forms.' },
+  
+  'home.feat.parsing.title':  { fr: 'Analyse Automatique', en: 'Automatic Parsing' },
+  'home.feat.parsing.desc':   { fr: 'Extrayez et structurez automatiquement le nom, les contacts, la formation et l\'expérience.', en: 'Extract and structure name, contact, education, and experience data automatically.' },
+  
+  'home.feat.template.title': { fr: 'Génération de Modèles', en: 'Template Generation' },
+  'home.feat.template.desc':  { fr: 'Générez des modèles de CV standardisés (format entreprise) pour tous les profils.', en: 'Generate standardized company CV templates for all parsed profiles.' },
+  
+  'home.feat.assessment.title': { fr: 'Évaluation Automatisée', en: 'Automated Assessment' },
+  'home.feat.assessment.desc':  { fr: 'Évaluez les candidatures selon leur exhaustivité et leur pertinence pour le poste.', en: 'Score applications by completeness and fit for the open position.' },
+  
+  'home.feat.matching.title': { fr: 'Ciblage de Compatibilité', en: 'Compatibility Matching' },
+  'home.feat.matching.desc':  { fr: 'Comparez automatiquement les profils avec les exigences de l\'offre.', en: 'Match candidate profiles against job requirements automatically.' },
+  
+  'home.feat.gdpr.title':     { fr: 'Conformité RGPD', en: 'GDPR Compliant' },
+  'home.feat.gdpr.desc':      { fr: 'Stockage sécurisé et contrôle des accès (visualisation, téléchargement) basé sur les rôles.', en: 'Secure storage and role-based CV view and download controls.' },
+
+  'home.company.about':       { fr: 'À propos', en: 'About Us' },
+  'home.company.reach':       { fr: 'Sfax · Tunisie · Portée internationale', en: 'Sfax · Tunisia · Global reach' },
+  'home.company.card1.title': { fr: 'Technologie & Innovation', en: 'Tech & Innovation' },
+  'home.company.card1.sub':   { fr: 'Transformation Numérique', en: 'Digital Transformation' },
+  'home.company.stat.location': { fr: 'LOCALITÉ', en: 'LOCATION' },
+  'home.company.stat.reach':  { fr: 'PORTÉE', en: 'REACH' },
+  'home.company.stat.reachVal': { fr: 'Globale', en: 'Global' },
+  'home.company.stat.team':   { fr: 'ÉQUIPE', en: 'TEAM' },
+  'home.company.stat.uptime': { fr: 'DISPO', en: 'UPTIME' },
+  'home.company.contacts':    { fr: 'Contacts', en: 'Contacts' },
+
+  'home.expertise.title':     { fr: 'Notre Expertise', en: 'Our Expertise' },
+  'home.expertise.subtitle':  { fr: 'Nous combinons les talents locaux avec les standards d\'ingénierie globaux pour concevoir des produits impactants.', en: 'We combine local talent with global engineering standards to build high-impact products.' },
+  
+  'home.exp.softDev':         { fr: 'Développement Logiciel', en: 'Software Development' },
+  'home.exp.ai':              { fr: 'IA et Machine Learning', en: 'AI and Machine Learning' },
+  'home.exp.cloud':           { fr: 'Solutions Cloud', en: 'Cloud Solutions' },
+  'home.exp.digital':         { fr: 'Transformation Numérique', en: 'Digital Transformation' },
+  
+  'home.expert.hub.title':    { fr: 'Pôle d\'Innovation', en: 'Innovation Hub' },
+  'home.expert.hub.desc':     { fr: 'Sfax est l\'un des centres technologiques majeurs en Tunisie avec un écosystème en pleine croissance.', en: 'Sfax is one of Tunisia\'s strongest technology centers with a growing software ecosystem.' },
+
+  'home.stack.title':         { fr: 'Stack Technique', en: 'Technical Stack' },
+  'home.stack.subtitle':      { fr: 'Conçu avec des technologies modernes et prêtes pour l\'entreprise.', en: 'Built with modern enterprise-ready technologies.' },
+
+  'home.stack.cat.frontend':  { fr: 'Frontend', en: 'Frontend' },
+  'home.stack.cat.backend':   { fr: 'Backend', en: 'Backend' },
+  'home.stack.cat.database':  { fr: 'Base de données', en: 'Database' },
+  'home.stack.cat.deploy':    { fr: 'Déploiement', en: 'Deployment' },
+
+  'home.final.title':         { fr: 'Prêt à transformer vos recrutements ?', en: 'Ready to Transform Your Hiring?' },
+  'home.final.subtitle':      { fr: 'Centralisez les candidatures, évaluez plus vite et identifiez les meilleurs talents avec des données fiables.', en: 'Centralize applications, evaluate faster, and identify top candidates with reliable structured data.' },
+  'home.final.cta.start':     { fr: 'Commencer', en: 'Get Started' },
+  'home.final.cta.submit':    { fr: 'Déposer un CV', en: 'Submit CV' },
+
   // ── Login ──
   'login.welcomeTo':          { fr: 'Bienvenue sur',    en: 'Welcome to' },
   'login.subtitle':           { fr: 'Connectez-vous à votre espace professionnel', en: 'Sign in to your professional workspace' },

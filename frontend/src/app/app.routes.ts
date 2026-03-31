@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { HomePageComponent } from './pages/home-page/home-page.component';
 import { LoginComponent } from './pages/login/login.component';
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
 import { SkillsComponent } from './pages/skills/skills.component';
@@ -14,6 +15,11 @@ import { CandidatesListComponent } from './pages/candidates/candidates-list.comp
 import { CandidateDetailComponent } from './pages/candidates/candidate-detail.component';
 
 export const routes: Routes = [
+  {
+    path: '',
+    component: HomePageComponent,
+    pathMatch: 'full',
+  },
   {
     path: 'jobs',
     component: PublicJobListComponent,
@@ -76,12 +82,7 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   {
-    path: '',
-    redirectTo: '/dashboard',
-    pathMatch: 'full',
-  },
-  {
     path: '**',
-    redirectTo: '/login',
+    redirectTo: '/',
   },
 ];
