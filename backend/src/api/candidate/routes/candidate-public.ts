@@ -1,5 +1,77 @@
 export default {
   routes: [
+    // ── S3-US6: CV Templates catalog ──
+    {
+      method: 'GET',
+      path: '/cv-templates',
+      handler: 'candidate.listCvTemplates',
+      config: {
+        auth: false,
+        policies: [],
+        middlewares: [],
+        description: 'List all available CV templates',
+      },
+    },
+    // ── S3-US6: Update candidate CV template ──
+    {
+      method: 'PUT',
+      path: '/candidates/:id/template',
+      handler: 'candidate.updateTemplate',
+      config: {
+        auth: false,
+        policies: [],
+        middlewares: [],
+        description: 'HR endpoint – update candidate CV template selection',
+      },
+    },
+    // ── S3-US7: Download CV as PDF ──
+    {
+      method: 'GET',
+      path: '/candidates/:id/cv-pdf',
+      handler: 'candidate.downloadCvPdf',
+      config: {
+        auth: false,
+        policies: [],
+        middlewares: [],
+        description: 'Download standardized CV as PDF (HR or public token)',
+      },
+    },
+    // ── S3-US8: Reprocess candidate ──
+    {
+      method: 'PUT',
+      path: '/candidates/:id/reprocess',
+      handler: 'candidate.reprocess',
+      config: {
+        auth: false,
+        policies: [],
+        middlewares: [],
+        description: 'HR endpoint – reset and re-trigger AI pipeline',
+      },
+    },
+    // ── S3-US5: CV Preview ──
+    {
+      method: 'GET',
+      path: '/candidates/:id/cv-preview',
+      handler: 'candidate.getCvPreview',
+      config: {
+        auth: false,
+        policies: [],
+        middlewares: [],
+        description: 'HR endpoint – get CV preview data',
+      },
+    },
+    // ── S3-US1: Manual process trigger ──
+    {
+      method: 'POST',
+      path: '/candidates/:id/process',
+      handler: 'candidate.triggerProcess',
+      config: {
+        auth: false,
+        policies: [],
+        middlewares: [],
+        description: 'HR endpoint – manually trigger AI processing',
+      },
+    },
     // ── S2-US6: HR candidate listing with pagination ──
     {
       method: 'GET',

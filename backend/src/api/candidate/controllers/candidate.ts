@@ -28,8 +28,8 @@ const VALID_STATUS_TRANSITIONS: Record<string, string[]> = {
  */
 const ALLOWED_MIME_TYPES = [
   'application/pdf',
-  'application/msword',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'text/plain',
 ];
 const MAX_FILE_SIZE_MB = 5;
 const TRACKING_CODE_TTL_MINUTES = 15;
@@ -243,7 +243,7 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
 
     if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
       return ctx.badRequest(
-        `Invalid file type "${mimeType}". Allowed: PDF, DOC, DOCX.`
+        `Invalid file type "${mimeType}". Allowed: PDF, DOCX, TXT.`
       );
     }
 
@@ -416,6 +416,7 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
     );
 
     const applications = candidates.map((candidate) => ({
+      documentId: candidate.documentId,
       publicToken: candidate.publicToken,
       status: candidate.status,
       jobTitle: (candidate as any).job_posting?.title || null,
@@ -456,6 +457,7 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
 
     return ctx.send({
       data: {
+        documentId: candidate.documentId,
         fullName: candidate.fullName,
         email: candidate.email,
         status: candidate.status,
@@ -769,6 +771,250 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
         documentId: updated.documentId,
         hrNotes: (updated as any).hrNotes,
         updatedAt: updated.updatedAt,
+      },
+    });
+  },
+
+  // ─────────────────────────────────────────────────────────────
+  //  S3-US6: GET /api/cv-templates   (public)
+  //  Returns list of available CV templates
+  // ─────────────────────────────────────────────────────────────
+  async listCvTemplates(ctx) {
+    const { CV_TEMPLATES } = await import('../services/candidate');
+    return ctx.send({ data: CV_TEMPLATES });
+  },
+
+  // ─────────────────────────────────────────────────────────────
+  //  S3-US6: PUT /api/candidates/:id/template   (HR)
+  //  Update candidate's selected CV template
+  // ─────────────────────────────────────────────────────────────
+  async updateTemplate(ctx) {
+    const { id } = ctx.params;
+    const { templateKey } = ctx.request.body as any;
+
+    if (!id) {
+      return ctx.badRequest('Candidate ID is required.');
+    }
+
+    const { isCvTemplateKey } = await import('../services/candidate');
+
+    if (!isCvTemplateKey(templateKey)) {
+      return ctx.badRequest(`Invalid template key: ${templateKey}`);
+    }
+
+    const candidate = await strapi.documents('api::candidate.candidate').findOne({
+      documentId: id,
+    });
+
+    if (!candidate) {
+      return ctx.notFound('Candidate not found.');
+    }
+
+    const updated = await strapi.documents('api::candidate.candidate').update({
+      documentId: id,
+      data: { cvTemplateKey: templateKey } as any,
+    });
+
+    return ctx.send({
+      data: {
+        documentId: updated.documentId,
+        cvTemplateKey: (updated as any).cvTemplateKey,
+        updatedAt: updated.updatedAt,
+      },
+    });
+  },
+
+  // ─────────────────────────────────────────────────────────────
+  //  S3-US7: GET /api/candidates/:id/cv-pdf   (HR or public token)
+  //  Download CV as PDF
+  // ─────────────────────────────────────────────────────────────
+  async downloadCvPdf(ctx) {
+    const { id } = ctx.params;
+    const { token } = ctx.query;
+
+    if (!id) {
+      return ctx.badRequest('Candidate ID is required.');
+    }
+
+    const candidate = await strapi.documents('api::candidate.candidate').findOne({
+      documentId: id,
+    });
+
+    if (!candidate) {
+      return ctx.notFound('Candidate not found.');
+    }
+
+    // Public token access validation
+    if (token && (candidate as any).publicToken !== token) {
+      return ctx.forbidden('Invalid access token.');
+    }
+
+    const cvMarkdown = (candidate as any).standardizedCvMarkdown;
+    if (!cvMarkdown) {
+      return ctx.badRequest('CV not yet generated. Please wait for processing to complete.');
+    }
+
+    const { markdownToHtml, convertHtmlToPdf } = await import('../services/candidate');
+
+    const html = markdownToHtml(cvMarkdown);
+    const pdfBuffer = await convertHtmlToPdf(html);
+
+    const filename = `${(candidate as any).fullName || 'candidate'}-CV.pdf`.replace(/[^a-zA-Z0-9.-]/g, '_');
+
+    ctx.set('Content-Type', 'application/pdf');
+    ctx.set('Content-Disposition', `attachment; filename="${filename}"`);
+    ctx.body = pdfBuffer;
+  },
+
+  // ─────────────────────────────────────────────────────────────
+  //  S3-US8: PUT /api/candidates/:id/reprocess   (HR)
+  //  Reset status to new and re-trigger AI pipeline
+  // ─────────────────────────────────────────────────────────────
+  async reprocess(ctx) {
+    const { id } = ctx.params;
+
+    if (!id) {
+      return ctx.badRequest('Candidate ID is required.');
+    }
+
+    const candidate = await strapi.documents('api::candidate.candidate').findOne({
+      documentId: id,
+      populate: ['resume', 'job_posting'],
+    });
+
+    if (!candidate) {
+      return ctx.notFound('Candidate not found.');
+    }
+
+    // Reset AI-related fields
+    await strapi.documents('api::candidate.candidate').update({
+      documentId: id,
+      data: {
+        status: 'new',
+        score: 0,
+        extractedData: null,
+        standardizedCvMarkdown: null,
+      },
+    });
+
+    // Get the internal ID for processing
+    const internalCandidate = await strapi.entityService.findMany('api::candidate.candidate', {
+      filters: { documentId: id } as any,
+      limit: 1,
+    });
+
+    if (internalCandidate && internalCandidate.length > 0) {
+      const { processCandidate } = await import('../services/candidate');
+
+      // Re-trigger pipeline (async - don't await)
+      processCandidate((internalCandidate[0] as any).id, strapi).catch((err) => {
+        console.error(`Reprocess failed for candidate ${id}:`, err);
+      });
+    }
+
+    return ctx.send({
+      data: {
+        success: true,
+        message: 'Reprocessing started',
+        documentId: id,
+      },
+    });
+  },
+
+  // ─────────────────────────────────────────────────────────────
+  //  S3-US5: GET /api/candidates/:id/cv-preview   (HR)
+  //  Get standardized CV markdown for preview
+  // ─────────────────────────────────────────────────────────────
+  async getCvPreview(ctx) {
+    const { id } = ctx.params;
+
+    if (!id) {
+      return ctx.badRequest('Candidate ID is required.');
+    }
+
+    const candidate = await strapi.documents('api::candidate.candidate').findOne({
+      documentId: id,
+    });
+
+    if (!candidate) {
+      return ctx.notFound('Candidate not found.');
+    }
+
+    const cvMarkdown = (candidate as any).standardizedCvMarkdown;
+    const extractedData = (candidate as any).extractedData;
+
+    if (!cvMarkdown) {
+      return ctx.send({
+        data: {
+          status: candidate.status,
+          cvReady: false,
+          message: 'CV not yet generated',
+        },
+      });
+    }
+
+    const { markdownToHtml } = await import('../services/candidate');
+
+    return ctx.send({
+      data: {
+        cvReady: true,
+        status: candidate.status,
+        cvMarkdown,
+        cvHtml: markdownToHtml(cvMarkdown),
+        extractedData,
+        score: candidate.score,
+        cvTemplateKey: (candidate as any).cvTemplateKey || 'standard',
+      },
+    });
+  },
+
+  // ─────────────────────────────────────────────────────────────
+  //  S3-US1: POST /api/candidates/:id/process   (HR - manual trigger)
+  //  Manually trigger AI pipeline processing
+  // ─────────────────────────────────────────────────────────────
+  async triggerProcess(ctx) {
+    const { id } = ctx.params;
+
+    if (!id) {
+      return ctx.badRequest('Candidate ID is required.');
+    }
+
+    const candidate = await strapi.documents('api::candidate.candidate').findOne({
+      documentId: id,
+      populate: ['resume', 'job_posting'],
+    });
+
+    if (!candidate) {
+      return ctx.notFound('Candidate not found.');
+    }
+
+    if (candidate.status !== 'new' && candidate.status !== 'error') {
+      return ctx.badRequest(`Cannot process candidate in status "${candidate.status}". Status must be "new" or "error".`);
+    }
+
+    // Get the internal ID for processing
+    const internalCandidate = await strapi.entityService.findMany('api::candidate.candidate', {
+      filters: { documentId: id } as any,
+      limit: 1,
+    });
+
+    if (!internalCandidate || internalCandidate.length === 0) {
+      return ctx.notFound('Candidate internal record not found.');
+    }
+
+    const { processCandidate } = await import('../services/candidate');
+
+    // Trigger pipeline (async - don't await)
+    processCandidate((internalCandidate[0] as any).id, strapi).catch((err) => {
+      console.error(`Processing failed for candidate ${id}:`, err);
+    });
+
+    return ctx.send({
+      data: {
+        success: true,
+        message: 'Processing started',
+        documentId: id,
+        status: 'processing',
       },
     });
   },

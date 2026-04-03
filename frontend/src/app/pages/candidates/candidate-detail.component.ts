@@ -2,7 +2,14 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
-import { CandidateService, CandidateDetail } from '../../services/candidate.service';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import {
+  CandidateService,
+  CandidateDetail,
+  CvTemplateMeta,
+  CvTemplateKey,
+  CvPreviewResponse
+} from '../../services/candidate.service';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
@@ -245,6 +252,205 @@ import { AuthService } from '../../services/auth.service';
             </div>
           </ng-template>
         </div>
+
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!-- SPRINT 3: AI Processing Actions -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <div class="ai-actions-section">
+          <div class="section-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"/><path d="M7.5 13a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/><path d="M16.5 13a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/></svg>
+            AI Processing
+          </div>
+
+          <div class="ai-actions-row">
+            <!-- Status indicator with spinner for processing -->
+            <div class="ai-status-indicator" [ngClass]="'status-' + candidate.status">
+              <div class="status-icon-wrapper">
+                <!-- Processing spinner -->
+                <svg *ngIf="candidate.status === 'processing'" class="spinner" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="32"/>
+                </svg>
+                <!-- Processed check -->
+                <svg *ngIf="candidate.status === 'processed'" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                <!-- Error icon -->
+                <svg *ngIf="candidate.status === 'error'" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+                </svg>
+                <!-- New/pending icon -->
+                <svg *ngIf="candidate.status === 'new'" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                <!-- Other statuses -->
+                <svg *ngIf="!['processing', 'processed', 'error', 'new'].includes(candidate.status)" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <circle cx="12" cy="12" r="10"/>
+                </svg>
+              </div>
+              <span class="status-label">{{ getStatusLabel(candidate.status) }}</span>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="ai-action-buttons">
+              <!-- Process button (only for new/error) -->
+              <button
+                *ngIf="candidate.status === 'new' || candidate.status === 'error'"
+                class="btn-ai-action btn-process"
+                (click)="triggerProcess()"
+                [disabled]="processingAction">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                {{ processingAction ? 'Starting...' : 'Process CV' }}
+              </button>
+
+              <!-- Reprocess button (only for processed/error) -->
+              <button
+                *ngIf="candidate.status === 'processed' || candidate.status === 'error'"
+                class="btn-ai-action btn-reprocess"
+                (click)="confirmReprocess()"
+                [disabled]="processingAction">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+                {{ processingAction ? 'Reprocessing...' : 'Reprocess' }}
+              </button>
+
+              <!-- Download CV button -->
+              <a
+                *ngIf="cvPreview?.cvReady"
+                [href]="candidateService.getCvPdfDownloadUrl(candidate.documentId)"
+                target="_blank"
+                class="btn-ai-action btn-download-cv">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Download CV (PDF)
+              </a>
+            </div>
+          </div>
+
+          <div class="alert error ai-error" *ngIf="candidate.status === 'error' && candidate.hrNotes">
+            {{ candidate.hrNotes }}
+          </div>
+
+          <!-- Reprocess confirmation dialog -->
+          <div class="confirm-dialog-overlay" *ngIf="showReprocessConfirm" (click)="cancelReprocess()">
+            <div class="confirm-dialog" (click)="$event.stopPropagation()">
+              <div class="dialog-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              </div>
+              <h3>Reprocess CV?</h3>
+              <p>This will re-parse the CV and recalculate the score. The current extracted data and generated CV will be overwritten.</p>
+              <div class="dialog-actions">
+                <button class="btn-cancel" (click)="cancelReprocess()">Cancel</button>
+                <button class="btn-confirm" (click)="executeReprocess()">Yes, Reprocess</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!-- SPRINT 3: CV Template Picker -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <div class="template-section" *ngIf="cvTemplates.length > 0">
+          <div class="section-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+            CV Template
+          </div>
+
+          <div class="template-grid">
+            <div
+              *ngFor="let template of cvTemplates"
+              class="template-card"
+              [class.selected]="selectedTemplateKey === template.key"
+              (click)="selectTemplate(template.key)">
+              <div class="template-preview" [ngClass]="'preview-' + template.key">
+                <div class="template-thumb">
+                  <!-- Simple visual representation -->
+                  <div class="thumb-header"></div>
+                  <div class="thumb-content">
+                    <div class="thumb-line"></div>
+                    <div class="thumb-line short"></div>
+                    <div class="thumb-line"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="template-info">
+                <div class="template-name">{{ template.name }}</div>
+                <div class="template-desc">{{ template.description }}</div>
+              </div>
+              <div class="selected-badge" *ngIf="selectedTemplateKey === template.key">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <!-- SPRINT 3: Standardized CV Preview -->
+        <!-- ══════════════════════════════════════════════════════════════════ -->
+        <div class="cv-preview-section" *ngIf="cvPreview?.cvReady">
+          <div class="cv-preview-header">
+            <div class="section-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              Standardized CV Preview
+            </div>
+            <div class="preview-controls">
+              <button class="btn-zoom" (click)="zoomOut()" [disabled]="cvZoom <= 0.5">−</button>
+              <span class="zoom-level">{{ (cvZoom * 100) | number:'1.0-0' }}%</span>
+              <button class="btn-zoom" (click)="zoomIn()" [disabled]="cvZoom >= 1.5">+</button>
+            </div>
+          </div>
+
+          <div class="cv-preview-container" [style.transform]="'scale(' + cvZoom + ')'" [style.transformOrigin]="'top center'">
+            <div class="cv-preview-content" [innerHTML]="sanitizedCvHtml"></div>
+          </div>
+        </div>
+
+        <!-- CV not ready message -->
+        <div class="cv-not-ready" *ngIf="cvPreview && !cvPreview.cvReady && candidate.status !== 'processing'">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#9aa0b4" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <span>{{ cvPreview.message || 'CV not yet generated. Click "Process CV" to start.' }}</span>
+        </div>
+
+        <!-- Extracted Data Summary -->
+        <div class="extracted-data-section" *ngIf="cvPreview?.extractedData">
+          <div class="section-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+            Extracted Data Summary
+          </div>
+
+          <div class="extracted-data-grid">
+            <!-- Skills -->
+            <div class="data-card" *ngIf="cvPreview?.extractedData?.skills?.length">
+              <div class="data-label">Skills ({{ cvPreview?.extractedData?.skills?.length }})</div>
+              <div class="skills-list">
+                <span class="skill-chip" *ngFor="let skill of cvPreview?.extractedData?.skills || []">{{ skill }}</span>
+              </div>
+            </div>
+
+            <!-- Experience -->
+            <div class="data-card" *ngIf="cvPreview?.extractedData?.experience?.length">
+              <div class="data-label">Experience ({{ cvPreview?.extractedData?.experience?.length }} roles)</div>
+              <div class="experience-summary">
+                <div class="exp-item" *ngFor="let exp of (cvPreview?.extractedData?.experience || []).slice(0, 3)">
+                  <strong>{{ exp.title }}</strong> at {{ exp.company }}
+                  <span class="exp-dates">{{ exp.startDate }} - {{ exp.endDate }}</span>
+                </div>
+                <div class="more-indicator" *ngIf="(cvPreview?.extractedData?.experience?.length || 0) > 3">
+                  +{{ (cvPreview?.extractedData?.experience?.length || 0) - 3 }} more
+                </div>
+              </div>
+            </div>
+
+            <!-- Education -->
+            <div class="data-card" *ngIf="cvPreview?.extractedData?.education?.length">
+              <div class="data-label">Education</div>
+              <div class="education-summary">
+                <div class="edu-item" *ngFor="let edu of cvPreview?.extractedData?.education || []">
+                  <strong>{{ edu.degree }}</strong>
+                  <span>{{ edu.school }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </ng-container>
     </div>
   `,
@@ -310,6 +516,10 @@ import { AuthService } from '../../services/auth.service';
       color: $error;
       border: 1px solid rgba($error, 0.2);
       font-size: 14px;
+    }
+
+    .ai-error {
+      margin-top: 12px;
     }
 
     /* Hero */
@@ -658,6 +868,491 @@ import { AuthService } from '../../services/auth.service';
       display: flex;
       gap: 8px;
     }
+
+    /* ══════════════════════════════════════════════════════════════════ */
+    /* SPRINT 3: AI Processing Section */
+    /* ══════════════════════════════════════════════════════════════════ */
+
+    .ai-actions-section {
+      background: #fff;
+      border-radius: 20px;
+      border: 1px solid $gray-200;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+      padding: 24px;
+      margin-top: 24px;
+    }
+
+    .ai-actions-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .ai-status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 20px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .ai-status-indicator.status-new {
+      background: rgba(59, 130, 246, 0.1);
+      color: #2563eb;
+    }
+    .ai-status-indicator.status-processing {
+      background: rgba(245, 158, 11, 0.1);
+      color: #d97706;
+    }
+    .ai-status-indicator.status-processed {
+      background: rgba(34, 197, 94, 0.1);
+      color: #16a34a;
+    }
+    .ai-status-indicator.status-error {
+      background: rgba(239, 68, 68, 0.1);
+      color: #dc2626;
+    }
+    .ai-status-indicator.status-reviewing {
+      background: rgba(139, 92, 246, 0.1);
+      color: #7c3aed;
+    }
+    .ai-status-indicator.status-shortlisted {
+      background: rgba(34, 197, 94, 0.15);
+      color: #15803d;
+    }
+    .ai-status-indicator.status-rejected {
+      background: rgba(239, 68, 68, 0.1);
+      color: #dc2626;
+    }
+    .ai-status-indicator.status-hired {
+      background: rgba(234, 179, 8, 0.15);
+      color: #a16207;
+    }
+
+    .status-icon-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .spinner {
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .ai-action-buttons {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn-ai-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .btn-process {
+      background: linear-gradient(135deg, #16a34a, #22c55e);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
+    }
+    .btn-process:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(22, 163, 74, 0.4);
+    }
+
+    .btn-reprocess {
+      background: linear-gradient(135deg, #d97706, #f59e0b);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3);
+    }
+    .btn-reprocess:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(217, 119, 6, 0.4);
+    }
+
+    .btn-download-cv {
+      background: linear-gradient(135deg, $red-deep, $red);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba($red, 0.3);
+    }
+    .btn-download-cv:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba($red, 0.4);
+    }
+
+    .btn-ai-action:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    /* Confirmation dialog */
+    .confirm-dialog-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .confirm-dialog {
+      background: #fff;
+      border-radius: 20px;
+      padding: 32px;
+      max-width: 420px;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    }
+
+    .dialog-icon {
+      margin-bottom: 16px;
+    }
+
+    .confirm-dialog h3 {
+      margin: 0 0 12px;
+      font-size: 20px;
+      color: $gray-800;
+    }
+
+    .confirm-dialog p {
+      margin: 0 0 24px;
+      color: $gray-600;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .dialog-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    .btn-confirm {
+      padding: 12px 24px;
+      background: linear-gradient(135deg, #d97706, #f59e0b);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-confirm:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(217, 119, 6, 0.4);
+    }
+
+    /* ══════════════════════════════════════════════════════════════════ */
+    /* SPRINT 3: CV Template Picker */
+    /* ══════════════════════════════════════════════════════════════════ */
+
+    .template-section {
+      background: #fff;
+      border-radius: 20px;
+      border: 1px solid $gray-200;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+      padding: 24px;
+      margin-top: 24px;
+    }
+
+    .template-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 16px;
+    }
+
+    .template-card {
+      position: relative;
+      background: $gray-50;
+      border: 2px solid $gray-200;
+      border-radius: 16px;
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .template-card:hover {
+      border-color: $gray-300;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    }
+
+    .template-card.selected {
+      border-color: $red;
+      background: rgba($red, 0.03);
+      box-shadow: 0 0 0 3px rgba($red, 0.1);
+    }
+
+    .template-preview {
+      height: 100px;
+      border-radius: 10px;
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+
+    .template-thumb {
+      width: 100%;
+      height: 100%;
+      background: #fff;
+      padding: 8px;
+      border-radius: 8px;
+      box-shadow: inset 0 0 0 1px $gray-200;
+    }
+
+    .thumb-header {
+      height: 20%;
+      background: linear-gradient(135deg, $red, $red-mid);
+      border-radius: 4px;
+      margin-bottom: 6px;
+    }
+
+    .preview-experience_first .thumb-header { background: linear-gradient(135deg, #667eea, #764ba2); }
+    .preview-skills_first .thumb-header { background: #1f2937; }
+    .preview-compact .thumb-header { background: $gray-600; }
+    .preview-education_first .thumb-header { background: $gray-800; }
+    .preview-project_focus .thumb-header { background: #059669; }
+    .preview-sidebar_photo .thumb-header { background: #111827; }
+    .preview-accent_pink .thumb-header { background: #db2777; }
+    .preview-teal_circle .thumb-header { background: #0d9488; }
+    .preview-navy_gold .thumb-header { background: linear-gradient(135deg, #1e3a5f, #fbbf24); }
+    .preview-sunset .thumb-header { background: linear-gradient(135deg, #f97316, #dc2626, #7c3aed); }
+
+    .thumb-content {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .thumb-line {
+      height: 6px;
+      background: $gray-200;
+      border-radius: 3px;
+    }
+
+    .thumb-line.short {
+      width: 60%;
+    }
+
+    .template-info {
+      text-align: center;
+    }
+
+    .template-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: $gray-800;
+      margin-bottom: 4px;
+    }
+
+    .template-desc {
+      font-size: 11px;
+      color: $gray-400;
+      line-height: 1.3;
+    }
+
+    .selected-badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 24px;
+      height: 24px;
+      background: $red;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+    }
+
+    /* ══════════════════════════════════════════════════════════════════ */
+    /* SPRINT 3: CV Preview */
+    /* ══════════════════════════════════════════════════════════════════ */
+
+    .cv-preview-section {
+      background: #fff;
+      border-radius: 20px;
+      border: 1px solid $gray-200;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+      padding: 24px;
+      margin-top: 24px;
+    }
+
+    .cv-preview-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .preview-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-zoom {
+      width: 32px;
+      height: 32px;
+      border: 1px solid $gray-300;
+      background: #fff;
+      border-radius: 8px;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-zoom:hover:not(:disabled) {
+      background: $gray-100;
+    }
+
+    .btn-zoom:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .zoom-level {
+      font-size: 13px;
+      color: $gray-600;
+      min-width: 40px;
+      text-align: center;
+    }
+
+    .cv-preview-container {
+      background: $gray-100;
+      border-radius: 12px;
+      padding: 24px;
+      max-height: 600px;
+      overflow: auto;
+      transition: transform 0.2s;
+    }
+
+    .cv-preview-content {
+      background: #fff;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      padding: 40px;
+      max-width: 800px;
+      margin: 0 auto;
+      border-radius: 4px;
+    }
+
+    .cv-not-ready {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 40px;
+      color: $gray-400;
+      font-size: 14px;
+      text-align: center;
+      background: #fff;
+      border-radius: 20px;
+      border: 1px solid $gray-200;
+      margin-top: 24px;
+    }
+
+    /* ══════════════════════════════════════════════════════════════════ */
+    /* SPRINT 3: Extracted Data Summary */
+    /* ══════════════════════════════════════════════════════════════════ */
+
+    .extracted-data-section {
+      background: #fff;
+      border-radius: 20px;
+      border: 1px solid $gray-200;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+      padding: 24px;
+      margin-top: 24px;
+    }
+
+    .extracted-data-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .data-card {
+      background: $gray-50;
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .data-label {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: $gray-600;
+      margin-bottom: 12px;
+    }
+
+    .skills-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .skill-chip {
+      padding: 4px 10px;
+      background: rgba($red, 0.08);
+      color: $red-deep;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .experience-summary, .education-summary {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .exp-item, .edu-item {
+      font-size: 13px;
+      color: $gray-700;
+      line-height: 1.4;
+    }
+
+    .exp-item strong, .edu-item strong {
+      color: $gray-800;
+    }
+
+    .exp-dates {
+      display: block;
+      font-size: 11px;
+      color: $gray-400;
+    }
+
+    .more-indicator {
+      font-size: 12px;
+      color: $red;
+      font-weight: 600;
+    }
   `]
 })
 export class CandidateDetailComponent implements OnInit {
@@ -676,10 +1371,20 @@ export class CandidateDetailComponent implements OnInit {
   notesDraft = '';
   notesSaving = false;
 
+  // S3: AI Pipeline state
+  cvTemplates: CvTemplateMeta[] = [];
+  selectedTemplateKey: CvTemplateKey = 'standard';
+  cvPreview: CvPreviewResponse | null = null;
+  sanitizedCvHtml: SafeHtml | null = null;
+  cvZoom = 1;
+  processingAction = false;
+  showReprocessConfirm = false;
+
   constructor(
     private route: ActivatedRoute,
-    private candidateService: CandidateService,
-    private authService: AuthService
+    public candidateService: CandidateService,
+    private authService: AuthService,
+    private sanitizer: DomSanitizer
   ) {}
 
   ngOnInit(): void {
@@ -690,16 +1395,46 @@ export class CandidateDetailComponent implements OnInit {
     }
     this.downloadUrl = this.buildDownloadUrl(id);
     this.load(id);
+    this.loadCvTemplates();
   }
 
   load(id: string): void {
     this.loading = true;
     this.candidateService.getHrDetail(id).subscribe({
-      next: (data) => { this.candidate = data; this.loading = false; },
+      next: (data) => {
+        this.candidate = data;
+        this.loading = false;
+        this.selectedTemplateKey = (data as any).cvTemplateKey || 'standard';
+        this.loadCvPreview(id);
+      },
       error: (err) => {
         this.error = err?.error?.error?.message || 'Failed to load candidate details.';
         this.loading = false;
       }
+    });
+  }
+
+  // S3: Load CV templates
+  loadCvTemplates(): void {
+    this.candidateService.getCvTemplates().subscribe({
+      next: (templates) => { this.cvTemplates = templates; },
+      error: (err) => { console.error('Failed to load CV templates:', err); }
+    });
+  }
+
+  // S3: Load CV preview
+  loadCvPreview(id: string): void {
+    this.candidateService.getCvPreview(id).subscribe({
+      next: (preview) => {
+        this.cvPreview = preview;
+        if (preview.cvHtml) {
+          this.sanitizedCvHtml = this.sanitizer.bypassSecurityTrustHtml(preview.cvHtml);
+        }
+        if (preview.cvTemplateKey) {
+          this.selectedTemplateKey = preview.cvTemplateKey;
+        }
+      },
+      error: (err) => { console.error('Failed to load CV preview:', err); }
     });
   }
 
@@ -795,5 +1530,154 @@ export class CandidateDetailComponent implements OnInit {
     this.editingStatus = false;
     this.editingNotes = false;
     this.notesDraft = '';
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // SPRINT 3: AI Pipeline Methods
+  // ══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Get human-readable status label
+   */
+  getStatusLabel(status: string): string {
+    const labels: Record<string, string> = {
+      new: 'New - Ready to Process',
+      processing: 'Processing CV...',
+      processed: 'CV Processed',
+      reviewing: 'Under Review',
+      shortlisted: 'Shortlisted',
+      rejected: 'Rejected',
+      hired: 'Hired',
+      error: 'Processing Error'
+    };
+    return labels[status] || status;
+  }
+
+  /**
+   * S3-US1: Trigger AI processing
+   */
+  triggerProcess(): void {
+    if (!this.candidate) return;
+
+    this.processingAction = true;
+    this.candidateService.triggerProcess(this.candidate.documentId).subscribe({
+      next: () => {
+        if (this.candidate) {
+          this.candidate.status = 'processing';
+        }
+        this.processingAction = false;
+        // Poll for completion
+        this.pollForCompletion();
+      },
+      error: (err) => {
+        this.error = err?.error?.error?.message || 'Failed to start processing.';
+        this.processingAction = false;
+      }
+    });
+  }
+
+  /**
+   * S3-US8: Show reprocess confirmation dialog
+   */
+  confirmReprocess(): void {
+    this.showReprocessConfirm = true;
+  }
+
+  /**
+   * Cancel reprocess
+   */
+  cancelReprocess(): void {
+    this.showReprocessConfirm = false;
+  }
+
+  /**
+   * S3-US8: Execute reprocessing
+   */
+  executeReprocess(): void {
+    if (!this.candidate) return;
+
+    this.showReprocessConfirm = false;
+    this.processingAction = true;
+
+    this.candidateService.reprocess(this.candidate.documentId).subscribe({
+      next: () => {
+        if (this.candidate) {
+          this.candidate.status = 'processing';
+        }
+        this.processingAction = false;
+        this.cvPreview = null;
+        this.sanitizedCvHtml = null;
+        // Poll for completion
+        this.pollForCompletion();
+      },
+      error: (err) => {
+        this.error = err?.error?.error?.message || 'Failed to reprocess.';
+        this.processingAction = false;
+      }
+    });
+  }
+
+  /**
+   * Poll for processing completion
+   */
+  pollForCompletion(): void {
+    if (!this.candidate) return;
+
+    const id = this.candidate.documentId;
+    const poll = setInterval(() => {
+      this.candidateService.getHrDetail(id).subscribe({
+        next: (data) => {
+          if (data.status !== 'processing') {
+            clearInterval(poll);
+            this.candidate = data;
+            this.loadCvPreview(id);
+          }
+        },
+        error: () => {
+          clearInterval(poll);
+        }
+      });
+    }, 3000); // Poll every 3 seconds
+
+    // Stop polling after 2 minutes
+    setTimeout(() => clearInterval(poll), 120000);
+  }
+
+  /**
+   * S3-US6: Select CV template
+   */
+  selectTemplate(key: CvTemplateKey): void {
+    if (!this.candidate || key === this.selectedTemplateKey) return;
+
+    this.selectedTemplateKey = key;
+    this.candidateService.updateCvTemplate(this.candidate.documentId, key).subscribe({
+      next: () => {
+        // If already processed, reprocess to regenerate CV with new template
+        if (this.candidate?.status === 'processed') {
+          this.executeReprocess();
+        }
+      },
+      error: (err) => {
+        this.error = err?.error?.error?.message || 'Failed to update template.';
+      }
+    });
+  }
+
+  /**
+   * Zoom in CV preview
+   */
+  zoomIn(): void {
+    if (this.cvZoom < 1.5) {
+      this.cvZoom += 0.1;
+    }
+  }
+
+  /**
+   * Zoom out CV preview
+   */
+  zoomOut(): void {
+    if (this.cvZoom > 0.5) {
+      this.cvZoom -= 0.1;
+    }
   }
 }

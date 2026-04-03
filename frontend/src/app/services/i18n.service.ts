@@ -295,6 +295,7 @@ const TRANSLATIONS: Record<string, Record<Lang, string>> = {
   'track.jobTitle':           { fr: 'Poste',                    en: 'Position' },
   'track.appliedAt':          { fr: 'Date de candidature',      en: 'Applied on' },
   'track.retentionUntil':     { fr: 'Données conservées jusqu\'au', en: 'Data retained until' },
+  'track.downloadCv':         { fr: 'Télécharger le CV',        en: 'Download CV' },
   'track.newSearch':          { fr: 'Nouvelle recherche',       en: 'New Search' },
   'track.withdraw':           { fr: 'Retirer ma candidature',   en: 'Withdraw Application' },
   'track.status_new':         { fr: 'Nouvelle',                 en: 'New' },

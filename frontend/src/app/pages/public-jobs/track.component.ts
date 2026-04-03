@@ -110,6 +110,14 @@ type TrackStep = 'email' | 'code' | 'list';
             </div>
 
             <div class="application-actions">
+              <a
+                *ngIf="app.status === 'processed'"
+                [href]="candidateService.getCvPdfDownloadUrl(app.documentId, app.publicToken)"
+                target="_blank"
+                rel="noopener"
+                class="btn-secondary">
+                {{ i18n.t('track.downloadCv') || 'Download CV' }}
+              </a>
               <a [routerLink]="['/withdraw', app.publicToken]" class="btn-danger">
                 {{ i18n.t('track.withdraw') }}
               </a>
@@ -362,6 +370,8 @@ type TrackStep = 'email' | 'code' | 'list';
       margin-top: 14px;
       display: flex;
       justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
     }
 
     .btn-danger {
@@ -431,7 +441,7 @@ export class TrackComponent implements OnInit {
   info = '';
 
   constructor(
-    private candidateService: CandidateService,
+    public candidateService: CandidateService,
     public i18n: I18nService,
     private route: ActivatedRoute,
   ) {}
