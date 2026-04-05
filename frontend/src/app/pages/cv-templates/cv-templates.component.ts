@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { RouterModule } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { CandidateService, CvTemplateKey, CvTemplateMeta } from '../../services/candidate.service';
@@ -62,70 +63,13 @@ import { I18nService } from '../../services/i18n.service';
           </div>
 
           <div class="preview-card">
-            <div class="preview" [ngClass]="getPreviewClass(selectedTemplateKey)">
-              <div class="preview-header">
-                <div>
-                  <div class="preview-name">{{ sample.fullName }}</div>
-                  <div class="preview-role">{{ sample.title }}</div>
-                </div>
-                <div class="preview-meta">
-                  <div>{{ sample.email }}</div>
-                  <div>{{ sample.phone }}</div>
-                  <div>{{ sample.location }}</div>
-                </div>
-              </div>
-
-              <div class="preview-body">
-                <div class="preview-side">
-                  <div class="preview-section skills">
-                    <div class="preview-label">Skills</div>
-                    <div class="preview-tags">
-                      <span *ngFor="let skill of sample.skills">{{ skill }}</span>
-                    </div>
-                  </div>
-
-                  <div class="preview-section focus">
-                    <div class="preview-label">Highlights</div>
-                    <ul>
-                      <li *ngFor="let item of sample.highlights">{{ item }}</li>
-                    </ul>
-                  </div>
-                </div>
-
-                <div class="preview-main">
-                  <div class="preview-section summary">
-                    <div class="preview-label">Profile summary</div>
-                    <p>{{ sample.summary }}</p>
-                  </div>
-
-                  <div class="preview-section experience">
-                    <div class="preview-label">Experience</div>
-                    <div class="preview-item" *ngFor="let exp of sample.experience">
-                      <div class="preview-item-title">{{ exp.title }}</div>
-                      <div class="preview-item-sub">{{ exp.company }} • {{ exp.period }}</div>
-                      <ul>
-                        <li *ngFor="let detail of exp.details">{{ detail }}</li>
-                      </ul>
-                    </div>
-                  </div>
-
-                  <div class="preview-section education">
-                    <div class="preview-label">Education</div>
-                    <div class="preview-item">
-                      <div class="preview-item-title">{{ sample.education.degree }}</div>
-                      <div class="preview-item-sub">{{ sample.education.school }} • {{ sample.education.period }}</div>
-                    </div>
-                  </div>
-
-                  <div class="preview-section projects">
-                    <div class="preview-label">Projects</div>
-                    <ul>
-                      <li *ngFor="let project of sample.projects">{{ project }}</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
+            <div class="preview-loading" *ngIf="previewLoading">
+              Loading preview...
             </div>
+            <div class="preview-error" *ngIf="previewError && !previewLoading">
+              {{ previewError }}
+            </div>
+            <div class="preview-shell" *ngIf="previewHtml && !previewLoading" [innerHTML]="previewHtml"></div>
           </div>
         </section>
       </div>
@@ -346,157 +290,35 @@ import { I18nService } from '../../services/i18n.service';
       margin-top: 14px;
     }
 
-    .preview {
+    .preview-loading,
+    .preview-error {
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid $gray-200;
+      padding: 16px;
+      font-size: 13px;
+      color: $gray-600;
+    }
+
+    .preview-error {
+      color: $error;
+      border-color: rgba($error, 0.2);
+      background: #fff5f5;
+    }
+
+    .preview-shell {
       background: #fff;
       border-radius: 12px;
       border: 1px solid $gray-200;
       padding: 18px;
-      color: $gray-700;
-      font-size: 12px;
-      --accent: #8b1f1f;
-      --accent-soft: rgba(139, 31, 31, 0.12);
+      max-height: 720px;
+      overflow: auto;
     }
 
-    .preview-header {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      border-bottom: 1px solid $gray-200;
-      padding-bottom: 12px;
-      margin-bottom: 14px;
+    .preview-shell .cv-container {
+      box-shadow: 0 10px 26px rgba(0, 0, 0, 0.08);
+      margin: 0 auto;
     }
-
-    .preview-name {
-      font-size: 16px;
-      font-weight: 800;
-      color: $gray-800;
-    }
-
-    .preview-role {
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--accent);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .preview-meta {
-      text-align: right;
-      font-size: 11px;
-      color: $gray-400;
-    }
-
-    .preview-body {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 16px;
-    }
-
-    .preview-side,
-    .preview-main {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-
-    .preview-section {
-      background: $gray-50;
-      border: 1px solid $gray-200;
-      border-radius: 12px;
-      padding: 12px;
-    }
-
-    .preview-label {
-      font-size: 11px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: $gray-600;
-      margin-bottom: 8px;
-    }
-
-    .preview-tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-
-    .preview-tags span {
-      background: var(--accent-soft);
-      color: var(--accent);
-      border-radius: 999px;
-      padding: 4px 8px;
-      font-size: 11px;
-      font-weight: 700;
-    }
-
-    .preview-item {
-      margin-bottom: 10px;
-    }
-
-    .preview-item-title {
-      font-weight: 700;
-      color: $gray-800;
-      margin-bottom: 2px;
-    }
-
-    .preview-item-sub {
-      font-size: 11px;
-      color: $gray-400;
-      margin-bottom: 6px;
-    }
-
-    .preview-section ul {
-      padding-left: 16px;
-      margin: 0;
-    }
-
-    .layout-sidebar .preview-body {
-      grid-template-columns: 220px 1fr;
-    }
-
-    .layout-sidebar .preview-side {
-      background: var(--accent-soft);
-      border-radius: 12px;
-      padding: 12px;
-    }
-
-    .layout-compact {
-      font-size: 11px;
-    }
-
-    .layout-compact .preview-section {
-      padding: 10px;
-    }
-
-    .layout-skills-first .preview-side {
-      order: -1;
-    }
-
-    .layout-experience-first .preview-section.experience {
-      order: -1;
-    }
-
-    .layout-education-first .preview-section.education {
-      order: -1;
-    }
-
-    .layout-project-first .preview-section.projects {
-      order: -1;
-    }
-
-    /* Accent themes */
-    .theme-standard { --accent: #8b1f1f; --accent-soft: rgba(139, 31, 31, 0.12); }
-    .theme-experience_first { --accent: #4338ca; --accent-soft: rgba(67, 56, 202, 0.12); }
-    .theme-skills_first { --accent: #111827; --accent-soft: rgba(17, 24, 39, 0.12); }
-    .theme-compact { --accent: #4b5563; --accent-soft: rgba(75, 85, 99, 0.12); }
-    .theme-education_first { --accent: #1f2937; --accent-soft: rgba(31, 41, 55, 0.12); }
-    .theme-project_focus { --accent: #059669; --accent-soft: rgba(5, 150, 105, 0.12); }
-    .theme-sidebar_photo { --accent: #0f172a; --accent-soft: rgba(15, 23, 42, 0.12); }
-    .theme-accent_pink { --accent: #db2777; --accent-soft: rgba(219, 39, 119, 0.12); }
-    .theme-teal_circle { --accent: #0d9488; --accent-soft: rgba(13, 148, 136, 0.12); }
-    .theme-navy_gold { --accent: #1e3a5f; --accent-soft: rgba(30, 58, 95, 0.12); }
-    .theme-sunset { --accent: #ea580c; --accent-soft: rgba(234, 88, 12, 0.12); }
 
     .dot-standard { background: #8b1f1f; box-shadow: 0 0 0 4px rgba(139, 31, 31, 0.15); }
     .dot-experience_first { background: #4338ca; box-shadow: 0 0 0 4px rgba(67, 56, 202, 0.15); }
@@ -519,45 +341,14 @@ export class CvTemplatesComponent implements OnInit {
   saving = false;
   error = '';
   success = '';
-
-  sample = {
-    fullName: 'Amira Ben Salah',
-    title: 'Senior Data Analyst',
-    email: 'amira.bensalah@mail.com',
-    phone: '+216 55 123 456',
-    location: 'Sfax, Tunisia',
-    summary: 'Data analyst with 7 years of experience turning raw data into business decisions. Skilled in KPI design, automation, and stakeholder storytelling.',
-    skills: ['SQL', 'Power BI', 'Python', 'A/B Testing', 'Forecasting'],
-    highlights: [
-      'Built executive dashboards for 12 teams',
-      'Reduced reporting time by 45%',
-      'Automated churn alerts with weekly insights'
-    ],
-    experience: [
-      {
-        title: 'Lead Data Analyst',
-        company: 'Nova Labs',
-        period: '2021 - Present',
-        details: ['Owned KPI framework across growth teams', 'Mentored 4 analysts and aligned metrics']
-      },
-      {
-        title: 'Data Analyst',
-        company: 'Atlas Retail',
-        period: '2018 - 2021',
-        details: ['Optimized sales forecast accuracy by 18%', 'Built self-serve Power BI workspace']
-      }
-    ],
-    education: {
-      degree: 'MSc Applied Statistics',
-      school: 'University of Sfax',
-      period: '2016 - 2018'
-    },
-    projects: ['Customer churn model rollout', 'Sales pipeline automation'],
-  };
+  previewHtml: SafeHtml | null = null;
+  previewLoading = false;
+  previewError = '';
 
   constructor(
     private candidateService: CandidateService,
-    public i18n: I18nService
+    public i18n: I18nService,
+    private sanitizer: DomSanitizer
   ) {}
 
   ngOnInit(): void {
@@ -578,6 +369,7 @@ export class CvTemplatesComponent implements OnInit {
         this.templates = templates;
         this.defaultTemplateKey = defaults.templateKey;
         this.selectedTemplateKey = defaults.templateKey;
+        this.loadPreview(this.selectedTemplateKey);
         this.loading = false;
       },
       error: (err) => {
@@ -590,6 +382,7 @@ export class CvTemplatesComponent implements OnInit {
   selectTemplate(key: CvTemplateKey): void {
     if (this.saving) return;
     this.selectedTemplateKey = key;
+    this.loadPreview(key);
 
     if (key === this.defaultTemplateKey) {
       return;
@@ -605,23 +398,25 @@ export class CvTemplatesComponent implements OnInit {
       error: (err) => {
         this.error = err?.error?.error?.message || this.i18n.t('cvTemplates.saveError');
         this.selectedTemplateKey = this.defaultTemplateKey;
+        this.loadPreview(this.defaultTemplateKey);
         this.saving = false;
       }
     });
   }
 
-  getPreviewClass(key: CvTemplateKey): string {
-    const layout = this.getLayoutClass(key);
-    return `theme-${key} ${layout}`;
-  }
-
-  getLayoutClass(key: CvTemplateKey): string {
-    if (key === 'sidebar_photo' || key === 'navy_gold') return 'layout-sidebar';
-    if (key === 'skills_first') return 'layout-skills-first';
-    if (key === 'experience_first') return 'layout-experience-first';
-    if (key === 'education_first') return 'layout-education-first';
-    if (key === 'project_focus') return 'layout-project-first';
-    if (key === 'compact') return 'layout-compact';
-    return 'layout-standard';
+  loadPreview(key: CvTemplateKey): void {
+    this.previewLoading = true;
+    this.previewError = '';
+    this.candidateService.getCvTemplatePreview(key).subscribe({
+      next: (preview) => {
+        this.previewHtml = this.sanitizer.bypassSecurityTrustHtml(preview.cvHtml);
+        this.previewLoading = false;
+      },
+      error: (err) => {
+        this.previewError = err?.error?.error?.message || 'Failed to load preview.';
+        this.previewHtml = null;
+        this.previewLoading = false;
+      }
+    });
   }
 }

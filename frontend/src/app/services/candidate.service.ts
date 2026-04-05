@@ -305,6 +305,16 @@ export class CandidateService {
   }
 
   /**
+   * S3-US6: Get rendered preview HTML for a CV template
+   */
+  getCvTemplatePreview(templateKey: CvTemplateKey): Observable<CvTemplatePreviewResponse> {
+    const params = new HttpParams().set('templateKey', templateKey);
+    return this.http
+      .get<{ data: CvTemplatePreviewResponse }>('http://localhost:1337/api/cv-templates/preview', { params })
+      .pipe(map(res => res.data));
+  }
+
+  /**
    * S3-US6: Get the persisted default CV template key
    */
   getDefaultCvTemplate(): Observable<{ templateKey: CvTemplateKey }> {
@@ -417,6 +427,12 @@ export interface CvPreviewResponse {
   score?: number;
   cvTemplateKey?: CvTemplateKey;
   message?: string;
+}
+
+export interface CvTemplatePreviewResponse {
+  templateKey: CvTemplateKey;
+  cvMarkdown: string;
+  cvHtml: string;
 }
 
 /** Extracted data from CV parsing */

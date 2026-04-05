@@ -14,6 +14,17 @@ export default {
     },
     {
       method: 'GET',
+      path: '/cv-templates/preview',
+      handler: 'candidate.previewCvTemplate',
+      config: {
+        auth: false,
+        policies: [],
+        middlewares: [],
+        description: 'Get a rendered preview for a CV template key',
+      },
+    },
+    {
+      method: 'GET',
       path: '/cv-templates/default',
       handler: 'candidate.getDefaultCvTemplate',
       config: {

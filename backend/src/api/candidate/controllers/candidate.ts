@@ -785,6 +785,72 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
   },
 
   // ─────────────────────────────────────────────────────────────
+  //  S3-US6: GET /api/cv-templates/preview   (public)
+  //  Return a rendered preview for a given template key
+  // ─────────────────────────────────────────────────────────────
+  async previewCvTemplate(ctx) {
+    const { templateKey } = ctx.query as any;
+    const { isCvTemplateKey, renderCvMarkdownFromTemplate, markdownToHtml } = await import('../services/candidate');
+
+    if (!isCvTemplateKey(templateKey)) {
+      return ctx.badRequest(`Invalid template key: ${templateKey}`);
+    }
+
+    const sampleContact = {
+      fullName: 'Amira Ben Salah',
+      email: 'amira.bensalah@mail.com',
+      phone: '+216 55 123 456',
+      location: 'Sfax, Tunisia',
+    };
+
+    const sampleContent = {
+      summary: 'Data analyst with 7 years of experience turning raw data into business decisions. Skilled in KPI design, automation, and stakeholder storytelling.',
+      skills: ['SQL', 'Power BI', 'Python', 'A/B Testing', 'Forecasting'],
+      experience: [
+        {
+          title: 'Lead Data Analyst',
+          company: 'Nova Labs',
+          startDate: '2021',
+          endDate: 'Present',
+          highlights: ['Owned KPI framework across growth teams', 'Mentored 4 analysts and aligned metrics'],
+        },
+        {
+          title: 'Data Analyst',
+          company: 'Atlas Retail',
+          startDate: '2018',
+          endDate: '2021',
+          highlights: ['Optimized sales forecast accuracy by 18%', 'Built self-serve Power BI workspace'],
+        },
+      ],
+      education: [
+        {
+          degree: 'MSc Applied Statistics',
+          school: 'University of Sfax',
+          startDate: '2016',
+          endDate: '2018',
+        },
+      ],
+      projects: [
+        { name: 'Customer churn model rollout', description: 'Automated churn alerts with weekly insights', links: [] },
+        { name: 'Sales pipeline automation', description: 'Streamlined reporting for sales leadership', links: [] },
+      ],
+      languages: ['French', 'English'],
+      certifications: ['Google Data Analytics'],
+    };
+
+    const cvMarkdown = renderCvMarkdownFromTemplate(templateKey, sampleContact as any, sampleContent as any);
+    const cvHtml = markdownToHtml(cvMarkdown);
+
+    return ctx.send({
+      data: {
+        templateKey,
+        cvMarkdown,
+        cvHtml,
+      },
+    });
+  },
+
+  // ─────────────────────────────────────────────────────────────
   //  S3-US6: GET /api/cv-templates/default   (HR)
   //  Return the persisted default CV template key
   // ─────────────────────────────────────────────────────────────
