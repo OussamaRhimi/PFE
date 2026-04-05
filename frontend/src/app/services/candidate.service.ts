@@ -305,6 +305,24 @@ export class CandidateService {
   }
 
   /**
+   * S3-US6: Get the persisted default CV template key
+   */
+  getDefaultCvTemplate(): Observable<{ templateKey: CvTemplateKey }> {
+    return this.http
+      .get<{ data: { templateKey: CvTemplateKey } }>('http://localhost:1337/api/cv-templates/default')
+      .pipe(map(res => res.data));
+  }
+
+  /**
+   * S3-US6: Set the persisted default CV template key
+   */
+  setDefaultCvTemplate(templateKey: CvTemplateKey): Observable<{ templateKey: CvTemplateKey }> {
+    return this.http
+      .put<{ data: { templateKey: CvTemplateKey } }>('http://localhost:1337/api/cv-templates/default', { templateKey })
+      .pipe(map(res => res.data));
+  }
+
+  /**
    * S3-US6: Update candidate's CV template selection
    */
   updateCvTemplate(id: string, templateKey: CvTemplateKey): Observable<{ documentId: string; cvTemplateKey: string; updatedAt: string }> {
@@ -329,9 +347,13 @@ export class CandidateService {
   /**
    * S3-US5: Get CV preview data (HTML, markdown, extracted data)
    */
-  getCvPreview(id: string): Observable<CvPreviewResponse> {
+  getCvPreview(id: string, templateKey?: CvTemplateKey): Observable<CvPreviewResponse> {
+    let params = new HttpParams();
+    if (templateKey) {
+      params = params.set('templateKey', templateKey);
+    }
     return this.http
-      .get<{ data: CvPreviewResponse }>(`${this.apiUrl}/${id}/cv-preview`)
+      .get<{ data: CvPreviewResponse }>(`${this.apiUrl}/${id}/cv-preview`, { params })
       .pipe(map(res => res.data));
   }
 

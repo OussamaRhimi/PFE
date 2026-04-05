@@ -39,7 +39,7 @@ services:
       DATABASE_PASSWORD: strapi
       DATABASE_SSL: "false"
       OLLAMA_BASE_URL: http://ollama:11434
-      OLLAMA_MODEL: llama3.2
+      OLLAMA_MODEL: llama3.2:3b
     ports:
       - "1337:1337"
     volumes:

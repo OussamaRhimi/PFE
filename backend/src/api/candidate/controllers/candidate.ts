@@ -785,6 +785,37 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
   },
 
   // ─────────────────────────────────────────────────────────────
+  //  S3-US6: GET /api/cv-templates/default   (HR)
+  //  Return the persisted default CV template key
+  // ─────────────────────────────────────────────────────────────
+  async getDefaultCvTemplate(ctx) {
+    const { isCvTemplateKey } = await import('../services/candidate');
+    const store = strapi.store({ type: 'core', name: 'cv-templates' });
+    const stored = await store.get({ key: 'defaultCvTemplateKey' });
+    const templateKey = isCvTemplateKey(stored) ? stored : 'standard';
+
+    return ctx.send({ data: { templateKey } });
+  },
+
+  // ─────────────────────────────────────────────────────────────
+  //  S3-US6: PUT /api/cv-templates/default   (HR)
+  //  Persist the default CV template key
+  // ─────────────────────────────────────────────────────────────
+  async setDefaultCvTemplate(ctx) {
+    const { templateKey } = ctx.request.body as any;
+    const { isCvTemplateKey } = await import('../services/candidate');
+
+    if (!isCvTemplateKey(templateKey)) {
+      return ctx.badRequest(`Invalid template key: ${templateKey}`);
+    }
+
+    const store = strapi.store({ type: 'core', name: 'cv-templates' });
+    await store.set({ key: 'defaultCvTemplateKey', value: templateKey });
+
+    return ctx.send({ data: { templateKey } });
+  },
+
+  // ─────────────────────────────────────────────────────────────
   //  S3-US6: PUT /api/candidates/:id/template   (HR)
   //  Update candidate's selected CV template
   // ─────────────────────────────────────────────────────────────
@@ -927,6 +958,7 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
   // ─────────────────────────────────────────────────────────────
   async getCvPreview(ctx) {
     const { id } = ctx.params;
+    const { templateKey: templateKeyParam } = ctx.query as any;
 
     if (!id) {
       return ctx.badRequest('Candidate ID is required.');
@@ -943,7 +975,21 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
     const cvMarkdown = (candidate as any).standardizedCvMarkdown;
     const extractedData = (candidate as any).extractedData;
 
-    if (!cvMarkdown) {
+    const { markdownToHtml, isCvTemplateKey, renderCvMarkdownFromTemplate } = await import('../services/candidate');
+    const store = strapi.store({ type: 'core', name: 'cv-templates' });
+    const storedDefault = await store.get({ key: 'defaultCvTemplateKey' });
+    const fallbackTemplateKey = isCvTemplateKey(storedDefault) ? storedDefault : 'standard';
+    const candidateTemplateKey = isCvTemplateKey((candidate as any).cvTemplateKey)
+      ? (candidate as any).cvTemplateKey
+      : fallbackTemplateKey;
+    const requestedTemplateKey = isCvTemplateKey(templateKeyParam)
+      ? templateKeyParam
+      : candidateTemplateKey;
+
+    const generatedResumeContent = extractedData?.generatedResumeContent;
+    const hasGeneratedContent = generatedResumeContent && typeof generatedResumeContent === 'object';
+
+    if (!cvMarkdown && !hasGeneratedContent) {
       return ctx.send({
         data: {
           status: candidate.status,
@@ -953,17 +999,45 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
       });
     }
 
-    const { markdownToHtml } = await import('../services/candidate');
+    const pickText = (...values: unknown[]): string | undefined => {
+      for (const value of values) {
+        if (typeof value === 'string' && value.trim()) return value.trim();
+      }
+      return undefined;
+    };
+
+    const contactRaw = extractedData?.contact && typeof extractedData.contact === 'object'
+      ? extractedData.contact
+      : {};
+    const linksRaw = Array.isArray((contactRaw as any).links) ? (contactRaw as any).links : [];
+    const links = linksRaw
+      .map((link: unknown) => (typeof link === 'string' ? link.trim() : ''))
+      .filter(Boolean);
+
+    const contact = {
+      fullName: pickText((contactRaw as any).fullName, candidate.fullName),
+      email: pickText((contactRaw as any).email, candidate.email),
+      phone: pickText((contactRaw as any).phone),
+      location: pickText((contactRaw as any).location),
+      linkedin: pickText((contactRaw as any).linkedin, candidate.linkedin),
+      portfolio: pickText((contactRaw as any).portfolio, candidate.portfolio),
+      links,
+    };
+
+    const previewMarkdown = hasGeneratedContent
+      ? renderCvMarkdownFromTemplate(requestedTemplateKey, contact as any, generatedResumeContent as any)
+      : cvMarkdown;
+    const previewHtml = previewMarkdown ? markdownToHtml(previewMarkdown) : null;
 
     return ctx.send({
       data: {
         cvReady: true,
         status: candidate.status,
-        cvMarkdown,
-        cvHtml: markdownToHtml(cvMarkdown),
+        cvMarkdown: previewMarkdown,
+        cvHtml: previewHtml,
         extractedData,
         score: candidate.score,
-        cvTemplateKey: (candidate as any).cvTemplateKey || 'standard',
+        cvTemplateKey: requestedTemplateKey,
       },
     });
   },

@@ -133,6 +133,7 @@ import { CandidateService, CandidateListItem } from '../../services/candidate.se
     </div>
   `,
   styles: [`
+    @use 'sass:color';
     $red: #8b1f1f;
     $red-deep: #791212;
     $gray-50: #f9fafb;
@@ -343,7 +344,7 @@ import { CandidateService, CandidateListItem } from '../../services/candidate.se
     .badge-reviewing   { background: rgba(#8b5cf6, 0.1); color: #6d28d9; }
     .badge-shortlisted { background: rgba($success, 0.12); color: $success; }
     .badge-rejected    { background: rgba($error, 0.1); color: $error; }
-    .badge-hired       { background: rgba($success, 0.18); color: darken($success, 8%); }
+    .badge-hired       { background: rgba($success, 0.18); color: color.adjust($success, $lightness: -8%); }
     .badge-error       { background: rgba($error, 0.1); color: $error; }
 
     /* Score */

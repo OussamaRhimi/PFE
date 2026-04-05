@@ -195,12 +195,16 @@ const JSON_REPAIR_SYSTEM_PROMPT =
 
 const MONTH_MAP: Array<[RegExp, string]> = [
   [/\bjanvier\b/gi, 'January'],
+  [/\bjanv\.?\b/gi, 'January'],
   [/\bfevrier\b|\bf\u00e9vrier\b/gi, 'February'],
+  [/\bfev\.?\b|\bfevr\.?\b|\bf\u00e9v\.?\b|\bf\u00e9vr\.?\b/gi, 'February'],
   [/\bmars\b/gi, 'March'],
   [/\bavril\b/gi, 'April'],
+  [/\bavr\.?\b/gi, 'April'],
   [/\bmai\b/gi, 'May'],
   [/\bjuin\b/gi, 'June'],
   [/\bjuillet\b/gi, 'July'],
+  [/\bjuil\.?\b|\bjuill\.?\b/gi, 'July'],
   [/\bao[u\u00fb]t\b/gi, 'August'],
   [/\bseptembre\b/gi, 'September'],
   [/\boctobre\b/gi, 'October'],
@@ -210,14 +214,24 @@ const MONTH_MAP: Array<[RegExp, string]> = [
 ];
 
 const SKILL_ALIAS_GROUPS: Record<string, string[]> = {
+  react: ['reactjs', 'react js', 'react.js'],
   vue: ['vuejs', 'vue js', 'vue.js'],
   angular: ['angularjs', 'angular js'],
+  typescript: ['ts', 'type script'],
+  javascript: ['js', 'java script', 'ecmascript', 'es6'],
+  nodejs: ['node js', 'node.js', 'node'],
   nextjs: ['next js', 'next.js'],
-  nodejs: ['node js', 'node.js'],
+  nestjs: ['nest js', 'nest.js'],
   springboot: ['spring boot', 'spring-boot'],
   mongodb: ['mongo db', 'mongo-db', 'mango db', 'mangodb'],
   mysql: ['my sql'],
+  postgresql: ['postgres', 'postgre sql'],
+  expressjs: ['express js', 'express.js'],
+  reactnative: ['react native', 'react-native'],
+  dotnet: ['.net', 'dot net', 'asp.net', 'aspnet'],
+  csharp: ['c#', 'c sharp'],
   tailwindcss: ['tailwind css'],
+  graphql: ['graph ql', 'graph-ql'],
 };
 
 function truncateForModel(text: string, maxChars: number): string {
@@ -245,9 +259,19 @@ function clampScore(value: unknown): number | null {
   return Math.max(0, Math.min(100, Math.round(n * 100) / 100));
 }
 
-function pickTemplateKey(candidate: CandidateEntity): CvTemplateKey {
+function pickTemplateKey(candidate: CandidateEntity, fallback: CvTemplateKey): CvTemplateKey {
   const value = candidate.cvTemplateKey ?? undefined;
-  return isCvTemplateKey(value) ? value : 'standard';
+  return isCvTemplateKey(value) ? value : fallback;
+}
+
+async function getDefaultTemplateKey(strapi: Core.Strapi): Promise<CvTemplateKey> {
+  try {
+    const store = strapi.store({ type: 'core', name: 'cv-templates' });
+    const stored = await store.get({ key: 'defaultCvTemplateKey' });
+    return isCvTemplateKey(stored) ? stored : 'standard';
+  } catch {
+    return 'standard';
+  }
 }
 
 function asTrimmedString(value: unknown): string | null {
@@ -696,11 +720,30 @@ function parseLooseDate(input: unknown): Date | null {
 
   const dmy = /^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/.exec(normalized);
   if (dmy) {
-    const d = Number(dmy[1]);
-    const m = Number(dmy[2]);
+    const a = Number(dmy[1]);
+    const b = Number(dmy[2]);
     const y = Number(dmy[3]);
-    if (y >= 1900 && y <= 2100 && m >= 1 && m <= 12 && d >= 1 && d <= 31) {
-      return new Date(Date.UTC(y, m - 1, d));
+    if (y >= 1900 && y <= 2100 && a >= 1 && a <= 31 && b >= 1 && b <= 31) {
+      const makeDate = (day: number, month: number): Date | null => {
+        if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+        const dt = new Date(Date.UTC(y, month - 1, day));
+        if (dt.getUTCFullYear() !== y || dt.getUTCMonth() !== month - 1 || dt.getUTCDate() !== day) return null;
+        return dt;
+      };
+
+      const dm = makeDate(a, b);
+      const md = makeDate(b, a);
+
+      if (dm && md) {
+        const now = new Date();
+        const dmPast = dm.getTime() <= now.getTime();
+        const mdPast = md.getTime() <= now.getTime();
+        if (dmPast && !mdPast) return dm;
+        if (mdPast && !dmPast) return md;
+        return dm; // default to day/month when ambiguous
+      }
+
+      return dm || md;
     }
   }
 
@@ -719,13 +762,42 @@ function parseLooseDate(input: unknown): Date | null {
   return new Date(parsed);
 }
 
+function parseDateRange(input: unknown): { start: Date | null; end: Date | null } | null {
+  const normalized = normalizeDateText(input);
+  if (!normalized) return null;
+
+  const parts = normalized.split(/\s+(?:-|–|—|to|until|au)\s+/i).map((p) => p.trim()).filter(Boolean);
+  if (parts.length < 2) return null;
+
+  const start = parseLooseDate(parts[0]);
+  const end = parseLooseDate(parts[1]);
+  if (!start && !end) return null;
+
+  return { start, end };
+}
+
 function calculateExperienceYears(parsed: Record<string, unknown>): number {
   const experience = Array.isArray(parsed.experience) ? parsed.experience : [];
   let totalMs = 0;
 
   for (const row of experience as any[]) {
-    const start = parseLooseDate(row?.startDate);
-    const end = parseLooseDate(row?.endDate) ?? new Date();
+    let start = parseLooseDate(row?.startDate);
+    let end = parseLooseDate(row?.endDate);
+
+    if ((!start || !end) && typeof row?.startDate === 'string') {
+      const range = parseDateRange(row.startDate);
+      if (range) {
+        if (!start && range.start) start = range.start;
+        if (!end && range.end) end = range.end;
+      }
+    }
+
+    if (!end) end = new Date();
+    if (start && end && end.getTime() < start.getTime()) {
+      const tmp = start;
+      start = end;
+      end = tmp;
+    }
     if (!start || !end) continue;
     const delta = Math.max(0, end.getTime() - start.getTime());
     totalMs += delta;
@@ -777,13 +849,10 @@ export function deterministicEvaluate(
   const requiredSkills = asStringArray((requirementsObj as any).skillsRequired);
   const niceToHaveSkills = asStringArray((requirementsObj as any).skillsNiceToHave);
 
-  const candidateSkills = normalizeSkills(asStringArray(parsed.skills));
-  const requiredSkillsNorm = normalizeSkills(requiredSkills);
-  const niceToHaveSkillsNorm = normalizeSkills(niceToHaveSkills);
-
-  const skillsMatched = requiredSkills.filter((skill, idx) => candidateSkills.includes(requiredSkillsNorm[idx]));
-  const skillsMissing = requiredSkills.filter((skill, idx) => !candidateSkills.includes(requiredSkillsNorm[idx]));
-  const niceToHaveMatched = niceToHaveSkills.filter((skill, idx) => candidateSkills.includes(niceToHaveSkillsNorm[idx]));
+  const evidence = buildEvidence(parsed);
+  const skillsMatched = requiredSkills.filter((skill) => hasSkillMatch(skill, evidence));
+  const skillsMissing = requiredSkills.filter((skill) => !hasSkillMatch(skill, evidence));
+  const niceToHaveMatched = niceToHaveSkills.filter((skill) => hasSkillMatch(skill, evidence));
 
   const requiredCoverage = requiredSkills.length > 0
     ? (skillsMatched.length / requiredSkills.length) * 100
@@ -948,17 +1017,21 @@ function buildContact(parsed: Record<string, unknown>): ResumeContact {
 
 export async function processCandidate(candidateId: number, strapi: Core.Strapi): Promise<void> {
   const startedAt = Date.now();
+  let stage = 'init';
   const log = (level: 'info' | 'warn' | 'error', message: string) => {
     strapi?.log?.[level]?.(`[candidate-ai] ${message}`);
   };
 
+  stage = 'load-candidate';
   const candidate = (await strapi.entityService.findOne('api::candidate.candidate', candidateId, {
     populate: ['resume', 'job_posting'],
   })) as CandidateEntity | null;
 
   if (!candidate) return;
 
-  const templateKey = pickTemplateKey(candidate);
+  stage = 'load-template';
+  const defaultTemplateKey = await getDefaultTemplateKey(strapi);
+  const templateKey = pickTemplateKey(candidate, defaultTemplateKey);
   const resume = Array.isArray(candidate.resume) ? candidate.resume[0] : candidate.resume;
   if (!resume?.url) return;
 
@@ -968,6 +1041,7 @@ export async function processCandidate(candidateId: number, strapi: Core.Strapi)
   });
 
   try {
+    stage = 'extract-text';
     const t0 = Date.now();
     const cvText = await extractTextFromResume(resume as any, strapi);
     log('info', `candidate ${candidateId} extracted text in ${Date.now() - t0}ms`);
@@ -984,6 +1058,7 @@ export async function processCandidate(candidateId: number, strapi: Core.Strapi)
       ? truncateForModel(cvText, maxCvChars)
       : cvText;
 
+    stage = 'parse-resume';
     const t1 = Date.now();
     const parsedModel = parseModelJson<Record<string, unknown>>(
       await ollamaChat({
@@ -1001,6 +1076,7 @@ export async function processCandidate(candidateId: number, strapi: Core.Strapi)
 
     const parsed = normalizeParsedData(parsedModel.value);
 
+    stage = 'evaluate';
     const t2 = Date.now();
     const evaluation = deterministicEvaluate(candidate.job_posting?.requirements ?? {}, parsed, {
       linkedin: candidate.linkedin ?? undefined,
@@ -1025,6 +1101,7 @@ export async function processCandidate(candidateId: number, strapi: Core.Strapi)
       `Evaluation (JSON):\n${JSON.stringify(evalCompact)}\n\n` +
       'Generate strong but truthful bullet highlights. If some fields are missing, omit the section or use a short placeholder like "(Information not provided)".';
 
+    stage = 'generate-resume';
     const t3 = Date.now();
     const generatedRaw = await ollamaChat({
       system: GENERATOR_SYSTEM_PROMPT,
@@ -1063,6 +1140,7 @@ export async function processCandidate(candidateId: number, strapi: Core.Strapi)
     if (resumeContentModel.recovered) {
       log('warn', `candidate ${candidateId} generator output required JSON recovery`);
     }
+    stage = 'render-template';
     const resumeContent = normalizeGeneratedResumeContent(resumeContentModel.value);
     log('info', `candidate ${candidateId} generated resume content in ${Date.now() - t3}ms`);
 
@@ -1075,6 +1153,7 @@ export async function processCandidate(candidateId: number, strapi: Core.Strapi)
     await strapi.entityService.update('api::candidate.candidate', candidateId, {
       data: {
         status: 'processed',
+        hrNotes: null,
         extractedData: { ...parsed, evaluation, generatedResumeContent: resumeContent, cvTemplateKeyUsed: templateKey },
         ...(evaluation.score !== null ? { score: evaluation.score } : {}),
         standardizedCvMarkdown: markdown,
@@ -1084,10 +1163,12 @@ export async function processCandidate(candidateId: number, strapi: Core.Strapi)
     });
     log('info', `Done candidate ${candidateId} in ${Date.now() - startedAt}ms`);
   } catch (error: any) {
+    const timestamp = new Date().toISOString();
+    const message = error?.message ?? String(error);
     await strapi.entityService.update('api::candidate.candidate', candidateId, {
       data: {
         status: 'error',
-        hrNotes: `AI processing failed: ${error?.message ?? String(error)}`,
+        hrNotes: `AI processing failed (${stage} @ ${timestamp}): ${message}`,
       },
     });
     log('error', `Failed candidate ${candidateId} after ${Date.now() - startedAt}ms: ${error?.message ?? error}`);

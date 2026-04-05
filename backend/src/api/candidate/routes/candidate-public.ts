@@ -12,6 +12,28 @@ export default {
         description: 'List all available CV templates',
       },
     },
+    {
+      method: 'GET',
+      path: '/cv-templates/default',
+      handler: 'candidate.getDefaultCvTemplate',
+      config: {
+        auth: false,
+        policies: [],
+        middlewares: [],
+        description: 'Get the default CV template key',
+      },
+    },
+    {
+      method: 'PUT',
+      path: '/cv-templates/default',
+      handler: 'candidate.setDefaultCvTemplate',
+      config: {
+        auth: false,
+        policies: [],
+        middlewares: [],
+        description: 'Set the default CV template key',
+      },
+    },
     // ── S3-US6: Update candidate CV template ──
     {
       method: 'PUT',

@@ -449,7 +449,24 @@ export interface ApiCandidateCandidate extends Struct.CollectionTypeSchema {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    cvTemplateKey: Schema.Attribute.Enumeration<
+      [
+        'standard',
+        'experience_first',
+        'skills_first',
+        'compact',
+        'education_first',
+        'project_focus',
+        'sidebar_photo',
+        'accent_pink',
+        'teal_circle',
+        'navy_gold',
+        'sunset',
+      ]
+    > &
+      Schema.Attribute.DefaultTo<'standard'>;
     email: Schema.Attribute.Email & Schema.Attribute.Required;
+    extractedData: Schema.Attribute.JSON;
     fullName: Schema.Attribute.String &
       Schema.Attribute.Required &
       Schema.Attribute.SetMinMaxLength<{
@@ -481,6 +498,7 @@ export interface ApiCandidateCandidate extends Struct.CollectionTypeSchema {
     retentionUntil: Schema.Attribute.DateTime;
     score: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
     selfReportedYearsExperience: Schema.Attribute.Integer;
+    standardizedCvMarkdown: Schema.Attribute.Text;
     status: Schema.Attribute.Enumeration<
       [
         'new',

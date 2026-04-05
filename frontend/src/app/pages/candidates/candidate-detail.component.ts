@@ -112,10 +112,10 @@ import { AuthService } from '../../services/auth.service';
                 </button>
               </ng-container>
               <ng-container *ngIf="editingStatus">
-                <select [(ngModel)]="candidate.status" class="status-select" [disabled]="statusSaving">
+                <select [(ngModel)]="statusDraft" class="status-select" [disabled]="statusSaving">
                   <option *ngFor="let status of statusOptions" [value]="status">{{ status }}</option>
                 </select>
-                <button class="btn-save" (click)="saveStatus(candidate.status)" [disabled]="statusSaving">
+                <button class="btn-save" (click)="saveStatus()" [disabled]="statusSaving">
                   {{ statusSaving ? 'Saving...' : 'Save' }}
                 </button>
                 <button class="btn-cancel" (click)="cancelEdit()" [disabled]="statusSaving">Cancel</button>
@@ -345,37 +345,30 @@ import { AuthService } from '../../services/auth.service';
         </div>
 
         <!-- ══════════════════════════════════════════════════════════════════ -->
-        <!-- SPRINT 3: CV Template Picker -->
+        <!-- SPRINT 3: CV Template Override -->
         <!-- ══════════════════════════════════════════════════════════════════ -->
-        <div class="template-section" *ngIf="cvTemplates.length > 0">
+        <div class="template-override-section" *ngIf="cvTemplates.length > 0">
           <div class="section-title">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
-            CV Template
+            CV Template Override
           </div>
 
-          <div class="template-grid">
-            <div
-              *ngFor="let template of cvTemplates"
-              class="template-card"
-              [class.selected]="selectedTemplateKey === template.key"
-              (click)="selectTemplate(template.key)">
-              <div class="template-preview" [ngClass]="'preview-' + template.key">
-                <div class="template-thumb">
-                  <!-- Simple visual representation -->
-                  <div class="thumb-header"></div>
-                  <div class="thumb-content">
-                    <div class="thumb-line"></div>
-                    <div class="thumb-line short"></div>
-                    <div class="thumb-line"></div>
-                  </div>
-                </div>
+          <div class="template-override-card">
+            <div class="template-override-info">
+              <div class="template-override-title">Apply a different template for this candidate</div>
+              <div class="template-override-sub">
+                Global default: <strong>{{ getTemplateName(defaultTemplateKey) }}</strong>
               </div>
-              <div class="template-info">
-                <div class="template-name">{{ template.name }}</div>
-                <div class="template-desc">{{ template.description }}</div>
-              </div>
-              <div class="selected-badge" *ngIf="selectedTemplateKey === template.key">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div class="template-override-control">
+              <select
+                class="template-select"
+                [(ngModel)]="selectedTemplateKey"
+                (change)="selectTemplate(selectedTemplateKey)">
+                <option *ngFor="let template of cvTemplates" [value]="template.key">{{ template.name }}</option>
+              </select>
+              <div class="template-override-note" *ngIf="selectedTemplateKey === defaultTemplateKey">
+                Using global default
               </div>
             </div>
           </div>
@@ -408,53 +401,251 @@ import { AuthService } from '../../services/auth.service';
           <span>{{ cvPreview.message || 'CV not yet generated. Click "Process CV" to start.' }}</span>
         </div>
 
-        <!-- Extracted Data Summary -->
-        <div class="extracted-data-section" *ngIf="cvPreview?.extractedData">
+        <!-- Parsed CV Details -->
+        <div class="parsed-cv-section" *ngIf="cvPreview?.extractedData as extracted">
           <div class="section-title">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
-            Extracted Data Summary
+            Parsed CV Details
           </div>
+          <p class="section-subtitle">This information is extracted automatically from the resume. Review and edit if something looks off.</p>
 
-          <div class="extracted-data-grid">
-            <!-- Skills -->
-            <div class="data-card" *ngIf="cvPreview?.extractedData?.skills?.length">
-              <div class="data-label">Skills ({{ cvPreview?.extractedData?.skills?.length }})</div>
-              <div class="skills-list">
-                <span class="skill-chip" *ngFor="let skill of cvPreview?.extractedData?.skills || []">{{ skill }}</span>
-              </div>
-            </div>
+          <ng-container *ngIf="getExtractedContact(extracted) as contact">
+            <div class="parsed-grid">
+              <section class="parsed-card">
+                <div class="parsed-card-title">Personal details</div>
+                <div class="kv-grid">
+                  <div class="kv-item">
+                    <div class="kv-label">Full name</div>
+                    <div class="kv-value">{{ contact.fullName }}</div>
+                  </div>
+                  <div class="kv-item">
+                    <div class="kv-label">Email</div>
+                    <div class="kv-value">
+                      <a *ngIf="contact.email !== '-'" [href]="'mailto:' + contact.email" class="kv-link">{{ contact.email }}</a>
+                      <span *ngIf="contact.email === '-'">-</span>
+                    </div>
+                  </div>
+                  <div class="kv-item">
+                    <div class="kv-label">Phone</div>
+                    <div class="kv-value">{{ contact.phone }}</div>
+                  </div>
+                  <div class="kv-item">
+                    <div class="kv-label">Location</div>
+                    <div class="kv-value">{{ contact.location }}</div>
+                  </div>
+                </div>
+              </section>
 
-            <!-- Experience -->
-            <div class="data-card" *ngIf="cvPreview?.extractedData?.experience?.length">
-              <div class="data-label">Experience ({{ cvPreview?.extractedData?.experience?.length }} roles)</div>
-              <div class="experience-summary">
-                <div class="exp-item" *ngFor="let exp of (cvPreview?.extractedData?.experience || []).slice(0, 3)">
-                  <strong>{{ exp.title }}</strong> at {{ exp.company }}
-                  <span class="exp-dates">{{ exp.startDate }} - {{ exp.endDate }}</span>
-                </div>
-                <div class="more-indicator" *ngIf="(cvPreview?.extractedData?.experience?.length || 0) > 3">
-                  +{{ (cvPreview?.extractedData?.experience?.length || 0) - 3 }} more
-                </div>
-              </div>
-            </div>
+              <section class="parsed-card">
+                <div class="parsed-card-title">Professional summary</div>
+                <p class="parsed-text">{{ getSummaryText(extracted) }}</p>
+              </section>
 
-            <!-- Education -->
-            <div class="data-card" *ngIf="cvPreview?.extractedData?.education?.length">
-              <div class="data-label">Education</div>
-              <div class="education-summary">
-                <div class="edu-item" *ngFor="let edu of cvPreview?.extractedData?.education || []">
-                  <strong>{{ edu.degree }}</strong>
-                  <span>{{ edu.school }}</span>
+              <section class="parsed-card">
+                <div class="parsed-card-title">Links and profiles</div>
+                <div class="link-list" *ngIf="getContactLinks(extracted).length; else noLinks">
+                  <a class="link-pill" *ngFor="let link of getContactLinks(extracted)" [href]="link.url" target="_blank" rel="noopener">
+                    <span class="link-label">{{ link.label }}</span>
+                    <span class="link-url">{{ link.display }}</span>
+                  </a>
                 </div>
-              </div>
+                <ng-template #noLinks>
+                  <div class="text-muted">No links extracted yet.</div>
+                </ng-template>
+              </section>
+
+              <section class="parsed-card">
+                <div class="parsed-card-title">Skills and competencies</div>
+                <div class="chip-wrap" *ngIf="getSkills(extracted).length; else noSkills">
+                  <span class="chip" *ngFor="let skill of getSkills(extracted)">{{ skill }}</span>
+                </div>
+                <ng-template #noSkills>
+                  <div class="text-muted">No skills extracted yet.</div>
+                </ng-template>
+
+                <div class="chip-subtitle" *ngIf="getCompetencies(extracted).length">Competencies</div>
+                <div class="chip-wrap" *ngIf="getCompetencies(extracted).length">
+                  <span class="chip chip-soft" *ngFor="let comp of getCompetencies(extracted)">{{ comp }}</span>
+                </div>
+              </section>
+
+              <section class="parsed-card span-2" *ngIf="getScoreExplanation(extracted) as scoreExp">
+                <div class="score-header">
+                  <div class="parsed-card-title">Score explanation</div>
+                  <span class="score-pill" [ngClass]="'score-' + scoreExp.qualityTone">{{ scoreExp.qualityLabel }}</span>
+                </div>
+                <p class="score-formula">Final score blends fit and completeness for a quick, reliable screening signal.</p>
+
+                <div class="score-bars">
+                  <div class="score-row">
+                    <div class="score-label">Final score</div>
+                    <div class="score-track">
+                      <div class="score-fill" [style.width.%]="scoreExp.score"></div>
+                    </div>
+                    <div class="score-value">{{ scoreExp.score | number:'1.0-0' }}</div>
+                  </div>
+                  <div class="score-row">
+                    <div class="score-label">Fit score</div>
+                    <div class="score-track">
+                      <div class="score-fill score-fill-alt" [style.width.%]="scoreExp.fitScore"></div>
+                    </div>
+                    <div class="score-value">{{ scoreExp.fitScore | number:'1.0-0' }}</div>
+                  </div>
+                  <div class="score-row">
+                    <div class="score-label">Completeness</div>
+                    <div class="score-track">
+                      <div class="score-fill score-fill-soft" [style.width.%]="scoreExp.completenessScore"></div>
+                    </div>
+                    <div class="score-value">{{ scoreExp.completenessScore | number:'1.0-0' }}</div>
+                  </div>
+                </div>
+
+                <div class="score-details">
+                  <div class="score-block">
+                    <div class="score-subtitle">Required skills</div>
+                    <div class="chip-wrap" *ngIf="scoreExp.skillsMatched.length">
+                      <span class="chip chip-positive" *ngFor="let skill of scoreExp.skillsMatched">{{ skill }}</span>
+                    </div>
+                    <div class="chip-wrap" *ngIf="scoreExp.skillsMissing.length">
+                      <span class="chip chip-negative" *ngFor="let skill of scoreExp.skillsMissing">{{ skill }}</span>
+                    </div>
+                    <div class="text-muted" *ngIf="!scoreExp.skillsMatched.length && !scoreExp.skillsMissing.length">
+                      No required skills listed.
+                    </div>
+                  </div>
+
+                  <div class="score-block">
+                    <div class="score-subtitle">Nice to have skills</div>
+                    <div class="chip-wrap" *ngIf="scoreExp.niceToHaveMatched.length">
+                      <span class="chip chip-soft" *ngFor="let skill of scoreExp.niceToHaveMatched">{{ skill }}</span>
+                    </div>
+                    <div class="text-muted" *ngIf="!scoreExp.niceToHaveMatched.length">No nice to have skills matched.</div>
+                  </div>
+
+                  <div class="score-block">
+                    <div class="score-subtitle">Experience</div>
+                    <div class="score-metric">Detected: {{ scoreExp.experienceYears | number:'1.0-1' }} years</div>
+                    <div class="score-metric" *ngIf="scoreExp.experienceMatch !== null">
+                      Requirement: <span [class.score-ok]="scoreExp.experienceMatch" [class.score-warn]="scoreExp.experienceMatch === false">
+                        {{ scoreExp.experienceMatch ? 'Met' : 'Not met' }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="parsed-card span-2">
+                <div class="parsed-card-title">Work experience</div>
+                <div class="timeline" *ngIf="getExperienceItems(extracted).length; else noExperience">
+                  <div class="timeline-item" *ngFor="let exp of getExperienceItems(extracted)">
+                    <div class="timeline-marker">W</div>
+                    <div class="timeline-body">
+                      <div class="timeline-title">{{ exp.title || 'Role' }}</div>
+                      <div class="timeline-sub">
+                        {{ exp.company || 'Company' }}
+                        <span class="timeline-dot">•</span>
+                        {{ formatDateRange(exp.startDate, exp.endDate) }}
+                      </div>
+                      <ul class="timeline-list" *ngIf="exp.highlights?.length">
+                        <li *ngFor="let h of exp.highlights">{{ h }}</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+                <ng-template #noExperience>
+                  <div class="text-muted">No experience extracted yet.</div>
+                </ng-template>
+              </section>
+
+              <section class="parsed-card">
+                <div class="parsed-card-title">Education</div>
+                <div class="timeline" *ngIf="getEducationItems(extracted).length; else noEducation">
+                  <div class="timeline-item" *ngFor="let edu of getEducationItems(extracted)">
+                    <div class="timeline-marker">E</div>
+                    <div class="timeline-body">
+                      <div class="timeline-title">{{ edu.degree || 'Education' }}</div>
+                      <div class="timeline-sub">
+                        {{ edu.school || 'School' }}
+                        <span class="timeline-dot">•</span>
+                        {{ formatDateRange(edu.startDate, edu.endDate) }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <ng-template #noEducation>
+                  <div class="text-muted">No education extracted yet.</div>
+                </ng-template>
+              </section>
+
+              <section class="parsed-card">
+                <div class="parsed-card-title">Projects</div>
+                <div class="project-grid" *ngIf="getProjects(extracted).length; else noProjects">
+                  <div class="project-card" *ngFor="let proj of getProjects(extracted)">
+                    <div class="project-title">{{ proj.name || 'Project' }}</div>
+                    <div class="project-desc">{{ proj.description || 'No description provided.' }}</div>
+                    <div class="project-links" *ngIf="proj.links.length">
+                      <a *ngFor="let link of proj.links" [href]="normalizeUrl(link)" target="_blank" rel="noopener">{{ link }}</a>
+                    </div>
+                  </div>
+                </div>
+                <ng-template #noProjects>
+                  <div class="text-muted">No projects extracted yet.</div>
+                </ng-template>
+              </section>
+
+              <section class="parsed-card span-2">
+                <div class="parsed-card-title">Additional info</div>
+                <div class="info-group">
+                  <div class="info-label">Certifications</div>
+                  <div class="chip-wrap" *ngIf="getCertifications(extracted).length; else noCerts">
+                    <span class="chip chip-soft" *ngFor="let cert of getCertifications(extracted)">{{ cert }}</span>
+                  </div>
+                  <ng-template #noCerts>
+                    <div class="text-muted">No certifications extracted yet.</div>
+                  </ng-template>
+                </div>
+
+                <div class="info-group">
+                  <div class="info-label">Languages</div>
+                  <div class="chip-wrap" *ngIf="getLanguages(extracted).length; else noLangs">
+                    <span class="chip chip-soft" *ngFor="let lang of getLanguages(extracted)">{{ lang }}</span>
+                  </div>
+                  <ng-template #noLangs>
+                    <div class="text-muted">No languages extracted yet.</div>
+                  </ng-template>
+                </div>
+
+                <div class="info-group">
+                  <div class="info-label">Qualities</div>
+                  <div class="chip-wrap" *ngIf="getQualities(extracted).length; else noQualities">
+                    <span class="chip chip-soft" *ngFor="let q of getQualities(extracted)">{{ q }}</span>
+                  </div>
+                  <ng-template #noQualities>
+                    <div class="text-muted">No qualities extracted yet.</div>
+                  </ng-template>
+                </div>
+
+                <div class="info-group">
+                  <div class="info-label">Interests</div>
+                  <div class="chip-wrap" *ngIf="getInterests(extracted).length; else noInterests">
+                    <span class="chip chip-soft" *ngFor="let interest of getInterests(extracted)">{{ interest }}</span>
+                  </div>
+                  <ng-template #noInterests>
+                    <div class="text-muted">No interests extracted yet.</div>
+                  </ng-template>
+                </div>
+              </section>
             </div>
-          </div>
+          </ng-container>
         </div>
 
       </ng-container>
     </div>
   `,
   styles: [`
+    @use 'sass:color';
+    @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+
     $red: #8b1f1f;
     $red-mid: #a31a1a;
     $red-deep: #791212;
@@ -474,6 +665,7 @@ import { AuthService } from '../../services/auth.service';
       max-width: 1100px;
       margin: 28px auto;
       padding: 0 24px 60px;
+      font-family: 'Manrope', 'Segoe UI', sans-serif;
     }
 
     /* Back link */
@@ -584,11 +776,11 @@ import { AuthService } from '../../services/auth.service';
     .large-badge { font-size: 13px; padding: 8px 20px; }
     .badge-new         { background: rgba(#3b82f6, 0.12); color: #1d4ed8; }
     .badge-processing  { background: rgba($warning, 0.12); color: $warning; }
-    .badge-processed   { background: rgba($warning, 0.12); color: darken($warning, 5%); }
+    .badge-processed   { background: rgba($warning, 0.12); color: color.adjust($warning, $lightness: -5%); }
     .badge-reviewing   { background: rgba(#8b5cf6, 0.12); color: #6d28d9; }
     .badge-shortlisted { background: rgba($success, 0.14); color: $success; }
     .badge-rejected    { background: rgba($error, 0.12); color: $error; }
-    .badge-hired       { background: rgba($success, 0.2);  color: darken($success, 10%); }
+    .badge-hired       { background: rgba($success, 0.2);  color: color.adjust($success, $lightness: -10%); }
     .badge-error       { background: rgba($error, 0.12);  color: $error; }
 
     /* Cards grid */
@@ -1066,10 +1258,10 @@ import { AuthService } from '../../services/auth.service';
     }
 
     /* ══════════════════════════════════════════════════════════════════ */
-    /* SPRINT 3: CV Template Picker */
+    /* SPRINT 3: CV Template Override */
     /* ══════════════════════════════════════════════════════════════════ */
 
-    .template-section {
+    .template-override-section {
       background: #fff;
       border-radius: 20px;
       border: 1px solid $gray-200;
@@ -1078,113 +1270,57 @@ import { AuthService } from '../../services/auth.service';
       margin-top: 24px;
     }
 
-    .template-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    .template-override-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
       gap: 16px;
-    }
-
-    .template-card {
-      position: relative;
       background: $gray-50;
-      border: 2px solid $gray-200;
+      border: 1px solid $gray-200;
       border-radius: 16px;
-      padding: 16px;
-      cursor: pointer;
-      transition: all 0.2s;
+      padding: 16px 18px;
     }
 
-    .template-card:hover {
-      border-color: $gray-300;
-      transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-    }
-
-    .template-card.selected {
-      border-color: $red;
-      background: rgba($red, 0.03);
-      box-shadow: 0 0 0 3px rgba($red, 0.1);
-    }
-
-    .template-preview {
-      height: 100px;
-      border-radius: 10px;
-      margin-bottom: 12px;
-      overflow: hidden;
-    }
-
-    .template-thumb {
-      width: 100%;
-      height: 100%;
-      background: #fff;
-      padding: 8px;
-      border-radius: 8px;
-      box-shadow: inset 0 0 0 1px $gray-200;
-    }
-
-    .thumb-header {
-      height: 20%;
-      background: linear-gradient(135deg, $red, $red-mid);
-      border-radius: 4px;
+    .template-override-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: $gray-800;
       margin-bottom: 6px;
     }
 
-    .preview-experience_first .thumb-header { background: linear-gradient(135deg, #667eea, #764ba2); }
-    .preview-skills_first .thumb-header { background: #1f2937; }
-    .preview-compact .thumb-header { background: $gray-600; }
-    .preview-education_first .thumb-header { background: $gray-800; }
-    .preview-project_focus .thumb-header { background: #059669; }
-    .preview-sidebar_photo .thumb-header { background: #111827; }
-    .preview-accent_pink .thumb-header { background: #db2777; }
-    .preview-teal_circle .thumb-header { background: #0d9488; }
-    .preview-navy_gold .thumb-header { background: linear-gradient(135deg, #1e3a5f, #fbbf24); }
-    .preview-sunset .thumb-header { background: linear-gradient(135deg, #f97316, #dc2626, #7c3aed); }
+    .template-override-sub {
+      font-size: 12px;
+      color: $gray-600;
+    }
 
-    .thumb-content {
+    .template-override-control {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 8px;
+      min-width: 220px;
     }
 
-    .thumb-line {
-      height: 6px;
-      background: $gray-200;
-      border-radius: 3px;
-    }
-
-    .thumb-line.short {
-      width: 60%;
-    }
-
-    .template-info {
-      text-align: center;
-    }
-
-    .template-name {
-      font-size: 13px;
-      font-weight: 700;
+    .template-select {
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid $gray-300;
+      font-size: 14px;
+      font-weight: 600;
       color: $gray-800;
-      margin-bottom: 4px;
+      background: #fff;
     }
 
-    .template-desc {
+    .template-select:focus {
+      outline: none;
+      border-color: $red;
+      box-shadow: 0 0 0 3px rgba($red, 0.1);
+    }
+
+    .template-override-note {
       font-size: 11px;
+      font-weight: 600;
       color: $gray-400;
-      line-height: 1.3;
-    }
-
-    .selected-badge {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      width: 24px;
-      height: 24px;
-      background: $red;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #fff;
     }
 
     /* ══════════════════════════════════════════════════════════════════ */
@@ -1278,10 +1414,10 @@ import { AuthService } from '../../services/auth.service';
     }
 
     /* ══════════════════════════════════════════════════════════════════ */
-    /* SPRINT 3: Extracted Data Summary */
+    /* SPRINT 3: Parsed CV Details */
     /* ══════════════════════════════════════════════════════════════════ */
 
-    .extracted-data-section {
+    .parsed-cv-section {
       background: #fff;
       border-radius: 20px;
       border: 1px solid $gray-200;
@@ -1290,68 +1426,390 @@ import { AuthService } from '../../services/auth.service';
       margin-top: 24px;
     }
 
-    .extracted-data-grid {
+    .section-subtitle {
+      margin: -8px 0 18px;
+      color: $gray-600;
+      font-size: 13px;
+    }
+
+    .parsed-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 16px;
     }
 
-    .data-card {
-      background: $gray-50;
-      border-radius: 12px;
-      padding: 16px;
+    @media (max-width: 900px) {
+      .parsed-grid {
+        grid-template-columns: 1fr;
+      }
+      .span-2 {
+        grid-column: auto;
+      }
     }
 
-    .data-label {
+    .span-2 {
+      grid-column: span 2;
+    }
+
+    .parsed-card {
+      background: $gray-50;
+      border-radius: 16px;
+      padding: 18px;
+      border: 1px solid $gray-200;
+    }
+
+    .parsed-card-title {
       font-size: 12px;
-      font-weight: 700;
+      font-weight: 800;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.6px;
       color: $gray-600;
       margin-bottom: 12px;
     }
 
-    .skills-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
+    .kv-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
     }
 
-    .skill-chip {
-      padding: 4px 10px;
-      background: rgba($red, 0.08);
-      color: $red-deep;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
+    .kv-item {
+      background: #fff;
+      border-radius: 12px;
+      padding: 12px;
+      border: 1px solid $gray-200;
     }
 
-    .experience-summary, .education-summary {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+    .kv-label {
+      font-size: 11px;
+      color: $gray-400;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-bottom: 6px;
     }
 
-    .exp-item, .edu-item {
+    .kv-value {
       font-size: 13px;
-      color: $gray-700;
-      line-height: 1.4;
-    }
-
-    .exp-item strong, .edu-item strong {
+      font-weight: 600;
       color: $gray-800;
     }
 
-    .exp-dates {
-      display: block;
+    .kv-link {
+      color: $red;
+      text-decoration: none;
+    }
+
+    .kv-link:hover {
+      text-decoration: underline;
+    }
+
+    .parsed-text {
+      font-size: 13px;
+      color: $gray-700;
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    .text-muted {
+      color: $gray-400;
+      font-size: 13px;
+    }
+
+    .link-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .link-pill {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: #fff;
+      border: 1px solid $gray-200;
+      text-decoration: none;
+    }
+
+    .link-label {
       font-size: 11px;
+      font-weight: 700;
+      color: $gray-600;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .link-url {
+      font-size: 13px;
+      color: $red;
+      word-break: break-all;
+    }
+
+    .chip-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip {
+      padding: 6px 12px;
+      background: rgba($red, 0.1);
+      color: $red-deep;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .chip-soft {
+      background: rgba($gray-600, 0.12);
+      color: $gray-700;
+      font-weight: 600;
+    }
+
+    .chip-subtitle {
+      margin: 12px 0 8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: $gray-600;
+    }
+
+    .score-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .score-pill {
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      background: rgba($gray-600, 0.12);
+      color: $gray-700;
+    }
+
+    .score-excellent { background: rgba(22, 163, 74, 0.15); color: #15803d; }
+    .score-good { background: rgba(59, 130, 246, 0.12); color: #1d4ed8; }
+    .score-fair { background: rgba(245, 158, 11, 0.15); color: #b45309; }
+    .score-poor { background: rgba(239, 68, 68, 0.12); color: #b91c1c; }
+
+    .score-formula {
+      margin: 0 0 16px;
+      font-size: 13px;
+      color: $gray-600;
+    }
+
+    .score-bars {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .score-row {
+      display: grid;
+      grid-template-columns: 110px 1fr 36px;
+      align-items: center;
+      gap: 12px;
+      font-size: 12px;
+    }
+
+    .score-label {
+      font-weight: 600;
+      color: $gray-700;
+    }
+
+    .score-track {
+      height: 10px;
+      background: #fff;
+      border-radius: 999px;
+      border: 1px solid $gray-200;
+      overflow: hidden;
+    }
+
+    .score-fill {
+      height: 100%;
+      background: linear-gradient(135deg, $red, $red-deep);
+      border-radius: 999px;
+    }
+
+    .score-fill-alt {
+      background: linear-gradient(135deg, #1d4ed8, #60a5fa);
+    }
+
+    .score-fill-soft {
+      background: linear-gradient(135deg, #16a34a, #4ade80);
+    }
+
+    .score-value {
+      font-weight: 700;
+      color: $gray-800;
+      text-align: right;
+    }
+
+    .score-details {
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+    }
+
+    .score-block {
+      background: #fff;
+      border: 1px solid $gray-200;
+      border-radius: 14px;
+      padding: 12px;
+    }
+
+    .score-subtitle {
+      font-size: 12px;
+      font-weight: 700;
+      color: $gray-600;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .chip-positive {
+      background: rgba(22, 163, 74, 0.15);
+      color: #166534;
+    }
+
+    .chip-negative {
+      background: rgba(239, 68, 68, 0.12);
+      color: #b91c1c;
+    }
+
+    .score-metric {
+      font-size: 12px;
+      color: $gray-700;
+      margin-bottom: 6px;
+    }
+
+    .score-ok {
+      color: #15803d;
+      font-weight: 700;
+    }
+
+    .score-warn {
+      color: #b91c1c;
+      font-weight: 700;
+    }
+
+    .timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .timeline-item {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      background: #fff;
+      border: 1px solid $gray-200;
+      border-radius: 14px;
+      padding: 12px;
+    }
+
+    .timeline-marker {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: rgba($red, 0.12);
+      color: $red-deep;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+
+    .timeline-body {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .timeline-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: $gray-800;
+    }
+
+    .timeline-sub {
+      font-size: 12px;
+      color: $gray-600;
+    }
+
+    .timeline-dot {
+      margin: 0 6px;
       color: $gray-400;
     }
 
-    .more-indicator {
+    .timeline-list {
+      margin: 0;
+      padding-left: 18px;
+      color: $gray-700;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .project-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .project-card {
+      background: #fff;
+      border-radius: 14px;
+      border: 1px solid $gray-200;
+      padding: 12px;
+    }
+
+    .project-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: $gray-800;
+      margin-bottom: 6px;
+    }
+
+    .project-desc {
+      font-size: 12px;
+      color: $gray-600;
+      margin-bottom: 8px;
+    }
+
+    .project-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .project-links a {
       font-size: 12px;
       color: $red;
-      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .project-links a:hover {
+      text-decoration: underline;
+    }
+
+    .info-group {
+      margin-bottom: 14px;
+    }
+
+    .info-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: $gray-600;
+      margin-bottom: 8px;
     }
   `]
 })
@@ -1365,6 +1823,7 @@ export class CandidateDetailComponent implements OnInit {
   editingStatus = false;
   statusOptions = ['new', 'processing', 'processed', 'reviewing', 'shortlisted', 'rejected', 'hired'];
   statusSaving = false;
+  statusDraft = '';
 
   // S2-US9: Notes edit state
   editingNotes = false;
@@ -1373,6 +1832,7 @@ export class CandidateDetailComponent implements OnInit {
 
   // S3: AI Pipeline state
   cvTemplates: CvTemplateMeta[] = [];
+  defaultTemplateKey: CvTemplateKey = 'standard';
   selectedTemplateKey: CvTemplateKey = 'standard';
   cvPreview: CvPreviewResponse | null = null;
   sanitizedCvHtml: SafeHtml | null = null;
@@ -1396,6 +1856,7 @@ export class CandidateDetailComponent implements OnInit {
     this.downloadUrl = this.buildDownloadUrl(id);
     this.load(id);
     this.loadCvTemplates();
+    this.loadDefaultCvTemplate();
   }
 
   load(id: string): void {
@@ -1404,7 +1865,8 @@ export class CandidateDetailComponent implements OnInit {
       next: (data) => {
         this.candidate = data;
         this.loading = false;
-        this.selectedTemplateKey = (data as any).cvTemplateKey || 'standard';
+        this.statusDraft = data.status;
+        this.applyTemplateSelection();
         this.loadCvPreview(id);
       },
       error: (err) => {
@@ -1417,14 +1879,36 @@ export class CandidateDetailComponent implements OnInit {
   // S3: Load CV templates
   loadCvTemplates(): void {
     this.candidateService.getCvTemplates().subscribe({
-      next: (templates) => { this.cvTemplates = templates; },
+      next: (templates) => {
+        this.cvTemplates = templates;
+        this.applyTemplateSelection();
+      },
       error: (err) => { console.error('Failed to load CV templates:', err); }
     });
   }
 
+  loadDefaultCvTemplate(): void {
+    this.candidateService.getDefaultCvTemplate().subscribe({
+      next: (res) => {
+        this.defaultTemplateKey = res.templateKey;
+        this.applyTemplateSelection();
+      },
+      error: (err) => { console.error('Failed to load default CV template:', err); }
+    });
+  }
+
+  applyTemplateSelection(): void {
+    if (this.candidate?.cvTemplateKey) {
+      this.selectedTemplateKey = this.candidate.cvTemplateKey;
+      return;
+    }
+    this.selectedTemplateKey = this.defaultTemplateKey || 'standard';
+  }
+
   // S3: Load CV preview
-  loadCvPreview(id: string): void {
-    this.candidateService.getCvPreview(id).subscribe({
+  loadCvPreview(id: string, templateKey?: CvTemplateKey): void {
+    const key = templateKey || this.selectedTemplateKey;
+    this.candidateService.getCvPreview(id, key).subscribe({
       next: (preview) => {
         this.cvPreview = preview;
         if (preview.cvHtml) {
@@ -1463,14 +1947,18 @@ export class CandidateDetailComponent implements OnInit {
    * S2-US8: Enter status edit mode
    */
   startEditStatus(): void {
+    if (!this.candidate) return;
     this.editingStatus = true;
+    this.statusDraft = this.candidate.status;
   }
 
   /**
    * S2-US8: Save new status
    */
-  saveStatus(newStatus: string): void {
-    if (!this.candidate || newStatus === this.candidate.status) {
+  saveStatus(): void {
+    if (!this.candidate) return;
+    const newStatus = this.statusDraft;
+    if (!newStatus || newStatus === this.candidate.status) {
       this.editingStatus = false;
       return;
     }
@@ -1483,10 +1971,12 @@ export class CandidateDetailComponent implements OnInit {
           this.candidate.updatedAt = res.updatedAt;
         }
         this.editingStatus = false;
+        this.statusDraft = res.status;
         this.statusSaving = false;
       },
       error: (err) => {
         this.error = err?.error?.error?.message || 'Failed to update status.';
+        this.statusDraft = this.candidate?.status || '';
         this.statusSaving = false;
       }
     });
@@ -1530,6 +2020,7 @@ export class CandidateDetailComponent implements OnInit {
     this.editingStatus = false;
     this.editingNotes = false;
     this.notesDraft = '';
+    this.statusDraft = this.candidate?.status || '';
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -1647,20 +2138,266 @@ export class CandidateDetailComponent implements OnInit {
    * S3-US6: Select CV template
    */
   selectTemplate(key: CvTemplateKey): void {
-    if (!this.candidate || key === this.selectedTemplateKey) return;
+    if (!this.candidate) return;
+
+    const currentKey = this.candidate.cvTemplateKey || this.defaultTemplateKey || 'standard';
+    if (key === currentKey) {
+      this.selectedTemplateKey = key;
+      return;
+    }
 
     this.selectedTemplateKey = key;
     this.candidateService.updateCvTemplate(this.candidate.documentId, key).subscribe({
-      next: () => {
-        // If already processed, reprocess to regenerate CV with new template
-        if (this.candidate?.status === 'processed') {
-          this.executeReprocess();
+      next: (res) => {
+        if (this.candidate) {
+          this.candidate.cvTemplateKey = res.cvTemplateKey as CvTemplateKey;
+        }
+        if (this.candidate) {
+          this.loadCvPreview(this.candidate.documentId, key);
         }
       },
       error: (err) => {
         this.error = err?.error?.error?.message || 'Failed to update template.';
+        this.applyTemplateSelection();
       }
     });
+  }
+
+  getTemplateName(key: CvTemplateKey): string {
+    const match = this.cvTemplates.find(t => t.key === key);
+    return match ? match.name : key;
+  }
+
+  getExtractedContact(extracted: any): {
+    fullName: string;
+    email: string;
+    phone: string;
+    location: string;
+    linkedin: string;
+    portfolio: string;
+    links: string[];
+  } {
+    const contact = extracted?.contact ?? {};
+    const fullName = this.pickFirstText(contact?.fullName, this.candidate?.fullName) ?? '-';
+    const email = this.pickFirstText(contact?.email, this.candidate?.email) ?? '-';
+    const phone = this.pickFirstText(contact?.phone) ?? '-';
+    const location = this.pickFirstText(contact?.location) ?? '-';
+    const linkedin = this.pickFirstText(contact?.linkedin, this.candidate?.linkedin) ?? '-';
+    const portfolio = this.pickFirstText(contact?.portfolio, this.candidate?.portfolio) ?? '-';
+    const links = this.uniqStrings(this.toTrimmedArray(contact?.links));
+
+    return { fullName, email, phone, location, linkedin, portfolio, links };
+  }
+
+  getSummaryText(extracted: any): string {
+    const summary = extracted?.summary;
+    if (typeof summary === 'string' && summary.trim()) return summary.trim();
+    return 'No summary extracted yet.';
+  }
+
+  getSkills(extracted: any): string[] {
+    return this.uniqStrings(this.toTrimmedArray(extracted?.skills));
+  }
+
+  getCompetencies(extracted: any): string[] {
+    return this.uniqStrings(this.toTrimmedArray(extracted?.competencies));
+  }
+
+  getExperienceItems(extracted: any): Array<{ title: string; company: string; startDate?: string; endDate?: string; highlights?: string[] }> {
+    const rows = Array.isArray(extracted?.experience) ? extracted.experience : [];
+    return rows
+      .map((row: any) => {
+        const title = this.pickFirstText(row?.title) ?? '';
+        const company = this.pickFirstText(row?.company) ?? '';
+        const startDate = this.pickFirstText(row?.startDate) ?? '';
+        const endDate = this.pickFirstText(row?.endDate) ?? '';
+        const highlights = this.toTrimmedArray(row?.highlights);
+        return { title, company, startDate, endDate, highlights };
+      })
+      .filter((row: { title: string; company: string; startDate: string; endDate: string; highlights: string[] }) =>
+        row.title || row.company || row.startDate || row.endDate || row.highlights.length > 0
+      );
+  }
+
+  getEducationItems(extracted: any): Array<{ degree: string; school: string; startDate?: string; endDate?: string }> {
+    const rows = Array.isArray(extracted?.education) ? extracted.education : [];
+    return rows
+      .map((row: any) => {
+        const degree = this.pickFirstText(row?.degree) ?? '';
+        const school = this.pickFirstText(row?.school) ?? '';
+        const startDate = this.pickFirstText(row?.startDate) ?? '';
+        const endDate = this.pickFirstText(row?.endDate) ?? '';
+        return { degree, school, startDate, endDate };
+      })
+      .filter((row: { degree: string; school: string; startDate: string; endDate: string }) =>
+        row.degree || row.school || row.startDate || row.endDate
+      );
+  }
+
+  getProjects(extracted: any): Array<{ name: string; description: string; links: string[] }> {
+    const rows = Array.isArray(extracted?.projects) ? extracted.projects : [];
+    return rows
+      .map((row: any) => {
+        const name = this.pickFirstText(row?.name) ?? '';
+        const description = this.pickFirstText(row?.description) ?? '';
+        const links = this.uniqStrings(this.toTrimmedArray(row?.links));
+        return { name, description, links };
+      })
+      .filter((row: { name: string; description: string; links: string[] }) =>
+        row.name || row.description || row.links.length > 0
+      );
+  }
+
+  getCertifications(extracted: any): string[] {
+    return this.uniqStrings(this.toTrimmedArray(extracted?.certifications));
+  }
+
+  getLanguages(extracted: any): string[] {
+    return this.uniqStrings(this.toTrimmedArray(extracted?.languages));
+  }
+
+  getQualities(extracted: any): string[] {
+    return this.uniqStrings(this.toTrimmedArray(extracted?.qualities));
+  }
+
+  getInterests(extracted: any): string[] {
+    return this.uniqStrings(this.toTrimmedArray(extracted?.interests));
+  }
+
+  getScoreExplanation(extracted: any): {
+    score: number;
+    fitScore: number;
+    completenessScore: number;
+    skillsMatched: string[];
+    skillsMissing: string[];
+    niceToHaveMatched: string[];
+    experienceYears: number;
+    experienceMatch: boolean | null;
+    qualityLabel: string;
+    qualityTone: string;
+  } | null {
+    const evaluation = extracted?.evaluation;
+    if (!evaluation || typeof evaluation !== 'object') return null;
+
+    const breakdown = evaluation?.breakdown ?? {};
+    const score = this.toScore(evaluation?.score ?? breakdown?.score ?? 0);
+    const fitScore = this.toScore(breakdown?.fitScore ?? evaluation?.fitScore ?? 0);
+    const completenessScore = this.toScore(breakdown?.completenessScore ?? evaluation?.completenessScore ?? 0);
+
+    const skillsMatched = this.uniqStrings(this.toTrimmedArray(
+      breakdown?.skillsMatched ?? evaluation?.skillsMatched ?? evaluation?.matchedSkills
+    ));
+    const skillsMissing = this.uniqStrings(this.toTrimmedArray(
+      breakdown?.skillsMissing ?? evaluation?.skillsMissing ?? evaluation?.missingSkills
+    ));
+    const niceToHaveMatched = this.uniqStrings(this.toTrimmedArray(
+      breakdown?.niceToHaveMatched ?? evaluation?.niceToHaveMatched ?? evaluation?.matchedNiceToHave
+    ));
+
+    const experienceYears = this.toNumber(breakdown?.experienceYears ?? evaluation?.experienceYears) ?? 0;
+    const experienceMatch = typeof breakdown?.experienceMatch === 'boolean'
+      ? breakdown.experienceMatch
+      : typeof evaluation?.experienceMatch === 'boolean'
+        ? evaluation.experienceMatch
+        : null;
+
+    const qualityRaw = typeof evaluation?.qualityLabel === 'string'
+      ? evaluation.qualityLabel.trim().toLowerCase()
+      : '';
+    const qualityTone = ['excellent', 'good', 'fair', 'poor'].includes(qualityRaw) ? qualityRaw : 'neutral';
+    const qualityLabel = qualityRaw ? qualityRaw.charAt(0).toUpperCase() + qualityRaw.slice(1) : 'Score';
+
+    return {
+      score,
+      fitScore,
+      completenessScore,
+      skillsMatched,
+      skillsMissing,
+      niceToHaveMatched,
+      experienceYears,
+      experienceMatch,
+      qualityLabel,
+      qualityTone,
+    };
+  }
+
+  getContactLinks(extracted: any): Array<{ label: string; url: string; display: string }> {
+    const contact = this.getExtractedContact(extracted);
+    const links: Array<{ label: string; url: string; display: string }> = [];
+    const seen = new Set<string>();
+
+    const pushLink = (label: string, value: string) => {
+      const trimmed = value.trim();
+      if (!trimmed) return;
+      const normalized = this.normalizeUrl(trimmed);
+      const key = normalized.toLowerCase();
+      if (seen.has(key)) return;
+      seen.add(key);
+      links.push({ label, url: normalized, display: trimmed });
+    };
+
+    if (contact.linkedin !== '-') pushLink('LinkedIn', contact.linkedin);
+    if (contact.portfolio !== '-') pushLink('Portfolio', contact.portfolio);
+
+    for (const link of contact.links) {
+      pushLink('Link', link);
+    }
+
+    return links;
+  }
+
+  formatDateRange(start?: string, end?: string): string {
+    const startText = typeof start === 'string' && start.trim() ? start.trim() : '';
+    const endText = typeof end === 'string' && end.trim() ? end.trim() : '';
+    if (startText && endText) return `${startText} - ${endText}`;
+    if (startText && !endText) return `${startText} - Present`;
+    if (!startText && endText) return endText;
+    return 'Dates not provided';
+  }
+
+  normalizeUrl(raw: string): string {
+    const trimmed = raw.trim();
+    if (!trimmed) return '';
+    return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  }
+
+  private toNumber(value: unknown): number | null {
+    const n = typeof value === 'number' ? value : Number(value);
+    if (!Number.isFinite(n)) return null;
+    return n;
+  }
+
+  private toScore(value: unknown): number {
+    const n = this.toNumber(value) ?? 0;
+    return Math.max(0, Math.min(100, Math.round(n * 10) / 10));
+  }
+
+  private pickFirstText(...values: unknown[]): string | null {
+    for (const value of values) {
+      if (typeof value === 'string' && value.trim()) return value.trim();
+    }
+    return null;
+  }
+
+  private toTrimmedArray(value: unknown): string[] {
+    if (!Array.isArray(value)) return [];
+    return value
+      .map((item) => (typeof item === 'string' ? item.trim() : ''))
+      .filter(Boolean);
+  }
+
+  private uniqStrings(items: string[]): string[] {
+    const out: string[] = [];
+    const seen = new Set<string>();
+    for (const raw of items) {
+      const value = raw.trim();
+      if (!value) continue;
+      const key = value.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(value);
+    }
+    return out;
   }
 
   /**

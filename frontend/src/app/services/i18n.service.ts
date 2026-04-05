@@ -9,7 +9,22 @@ const TRANSLATIONS: Record<string, Record<Lang, string>> = {
   'nav.skills':          { fr: 'Compétences',     en: 'Skills' },
   'nav.departments':     { fr: 'Départements',    en: 'Departments' },
   'nav.jobPostings':     { fr: 'Offres d\'emploi', en: 'Job Postings' },
+  'nav.cvTemplates':     { fr: 'Modèles de CV',    en: 'CV Templates' },
   'nav.logout':          { fr: 'Déconnexion',     en: 'Logout' },
+
+  // ── CV Templates ──
+  'cvTemplates.title':       { fr: 'Modèles de CV', en: 'CV Templates' },
+  'cvTemplates.subtitle':    { fr: 'Sélectionnez le modèle par défaut appliqué à tous les CV générés.', en: 'Select the default template applied to all generated CVs.' },
+  'cvTemplates.defaultLabel': { fr: 'Par défaut :', en: 'Default:' },
+  'cvTemplates.defaultTag':   { fr: 'Par défaut', en: 'Default' },
+  'cvTemplates.listTitle':    { fr: 'Bibliothèque', en: 'Template Library' },
+  'cvTemplates.previewTitle': { fr: 'Aperçu', en: 'Preview' },
+  'cvTemplates.previewNote':  { fr: 'Données fictives', en: 'Sample data' },
+  'cvTemplates.loading':      { fr: 'Chargement des modèles...', en: 'Loading templates...' },
+  'cvTemplates.saving':       { fr: 'Enregistrement...', en: 'Saving default...' },
+  'cvTemplates.saved':        { fr: 'Modèle par défaut mis à jour.', en: 'Default template updated.' },
+  'cvTemplates.loadError':    { fr: 'Impossible de charger les modèles.', en: 'Failed to load templates.' },
+  'cvTemplates.saveError':    { fr: 'Impossible de mettre à jour le modèle.', en: 'Failed to update default template.' },
 
   // ── Home Page ──
   'home.hero.poweredBy':      { fr: 'Propulsé par', en: 'Powered by' },

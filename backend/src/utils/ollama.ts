@@ -85,12 +85,15 @@ export async function ollamaChat(
     ? { system: arg1, user: userPrompt ?? '' }
     : arg1;
 
+  const baseUrl = OLLAMA_BASE_URL.replace(/\/+$/, '');
+  const apiBase = baseUrl.endsWith('/api') ? baseUrl : `${baseUrl}/api`;
+
   const controller = options.timeoutMs ? new AbortController() : null;
   const timeoutId = options.timeoutMs
     ? setTimeout(() => controller?.abort(), options.timeoutMs)
     : null;
 
-  const response = await fetch(`${OLLAMA_BASE_URL}/api/chat`, {
+  const chatResponse = await fetch(`${apiBase}/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -110,12 +113,34 @@ export async function ollamaChat(
     clearTimeout(timeoutId);
   }
 
-  if (!response.ok) {
-    throw new Error(`Ollama request failed: ${response.status} ${response.statusText}`);
+  if (chatResponse.ok) {
+    const data = (await chatResponse.json()) as { message?: { content?: string } };
+    return data.message?.content || '';
   }
 
-  const data = (await response.json()) as { message?: { content?: string } };
-  return data.message?.content || '';
+  if (chatResponse.status !== 404) {
+    throw new Error(`Ollama request failed: ${chatResponse.status} ${chatResponse.statusText}`);
+  }
+
+  const generateResponse = await fetch(`${apiBase}/generate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: options.model || OLLAMA_MODEL,
+      prompt: `System:\n${options.system}\n\nUser:\n${options.user}`,
+      stream: false,
+      ...(options.format ? { format: options.format } : {}),
+      ...(options.ollamaOptions ? { options: options.ollamaOptions } : {}),
+    }),
+    signal: controller?.signal,
+  });
+
+  if (!generateResponse.ok) {
+    throw new Error(`Ollama request failed: ${generateResponse.status} ${generateResponse.statusText}`);
+  }
+
+  const data = (await generateResponse.json()) as { response?: string };
+  return data.response || '';
 }
 
 /**

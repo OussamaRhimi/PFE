@@ -13,6 +13,7 @@ import { TrackComponent } from './pages/public-jobs/track.component';
 import { WithdrawComponent } from './pages/public-jobs/withdraw.component';
 import { CandidatesListComponent } from './pages/candidates/candidates-list.component';
 import { CandidateDetailComponent } from './pages/candidates/candidate-detail.component';
+import { CvTemplatesComponent } from './pages/cv-templates/cv-templates.component';
 
 export const routes: Routes = [
   {
@@ -79,6 +80,11 @@ export const routes: Routes = [
   {
     path: 'candidates/:id',
     component: CandidateDetailComponent,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'cv-templates',
+    component: CvTemplatesComponent,
     canActivate: [authGuard],
   },
   {
