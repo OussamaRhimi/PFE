@@ -1,0 +1,54 @@
+
+
+FRONTEND:
+BACKEND:
+Arabic: native|
+Software engineering
+ 
+Departments management app
+ 
+English: fluent (conversational)|
+DATABASES:
+UI : 
+French: Intermediate
+For the ETL process i used Talend Studios , MySQL and Python to Handle the Raw data.
+Elasticsearch for Storing an indexing Data.
+Kibana for visualization and analytical Conclusions.
+September 2021 - June 2026
+Web developer intern, AlIDHAFA
+ Tender-Calls(Appel D’offres) app
+June 2025 - August 2025
+Created the specification book of said subject from scratch. 
+Designed the UI with FIGMA and Conceptualized the DataBase .
+Built an analytics dashboard to visualize call data more clearly in the NextJS app.
+created and improved the vues and used Git for version control. 
+Added data caching with PRISMA ORM and improved data fetching, which reduced loading time.
+intern, Tunisie Telecome
+Network management
+July 2024 - August 2024
+Built the website from scratch using Springboot , Html ,CSS and MySQL. 
+Used thymeLeaf a Sping extention to apply the html and Css in one Editor with the MVC Backend.
+Applied REST API to Develope CRUD functions 
+Buisness Intelegence, Covid 19 analytics
+December 2024
+Mars 2025
+Oussama Rhimi
+ 
+Software Engineering student
+SKILLS
+PROJECTS
+EDUCATION
+EXPERIENCE
+LANGUAGES
+NextJS – TailwindCSS – VueJS – Angular
+Springboot(JAVA) – NodeJS(Using NextJS)
+Higher Institute of Computer Science and Multimedia of Sfax (ISIMS)
+Analysis on Covid Data from kaggle and creation of a dashboard
+ MySQL – MangoDB
+FIGMA
+ousssama127@gmail.com
++216 99 584 182 
+Kasserine, Tunisia
+Measuring connectivity through designated tools.
+Documenting and Storing the Regional data into Csv files.
+Sending the Data to the headquarters using FileZilla.

@@ -70,6 +70,69 @@ Output JSON schema:
     "description": string,
     "links": string[]
   }]
+}
+
+EXAMPLE 1 INPUT:
+"OMAR ATRI\nFull Stack JS Developer\ncontact@omaratri.com\n+216 24 246 962\nKerkennah, Sfax, Tunisia\nlinkedin.com/in/omar-atri\nSKILLS\nNextJS – ReactJS – GatsbyJS – TailwindCSS\nExpressJS – Socket.IO\nEDUCATION\nSeptember 2021 - June 2026 Software engineering\nHigher Institute of Computer Science and Multimedia of Sfax (ISIMS)"
+
+EXAMPLE 1 OUTPUT:
+{
+  "contact": {
+    "fullName": "Omar Atri",
+    "email": "contact@omaratri.com",
+    "phone": "+216 24 246 962",
+    "location": "Kerkennah, Sfax, Tunisia",
+    "linkedin": "linkedin.com/in/omar-atri",
+    "portfolio": null,
+    "links": ["linkedin.com/in/omar-atri"]
+  },
+  "summary": "Full Stack JS Developer",
+  "skills": ["NextJS", "ReactJS", "GatsbyJS", "TailwindCSS", "ExpressJS", "Socket.IO"],
+  "competencies": [],
+  "languages": [],
+  "qualities": [],
+  "interests": [],
+  "experience": [],
+  "education": [{
+    "school": "Higher Institute of Computer Science and Multimedia of Sfax (ISIMS)",
+    "degree": "Software engineering",
+    "startDate": "September 2021",
+    "endDate": "June 2026"
+  }],
+  "certifications": [],
+  "projects": []
+}
+
+EXAMPLE 2 INPUT:
+"Yassin Sedki\nsedkiyassin19@gmail.com\n+216 93913842\nKsour Essef, Mahdia\nPROFILE\nFinal-year Software Engineering student focused on AI systems.\nEXPERIENCE\nAI Engineer Intern\nAttoflow Consulting\n06/2025 – 08/2025\nSKILLS\nPyTorch, TensorFlow, LangChain, LangGraph"
+
+EXAMPLE 2 OUTPUT:
+{
+  "contact": {
+    "fullName": "Yassin Sedki",
+    "email": "sedkiyassin19@gmail.com",
+    "phone": "+216 93913842",
+    "location": "Ksour Essef, Mahdia",
+    "linkedin": null,
+    "portfolio": null,
+    "links": []
+  },
+  "summary": "Final-year Software Engineering student focused on AI systems.",
+  "skills": ["PyTorch", "TensorFlow", "LangChain", "LangGraph"],
+  "competencies": [],
+  "languages": [],
+  "qualities": [],
+  "interests": [],
+  "experience": [{
+    "company": "Attoflow Consulting",
+    "title": "AI Engineer Intern",
+    "startDate": "June 2025",
+    "endDate": "August 2025",
+    "highlights": []
+  }],
+  "education": [],
+  "certifications": [],
+  "projects": []
 }`;
 
 /**

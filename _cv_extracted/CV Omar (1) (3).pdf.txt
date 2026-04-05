@@ -1,0 +1,52 @@
+
+
+Built a complete authentication system using ReactJS and ExpressJS.
+Added OAuth login with Google, GitHub and LinkedIn.
+Implemented 2FA with TOTP, backup codes, SMS, and email.
+Added real-time notifications and online users tracking with Socket.IO.
+June 2025 - August 2025Web developer intern, ONRTECH
+Built an analytics dashboard to visualize call data more clearly in the NextJS app.
+Added data caching with SWR and improved data fetching, which reduced loading time.
+Built a billing and subscription system from scratch using Stripe.
+Set up a Socket.IO server to handle real-time audio sharing between servers and play it on the frontend.
+OMAR ATRI
+Full Stack JS Developer
+     SKILLS
+     EXPERIENCE
+omaratri.com
+linkedin.com/in/omar-atri
+github.com/AtriOmar
+contact@omaratri.com
++216 24 246 962
+Kerkennah, Sfax, Tunisia
+FRONTEND:
+NextJS – ReactJS – GatsbyJS – TailwindCSS
+BACKEND:
+ExpressJS – Socket.IO
+DATABASES:
+MongoDB – MySQL
+DEPLOYMENT:
+NGINX –  OpenLiteSpeed
+     LANGUAGES
+Arabic: native          |          English: fluent (conversational)          |          French: basic
+     EDUCATION
+September 2021 - June 2026Software engineering
+Higher Institute of Computer Science and Multimedia of Sfax (ISIMS)
+July 2024 - August 2024Web developer intern, SECURAS Technologies
+AI-powered calls app
+Cybershield WAF
+Rebuilt the website’s frontend using Gatsby (SSG) and TailwindCSS with a pixel-perfect, responsive, and
+user-friendly design.
+Improved SEO and leveraged the potential of static site generation for a blazing-fast website.
+February 2024Web developer, Code Warriors competition (rank: 2nd)
+Built the website from scratch using NextJS (with SSR), TailwindCSS and MySQL.
+Added OAuth login with Google, Twitter, Facebook, and GitHub via NextAuth.
+Implemented a real-time chat feature with Socket.IO, including friend requests.
+Added Markdown support in questions, and other features for a nice UX.
+Implemented image upload and management across the app, with auto-loading profile image from OAuth.
+     PROJECTS
+January 2023 - February 2023Freelance web developer, Halal Correct
+Code Warriors, a platform for sharing IT questions, articles, and best practices
+warriors.omaratri.com
+Halal Correct, a management app for the Halal Correct Certifications company
+halalcorrect.com

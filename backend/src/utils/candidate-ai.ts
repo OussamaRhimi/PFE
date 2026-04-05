@@ -242,6 +242,285 @@ function truncateForModel(text: string, maxChars: number): string {
   return `${head}\n\n[...truncated...]\n\n${tail}`;
 }
 
+function normalizeCvText(input: string): string {
+  let out = String(input ?? '');
+  out = out.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  out = out.replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n');
+  // Split concatenated dates/roles (e.g., "2025Web developer")
+  out = out.replace(/(\d{4})(?=[A-Z])/g, '$1\n');
+  return out;
+}
+
+const SECTION_HEADINGS: Record<string, string[]> = {
+  profile: ['profile', 'summary', 'about', 'profil'],
+  experience: ['professional experience', 'work experience', 'experience'],
+  education: ['education', 'formation'],
+  skills: ['skills', 'competences', 'competencies'],
+  projects: ['projects', 'project'],
+  certificates: ['certificates', 'certifications'],
+  languages: ['languages', 'langues'],
+};
+
+const KNOWN_LANGUAGES = new Set([
+  'arabic', 'english', 'french', 'spanish', 'german', 'italian', 'portuguese', 'dutch',
+  'turkish', 'russian', 'chinese', 'japanese', 'korean', 'hindi', 'berber', 'amazigh',
+]);
+
+function detectHeading(line: string): string | null {
+  const raw = line.trim();
+  if (!raw) return null;
+  const compact = raw.toLowerCase().replace(/[^a-z ]/g, ' ').replace(/\s+/g, ' ').trim();
+  for (const [key, candidates] of Object.entries(SECTION_HEADINGS)) {
+    for (const candidate of candidates) {
+      if (compact === candidate || compact.includes(candidate)) return key;
+    }
+  }
+  if (raw.length <= 28 && raw === raw.toUpperCase()) {
+    for (const [key, candidates] of Object.entries(SECTION_HEADINGS)) {
+      if (candidates.some(c => raw.toLowerCase().includes(c))) return key;
+    }
+  }
+  return null;
+}
+
+function splitSections(lines: string[]): Record<string, string[]> {
+  const sections: Record<string, string[]> = {};
+  let current: string | null = null;
+  for (const raw of lines) {
+    const heading = detectHeading(raw);
+    if (heading) {
+      current = heading;
+      if (!sections[current]) sections[current] = [];
+      continue;
+    }
+    if (current) sections[current].push(raw);
+  }
+  return sections;
+}
+
+function extractContactFromText(lines: string[]): ResumeContact {
+  const joined = lines.join(' ');
+  const emailMatch = joined.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+
+  const phoneMatches = joined.match(/\+?\d[\d\s().-]{6,}\d/g) || [];
+  const phone = phoneMatches
+    .map((p) => p.replace(/[^\d+]/g, ''))
+    .sort((a, b) => b.length - a.length)[0];
+
+  const linkMatches = joined.match(/(https?:\/\/[^\s]+|www\.[^\s]+|linkedin\.com\/[^\s]+|github\.com\/[^\s]+)/gi) || [];
+  const links = uniqStrings(linkMatches.map(l => l.replace(/[),.;]+$/, '')));
+
+  const linkedin = links.find(l => l.toLowerCase().includes('linkedin.com'));
+  const portfolio = links.find(l => !l.toLowerCase().includes('linkedin.com') && !l.toLowerCase().includes('github.com'));
+
+  const candidateName = lines.find((line) => {
+    if (line.length > 60) return false;
+    if (/\d/.test(line)) return false;
+    if (/@|http|www\./i.test(line)) return false;
+    const parts = line.trim().split(/\s+/);
+    return parts.length >= 2 && parts.length <= 4;
+  });
+
+  const locationLine = lines.find((line) => {
+    if (!line.includes(',')) return false;
+    if (/@|http|www\./i.test(line)) return false;
+    if (/\d/.test(line)) return false;
+    return line.length <= 50;
+  });
+
+  return {
+    fullName: candidateName ? candidateName.trim() : undefined,
+    email: emailMatch ? emailMatch[0].trim() : undefined,
+    phone: phone ? phone.trim() : undefined,
+    location: locationLine ? locationLine.trim() : undefined,
+    linkedin: linkedin ? linkedin.trim() : undefined,
+    portfolio: portfolio ? portfolio.trim() : undefined,
+    links,
+  };
+}
+
+function splitSkillTokens(line: string): string[] {
+  const noBullet = line.replace(/^[-•\u2022]+/, '').trim();
+  if (!noBullet) return [];
+  const payload = noBullet.includes(':') ? noBullet.split(':').slice(1).join(':') : noBullet;
+  return payload
+    .split(/[,|;]|\s[-–—]\s|\u2022|•/)
+    .map((token) => token.trim())
+    .filter((token) => token.length >= 2);
+}
+
+function extractSkillsFromSection(lines: string[]): string[] {
+  const out: string[] = [];
+  for (const line of lines) {
+    out.push(...splitSkillTokens(line));
+  }
+  return uniqStrings(out);
+}
+
+function extractLanguagesFromSection(lines: string[]): string[] {
+  const out: string[] = [];
+  for (const line of lines) {
+    const parts = line.split(/[|,;]/).map(p => p.trim()).filter(Boolean);
+    for (const part of parts) {
+      const token = part.split(':')[0]?.trim().toLowerCase();
+      if (token && KNOWN_LANGUAGES.has(token)) out.push(token);
+    }
+  }
+  return uniqStrings(out.map((l) => l.charAt(0).toUpperCase() + l.slice(1)));
+}
+
+function extractSummaryFromSection(lines: string[]): string | null {
+  const summary = lines.join(' ').trim();
+  return summary ? summary : null;
+}
+
+function formatDateFromDate(input: Date | null): string | null {
+  if (!input) return null;
+  const year = input.getUTCFullYear();
+  const month = input.getUTCMonth() + 1;
+  return `${year}-${String(month).padStart(2, '0')}`;
+}
+
+function extractEducationFromSection(lines: string[]): Array<Record<string, unknown>> {
+  const entries: Array<Record<string, unknown>> = [];
+  const buffer: string[] = [];
+  for (const line of lines) {
+    const range = parseDateRange(line);
+    if (range) {
+      const school = buffer.pop();
+      const degree = buffer.pop();
+      entries.push({
+        ...(degree ? { degree } : {}),
+        ...(school ? { school } : {}),
+        ...(formatDateFromDate(range.start) ? { startDate: formatDateFromDate(range.start) } : {}),
+        ...(formatDateFromDate(range.end) ? { endDate: formatDateFromDate(range.end) } : {}),
+      });
+      buffer.length = 0;
+      continue;
+    }
+    if (line) buffer.push(line);
+  }
+  return entries;
+}
+
+function extractExperienceFromSection(lines: string[]): Array<Record<string, unknown>> {
+  const entries: Array<Record<string, unknown>> = [];
+  const buffer: string[] = [];
+
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i];
+    const range = parseDateRange(line);
+    if (range) {
+      const title = buffer.pop();
+      const company = buffer.pop();
+      const highlights: string[] = [];
+      let j = i + 1;
+      while (j < lines.length && /^[-•\u2022]/.test(lines[j])) {
+        highlights.push(lines[j].replace(/^[-•\u2022]+/, '').trim());
+        j += 1;
+      }
+      entries.push({
+        ...(title ? { title } : {}),
+        ...(company ? { company } : {}),
+        ...(formatDateFromDate(range.start) ? { startDate: formatDateFromDate(range.start) } : {}),
+        ...(formatDateFromDate(range.end) ? { endDate: formatDateFromDate(range.end) } : {}),
+        ...(highlights.length ? { highlights } : {}),
+      });
+      buffer.length = 0;
+      continue;
+    }
+    if (line) buffer.push(line);
+  }
+
+  return entries;
+}
+
+function extractProjectsFromSection(lines: string[]): Array<Record<string, unknown>> {
+  const entries: Array<Record<string, unknown>> = [];
+  for (const line of lines) {
+    if (!line) continue;
+    const name = line.replace(/^[-•\u2022]+/, '').trim();
+    if (name.length < 3) continue;
+    entries.push({ name });
+  }
+  return entries;
+}
+
+function parseResumeHeuristic(text: string): Record<string, unknown> {
+  const lines = text.split('\n').map((line) => line.trim()).filter(Boolean);
+  const sections = splitSections(lines);
+  const contact = extractContactFromText(lines);
+  const summary = sections.profile ? extractSummaryFromSection(sections.profile) : null;
+  const skills = sections.skills ? extractSkillsFromSection(sections.skills) : [];
+  const languages = sections.languages ? extractLanguagesFromSection(sections.languages) : [];
+  const education = sections.education ? extractEducationFromSection(sections.education) : [];
+  const experience = sections.experience ? extractExperienceFromSection(sections.experience) : [];
+  const projects = sections.projects ? extractProjectsFromSection(sections.projects) : [];
+
+  return {
+    contact,
+    ...(summary ? { summary } : {}),
+    ...(skills.length ? { skills } : {}),
+    ...(languages.length ? { languages } : {}),
+    ...(education.length ? { education } : {}),
+    ...(experience.length ? { experience } : {}),
+    ...(projects.length ? { projects } : {}),
+  };
+}
+
+function mergeParsedData(primary: Record<string, unknown>, fallback: Record<string, unknown>): Record<string, unknown> {
+  const primaryContact = (primary.contact && typeof primary.contact === 'object' ? primary.contact : {}) as Record<string, unknown>;
+  const fallbackContact = (fallback.contact && typeof fallback.contact === 'object' ? fallback.contact : {}) as Record<string, unknown>;
+
+  const mergedContact: Record<string, unknown> = { ...fallbackContact };
+  for (const [key, value] of Object.entries(primaryContact)) {
+    if (typeof value === 'string' && value.trim()) mergedContact[key] = value.trim();
+    if (Array.isArray(value) && value.length) mergedContact[key] = value;
+  }
+
+  const mergeList = (a: unknown, b: unknown): string[] => {
+    const left = asStringArray(a);
+    const right = asStringArray(b);
+    return uniqStrings([...left, ...right]);
+  };
+
+  const out: Record<string, unknown> = {
+    ...fallback,
+    ...primary,
+    contact: mergedContact,
+  };
+
+  if (!asStringArray(primary.skills).length && asStringArray(fallback.skills).length) {
+    out.skills = fallback.skills;
+  } else if (asStringArray(primary.skills).length && asStringArray(fallback.skills).length) {
+    out.skills = mergeList(primary.skills, fallback.skills);
+  }
+
+  if (!asStringArray(primary.languages).length && asStringArray(fallback.languages).length) {
+    out.languages = fallback.languages;
+  } else if (asStringArray(primary.languages).length && asStringArray(fallback.languages).length) {
+    out.languages = mergeList(primary.languages, fallback.languages);
+  }
+
+  if (!asTrimmedString(primary.summary) && asTrimmedString(fallback.summary)) {
+    out.summary = fallback.summary;
+  }
+
+  const expPrimary = Array.isArray(primary.experience) ? primary.experience : [];
+  const expFallback = Array.isArray(fallback.experience) ? fallback.experience : [];
+  if (expPrimary.length === 0 && expFallback.length > 0) out.experience = expFallback;
+
+  const eduPrimary = Array.isArray(primary.education) ? primary.education : [];
+  const eduFallback = Array.isArray(fallback.education) ? fallback.education : [];
+  if (eduPrimary.length === 0 && eduFallback.length > 0) out.education = eduFallback;
+
+  const projPrimary = Array.isArray(primary.projects) ? primary.projects : [];
+  const projFallback = Array.isArray(fallback.projects) ? fallback.projects : [];
+  if (projPrimary.length === 0 && projFallback.length > 0) out.projects = projFallback;
+
+  return out;
+}
+
 function parseModelJson<T = unknown>(raw: string): { value: T; recovered: boolean } {
   const parsed = parseJsonWithRecovery<T>(raw);
   if (!parsed.ok) {
@@ -840,6 +1119,59 @@ function calculateCompletenessScore(parsed: Record<string, unknown>, contact: Re
   return Math.min(points, maxPoints);
 }
 
+function computeMissingFields(parsed: Record<string, unknown>, contact: ResumeContact, candidateMeta?: { linkedin?: string; portfolio?: string }): string[] {
+  const missing: string[] = [];
+  const skills = asStringArray(parsed.skills);
+  const experience = Array.isArray(parsed.experience) ? parsed.experience : [];
+  const education = Array.isArray(parsed.education) ? parsed.education : [];
+  const projects = Array.isArray(parsed.projects) ? parsed.projects : [];
+
+  if (!contact.fullName) missing.push('fullName');
+  if (!contact.email) missing.push('email');
+  if (!contact.phone) missing.push('phone');
+  if (!contact.location) missing.push('location');
+  if (!contact.linkedin && !candidateMeta?.linkedin) missing.push('linkedin');
+  if (!contact.portfolio && !candidateMeta?.portfolio) missing.push('portfolio');
+  if (!asTrimmedString(parsed.summary)) missing.push('summary');
+  if (skills.length === 0) missing.push('skills');
+
+  if (experience.length === 0) {
+    missing.push('experience');
+  }
+
+  const hasDatedExperience = experience.some((row: any) =>
+    normalizeDateText(row?.startDate) && normalizeDateText(row?.endDate)
+  );
+  if (!hasDatedExperience) missing.push('experienceDates');
+
+  if (education.length === 0) missing.push('education');
+  if (projects.length === 0) missing.push('projects');
+
+  return missing;
+}
+
+function computeParseConfidence(missingFields: string[]): number {
+  const weights: Record<string, number> = {
+    fullName: 1,
+    email: 1,
+    phone: 0.5,
+    location: 0.5,
+    linkedin: 0.5,
+    portfolio: 0.5,
+    summary: 1,
+    skills: 2,
+    experience: 2,
+    experienceDates: 1,
+    education: 1,
+    projects: 0.5,
+  };
+
+  const totalWeight = Object.values(weights).reduce((sum, val) => sum + val, 0);
+  const missingWeight = missingFields.reduce((sum, field) => sum + (weights[field] ?? 0), 0);
+  if (totalWeight <= 0) return 0;
+  return Math.max(0, Math.min(100, Math.round(((totalWeight - missingWeight) / totalWeight) * 100)));
+}
+
 export function deterministicEvaluate(
   requirements: Requirements | unknown,
   parsed: Record<string, unknown>,
@@ -880,8 +1212,39 @@ export function deterministicEvaluate(
     portfolio: contact.portfolio ?? candidateMeta?.portfolio,
   });
 
-  const score = (fitScore * 0.75) + (completenessScore * 0.25);
-  const qualityLabel = score >= 80 ? 'excellent' : score >= 60 ? 'good' : score >= 40 ? 'fair' : 'poor';
+  let score = (fitScore * 0.75) + (completenessScore * 0.25);
+  const experienceRows = Array.isArray(parsed.experience) ? parsed.experience : [];
+  const skillRows = asStringArray(parsed.skills);
+  const criticalMissing = [
+    !contact.fullName,
+    !contact.email,
+    skillRows.length === 0,
+    experienceRows.length === 0,
+  ].filter(Boolean).length;
+
+  if (criticalMissing > 0) {
+    score = Math.min(score, completenessScore);
+  }
+  if (criticalMissing >= 2) {
+    score = Math.min(score, Math.max(0, completenessScore - 10));
+  }
+  const missingFields = computeMissingFields(parsed, contact, candidateMeta);
+  const parseConfidence = computeParseConfidence(missingFields);
+  const needsReview = parseConfidence < 60;
+
+  if (parseConfidence < 70) {
+    score = Math.min(score, parseConfidence + 10);
+  }
+  if (parseConfidence < 50) {
+    score = Math.min(score, parseConfidence + 5);
+  }
+
+  let qualityLabel = score >= 80 ? 'excellent' : score >= 60 ? 'good' : score >= 40 ? 'fair' : 'poor';
+  if (parseConfidence < 50) {
+    qualityLabel = 'poor';
+  } else if (needsReview && qualityLabel === 'excellent') {
+    qualityLabel = 'good';
+  }
 
   return {
     score: Math.round(score * 100) / 100,
@@ -895,6 +1258,9 @@ export function deterministicEvaluate(
       experienceMatch,
     },
     qualityLabel,
+    parseConfidence,
+    missingFields,
+    needsReview,
   };
 }
 
@@ -1043,7 +1409,8 @@ export async function processCandidate(candidateId: number, strapi: Core.Strapi)
   try {
     stage = 'extract-text';
     const t0 = Date.now();
-    const cvText = await extractTextFromResume(resume as any, strapi);
+    const cvTextRaw = await extractTextFromResume(resume as any, strapi);
+    const cvText = normalizeCvText(cvTextRaw);
     log('info', `candidate ${candidateId} extracted text in ${Date.now() - t0}ms`);
     if (!cvText.trim()) {
       strapi.log.warn(`[candidate-ai] No text extracted for candidate ${candidateId}`);
@@ -1074,7 +1441,9 @@ export async function processCandidate(candidateId: number, strapi: Core.Strapi)
     }
     log('info', `candidate ${candidateId} parsed CV in ${Date.now() - t1}ms`);
 
-    const parsed = normalizeParsedData(parsedModel.value);
+    const heuristicParsed = parseResumeHeuristic(cvText);
+    const mergedParsed = mergeParsedData(parsedModel.value, heuristicParsed);
+    const parsed = normalizeParsedData(mergedParsed);
 
     stage = 'evaluate';
     const t2 = Date.now();

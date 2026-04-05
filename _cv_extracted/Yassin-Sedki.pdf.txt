@@ -1,0 +1,70 @@
+
+
+Yassin Sedki
+sedkiyassin19@gmail.com
+ 
++216 93913842
+ 
+Ksour Essef,Mahdia
+ 
+linkedin.com/in/yassin-sedki-a2657b252
+ 
+github.com/yassinSedki
+ 
+my_portfolio
+ 
+PROFILE
+Final-year Software Engineering student with a specialized focus on building and deploying generative AI and machine learning systems. 
+Hands-on experience in developing production-ready RAG pipelines, multi-agent orchestration and backend infrastructure. 
+Seeking a full-time AI Engineer role to apply my skills in deep learning, NLP, and scalable system design to solve complex real-world 
+problems.
+PROFESSIONAL EXPERIENCE
+AI Engineer Intern
+Attoflow Consulting
+06/2025 – 08/2025
+•Architected and implemented an agentic RAG system using LangGraph integrating vector databases ChromaDB and multi-agent 
+orchestration, enabling secure, context-aware retrieval with optimized LLM interactions for reliable responses.
+Part-Time Software Engineer
+AllNet Company
+01/2024 – 12/2024
+•Built and maintained company websites
+•Developed a customized chatbot  utilizing LLaMA 3 LLM and natural language processing techniques.
+Full-Stack Developer Intern
+AllNet Company
+06/2023 – 08/2023
+• Developed a full-stack newsletter application, integrating frontend and backend components.
+EDUCATION
+Software Engineering
+Higher Institute of Computer Science and Multimedia of Sfax (ISIMS)
+2023 – present
+Integrated Preparatory Program
+Higher Institute of Computer Science and Multimedia of Sfax (ISIMS)
+2021 – 2023
+Baccalaureate in Mathematics
+Ksour Essef High School
+2021
+CERTIFICATES
+Efficient Large Language Model (LLM) Customization (NVIDIA)
+IBM AI Engineering Professional Certificate
+Building RAG Agents with LLMs (NVIDIA)
+Microsoft Certified: Azure AI Fundamentals
+Generative AI for Software Development
+PROJECTS
+Document Chatbot assistant
+•Developed a RAG chatbot for context-aware Q&A on PDFs, using LangChain, HuggingFace API, and FAISS.
+AI-Powered Job Recommendation Web App
+•Built a full-stack platform using embeddings and rule-based filters to deliver personalized, scalable job recommendations.
+Expense Tracker
+•Developed a full-stack web application using ASP.NET Core MVC for tracking income, expenses, and budgets.
+SKILLS
+•Core AI/ML: Deep Learning, NLP, LLMs, RAG
+•Tools & Frameworks: PyTorch, TensorFlow, LangChain, LangGraph
+•Software Engineering: OOP, Design Patterns, Problem Solving, Agile/Scrum, REST APIs, Git
+•Development Concepts: Backend Development , Frontend Basics (React, Next.js), Data Handling & Processing
+ORGANIZATIONS
+Competitive Programming Club at ISIMS2023 – 2025
+Junior Chamber International (JCI) in Ksour Essef
+National Theme Advisor
+2022 – 2023
+LANGUAGES
+Arabic: NativeFrench: ConversationalEnglish: B2 (IELTS)

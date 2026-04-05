@@ -302,9 +302,8 @@ import { AuthService } from '../../services/auth.service';
                 {{ processingAction ? 'Starting...' : 'Process CV' }}
               </button>
 
-              <!-- Reprocess button (only for processed/error) -->
+              <!-- Reprocess button -->
               <button
-                *ngIf="candidate.status === 'processed' || candidate.status === 'error'"
                 class="btn-ai-action btn-reprocess"
                 (click)="confirmReprocess()"
                 [disabled]="processingAction">
@@ -497,6 +496,24 @@ import { AuthService } from '../../services/auth.service';
                       <div class="score-fill score-fill-soft" [style.width.%]="scoreExp.completenessScore"></div>
                     </div>
                     <div class="score-value">{{ scoreExp.completenessScore | number:'1.0-0' }}</div>
+                  </div>
+                </div>
+
+                <div class="score-rationale" *ngIf="getScoreRationale(extracted) as rationale">
+                  <div class="score-subtitle">Why this score</div>
+                  <ul class="rationale-list">
+                    <li>Required skills matched: {{ rationale.requiredMatched }}/{{ rationale.requiredTotal }}</li>
+                    <li *ngIf="rationale.niceToHaveMatched > 0">Nice-to-have matched: {{ rationale.niceToHaveMatched }}</li>
+                    <li *ngIf="rationale.experienceYears !== null">
+                      Experience detected: {{ rationale.experienceYears | number:'1.0-1' }} years ({{ rationale.experienceLabel }})
+                    </li>
+                    <li>Completeness: {{ rationale.completenessScore | number:'1.0-0' }} / 100</li>
+                  </ul>
+                  <div class="rationale-missing" *ngIf="rationale.missingFields.length">
+                    <div class="score-subtitle">Missing data</div>
+                    <div class="chip-wrap">
+                      <span class="chip chip-negative" *ngFor="let field of rationale.missingFields">{{ field }}</span>
+                    </div>
                   </div>
                 </div>
 
@@ -1658,6 +1675,26 @@ import { AuthService } from '../../services/auth.service';
       gap: 14px;
     }
 
+    .score-rationale {
+      margin-top: 16px;
+      background: #fff;
+      border: 1px solid $gray-200;
+      border-radius: 14px;
+      padding: 12px;
+    }
+
+    .rationale-list {
+      margin: 0 0 10px;
+      padding-left: 18px;
+      color: $gray-700;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .rationale-missing {
+      margin-top: 10px;
+    }
+
     .score-block {
       background: #fff;
       border: 1px solid $gray-200;
@@ -1839,6 +1876,8 @@ export class CandidateDetailComponent implements OnInit {
   cvZoom = 1;
   processingAction = false;
   showReprocessConfirm = false;
+  private pollHandle: ReturnType<typeof setInterval> | null = null;
+  private pollTimeout: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -1868,6 +1907,9 @@ export class CandidateDetailComponent implements OnInit {
         this.statusDraft = data.status;
         this.applyTemplateSelection();
         this.loadCvPreview(id);
+        if (data.status === 'processing') {
+          this.pollForCompletion();
+        }
       },
       error: (err) => {
         this.error = err?.error?.error?.message || 'Failed to load candidate details.';
@@ -2114,24 +2156,36 @@ export class CandidateDetailComponent implements OnInit {
   pollForCompletion(): void {
     if (!this.candidate) return;
 
+    if (this.pollHandle) return;
+
     const id = this.candidate.documentId;
-    const poll = setInterval(() => {
+    this.pollHandle = setInterval(() => {
       this.candidateService.getHrDetail(id).subscribe({
         next: (data) => {
           if (data.status !== 'processing') {
-            clearInterval(poll);
+            if (this.pollHandle) clearInterval(this.pollHandle);
+            if (this.pollTimeout) clearTimeout(this.pollTimeout);
+            this.pollHandle = null;
+            this.pollTimeout = null;
             this.candidate = data;
             this.loadCvPreview(id);
           }
         },
         error: () => {
-          clearInterval(poll);
+          if (this.pollHandle) clearInterval(this.pollHandle);
+          if (this.pollTimeout) clearTimeout(this.pollTimeout);
+          this.pollHandle = null;
+          this.pollTimeout = null;
         }
       });
     }, 3000); // Poll every 3 seconds
 
     // Stop polling after 2 minutes
-    setTimeout(() => clearInterval(poll), 120000);
+    this.pollTimeout = setTimeout(() => {
+      if (this.pollHandle) clearInterval(this.pollHandle);
+      this.pollHandle = null;
+      this.pollTimeout = null;
+    }, 120000);
   }
 
   /**
@@ -2319,6 +2373,89 @@ export class CandidateDetailComponent implements OnInit {
       qualityLabel,
       qualityTone,
     };
+  }
+
+  getScoreRationale(extracted: any): {
+    requiredMatched: number;
+    requiredTotal: number;
+    niceToHaveMatched: number;
+    experienceYears: number | null;
+    experienceLabel: string;
+    completenessScore: number;
+    missingFields: string[];
+  } | null {
+    const evaluation = extracted?.evaluation;
+    if (!evaluation || typeof evaluation !== 'object') return null;
+
+    const breakdown = evaluation?.breakdown ?? {};
+    const skillsMatched = this.uniqStrings(this.toTrimmedArray(
+      breakdown?.skillsMatched ?? evaluation?.skillsMatched ?? evaluation?.matchedSkills
+    ));
+    const skillsMissing = this.uniqStrings(this.toTrimmedArray(
+      breakdown?.skillsMissing ?? evaluation?.skillsMissing ?? evaluation?.missingSkills
+    ));
+    const niceToHaveMatched = this.uniqStrings(this.toTrimmedArray(
+      breakdown?.niceToHaveMatched ?? evaluation?.niceToHaveMatched ?? evaluation?.matchedNiceToHave
+    ));
+
+    const requiredMatched = skillsMatched.length;
+    const requiredTotal = requiredMatched + skillsMissing.length;
+
+    const experienceYears = this.toNumber(breakdown?.experienceYears ?? evaluation?.experienceYears);
+    const experienceMatch = typeof breakdown?.experienceMatch === 'boolean'
+      ? breakdown.experienceMatch
+      : typeof evaluation?.experienceMatch === 'boolean'
+        ? evaluation.experienceMatch
+        : null;
+    const experienceLabel = experienceMatch === null
+      ? 'requirement not specified'
+      : experienceMatch
+        ? 'requirement met'
+        : 'requirement not met';
+
+    const completenessScore = this.toScore(breakdown?.completenessScore ?? evaluation?.completenessScore ?? 0);
+    const missingFields = this.getCompletenessMissing(extracted);
+
+    return {
+      requiredMatched,
+      requiredTotal,
+      niceToHaveMatched: niceToHaveMatched.length,
+      experienceYears,
+      experienceLabel,
+      completenessScore,
+      missingFields,
+    };
+  }
+
+  private getCompletenessMissing(extracted: any): string[] {
+    const missing: string[] = [];
+    const contact = extracted?.contact ?? {};
+
+    if (!this.pickFirstText(contact?.fullName)) missing.push('full name');
+    if (!this.pickFirstText(contact?.email)) missing.push('email');
+    if (!this.pickFirstText(contact?.phone)) missing.push('phone');
+    if (!this.pickFirstText(contact?.location)) missing.push('location');
+
+    if (!this.pickFirstText(contact?.linkedin, this.candidate?.linkedin)) missing.push('LinkedIn');
+    if (!this.pickFirstText(contact?.portfolio, this.candidate?.portfolio)) missing.push('portfolio');
+
+    if (!this.pickFirstText(extracted?.summary)) missing.push('summary');
+    if (this.toTrimmedArray(extracted?.skills).length === 0) missing.push('skills');
+
+    const experience = Array.isArray(extracted?.experience) ? extracted.experience : [];
+    if (experience.length === 0) missing.push('experience');
+    const hasDatedExperience = experience.some((row: any) =>
+      this.pickFirstText(row?.startDate) && this.pickFirstText(row?.endDate)
+    );
+    if (!hasDatedExperience) missing.push('experience dates');
+
+    const education = Array.isArray(extracted?.education) ? extracted.education : [];
+    if (education.length === 0) missing.push('education');
+
+    const projects = Array.isArray(extracted?.projects) ? extracted.projects : [];
+    if (projects.length === 0) missing.push('projects');
+
+    return missing;
   }
 
   getContactLinks(extracted: any): Array<{ label: string; url: string; display: string }> {

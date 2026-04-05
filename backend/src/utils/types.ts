@@ -169,6 +169,9 @@ export interface EvaluationResult {
     experienceMatch: boolean;
   };
   qualityLabel: 'excellent' | 'good' | 'fair' | 'poor';
+  parseConfidence?: number;
+  missingFields?: string[];
+  needsReview?: boolean;
 }
 
 /** Candidate metadata for evaluation */

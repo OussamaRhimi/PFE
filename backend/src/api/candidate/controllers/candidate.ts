@@ -289,13 +289,33 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
       },
     });
 
+    let responseStatus = candidate.status;
+
+    const internalCandidate = await strapi.entityService.findMany('api::candidate.candidate', {
+      filters: { documentId: candidate.documentId } as any,
+      limit: 1,
+    });
+
+    if (internalCandidate && internalCandidate.length > 0) {
+      const internalId = (internalCandidate[0] as any).id;
+      await strapi.entityService.update('api::candidate.candidate', internalId, {
+        data: { status: 'processing' },
+      });
+      responseStatus = 'processing';
+
+      const { processCandidate } = await import('../services/candidate');
+      processCandidate(internalId, strapi).catch((err) => {
+        console.error(`Auto-process failed for candidate ${candidate.documentId}:`, err);
+      });
+    }
+
     // Return only public-safe data + publicToken
     return ctx.send({
       data: {
         publicToken: candidate.publicToken,
         fullName: candidate.fullName,
         email: candidate.email,
-        status: candidate.status,
+        status: responseStatus,
         createdAt: candidate.createdAt,
       },
     });
