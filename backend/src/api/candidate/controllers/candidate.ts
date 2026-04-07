@@ -484,6 +484,8 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
       ? parseInt(selfReportedYearsExperience, 10) || null
       : null;
 
+    const jobRelation = (jobPosting as any).id ?? (jobPosting as any).documentId ?? jobPostingId;
+
     const candidate = await strapi.documents('api::candidate.candidate').create({
       data: {
         fullName: fullName.trim(),
@@ -494,7 +496,7 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
         city: city.trim(),
         candidateNotes: candidateNotes?.trim() || null,
         selfReportedYearsExperience: yearsExp,
-        job_posting: jobPostingId,
+        job_posting: jobRelation,
         status: 'new',
         score: 0,
         consent: true,
@@ -927,6 +929,7 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
       email: candidate.email,
       status: candidate.status,
       score: candidate.score,
+      extractedData: (candidate as any).extractedData ?? null,
       jobTitle: (candidate as any).job_posting?.title || null,
       jobPostingId: (candidate as any).job_posting?.documentId || null,
       createdAt: candidate.createdAt,

@@ -80,18 +80,17 @@ const DEFAULTS: FullEvaluationConfig = {
       </header>
 
       <section class="job-selector card">
-        <label class="selector-label" for="jobSelect">
+        <div class="selector-label">
           <lucide-angular [img]="icons.settings" [size]="18"></lucide-angular>
           Select Job Posting
-        </label>
+        </div>
         <select
-          id="jobSelect"
           class="selector-input"
-          [ngModel]="selectedJobKey()"
-          (ngModelChange)="onSelectJob($event)"
+          [ngModel]="selectedJobKey() ?? ''"
+          (ngModelChange)="onSelectJob($event || null)"
         >
-          <option [ngValue]="null" disabled>- Choose a job posting -</option>
-          <option *ngFor="let job of jobs(); trackBy: trackJob" [ngValue]="jobKey(job)">
+          <option value="">- Choose a job posting -</option>
+          <option *ngFor="let job of jobs(); trackBy: trackJob" [value]="jobKey(job)">
             {{ job.title || 'Untitled' }} ({{ job.status }})
           </option>
         </select>
@@ -299,9 +298,9 @@ const DEFAULTS: FullEvaluationConfig = {
                   <div class="criterion-field">
                     <label>Type</label>
                     <select
+                      class="criterion-select"
                       [ngModel]="criterion.type"
                       (ngModelChange)="updateCriterion(i, { type: $event })"
-                      class="criterion-select"
                     >
                       <option value="bonus">Bonus (+)</option>
                       <option value="penalty">Penalty (-)</option>
@@ -319,9 +318,9 @@ const DEFAULTS: FullEvaluationConfig = {
                   <div class="criterion-field">
                     <label>Match Mode</label>
                     <select
-                      [ngModel]="criterion.requireAll"
-                      (ngModelChange)="updateCriterion(i, { requireAll: $event === 'true' || $event === true })"
                       class="criterion-select"
+                      [ngModel]="criterion.requireAll"
+                      (ngModelChange)="updateCriterion(i, { requireAll: $event })"
                     >
                       <option [ngValue]="false">Any keyword</option>
                       <option [ngValue]="true">All keywords</option>
@@ -479,17 +478,16 @@ const DEFAULTS: FullEvaluationConfig = {
       }
       .selector-input {
         width: 100%;
-        padding: 0.6rem 0.75rem;
+        padding: 0.55rem 0.7rem;
         border: 1px solid var(--border);
         border-radius: 8px;
-        font-size: 0.92rem;
         background: var(--panel);
         color: var(--text);
+        font-size: 0.9rem;
       }
       .selector-input:focus {
         outline: none;
         border-color: var(--accent);
-        box-shadow: 0 0 0 3px rgba(139, 31, 31, 0.12);
       }
 
       .alert {
@@ -823,6 +821,10 @@ const DEFAULTS: FullEvaluationConfig = {
         background: var(--panel);
         color: var(--text);
       }
+      .criterion-select:focus {
+        outline: none;
+        border-color: var(--accent);
+      }
 
       .keyword-list {
         display: flex;
@@ -1003,7 +1005,9 @@ export class AiEvaluationComponent implements OnInit {
   }
 
   trackJob(_index: number, job: JobPosting): string {
-    return this.jobKey(job);
+    if (job.documentId) return job.documentId;
+    if (job.id != null) return String(job.id);
+    return '';
   }
 
   trackField(_index: number, field: { key: keyof FullCompletenessPointsConfig; label: string }): string {
@@ -1019,8 +1023,8 @@ export class AiEvaluationComponent implements OnInit {
   }
 
   jobKey(job: JobPosting): string {
-    if (job.id != null) return String(job.id);
     if (job.documentId) return job.documentId;
+    if (job.id != null) return String(job.id);
     return '';
   }
 

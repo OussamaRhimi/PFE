@@ -8,7 +8,7 @@ import { I18nService } from '../../services/i18n.service';
   standalone: true,
   imports: [CommonModule, RouterModule],
   template: `
-    <footer class="footer">
+    <footer class="footer page-footer">
       <div class="footer-inner">
         <div class="footer-top">
           <div class="footer-brand">
@@ -35,19 +35,14 @@ import { I18nService } from '../../services/i18n.service';
     $gray-200: #e5e8ef;
     $gray-300: #cbd0dc;
     $gray-400: #9aa0b4;
-    $gray-600: #5a6278;
     $gray-800: #252b3b;
     $gray-900: #1a1f2e;
 
     :host { display: block; margin-top: auto; }
 
     .footer {
-      background: rgba(255, 255, 255, 0.65);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border-top: 1px solid rgba(255, 255, 255, 0.4);
-      position: relative;
-      z-index: 10;
+      background: $gray-800;
+      color: $gray-300;
     }
     .footer-inner {
       max-width: 1200px;
@@ -66,11 +61,14 @@ import { I18nService } from '../../services/i18n.service';
     }
     .footer-logo {
       height: 28px;
+      filter: brightness(0) invert(1);
+      opacity: 0.8;
     }
     .footer-name {
       font-size: 1.1rem;
       font-weight: 700;
-      color: $gray-800;
+      color: #fff;
+      opacity: 0.9;
     }
     .footer-links {
       display: flex;
@@ -80,14 +78,14 @@ import { I18nService } from '../../services/i18n.service';
       text-decoration: none;
       font-size: 13.5px;
       font-weight: 500;
-      color: $gray-600;
+      color: $gray-300;
       transition: color 0.2s;
     }
-    .footer-links a:hover { color: $logo-red; }
+    .footer-links a:hover { color: #fff; }
 
     .footer-divider {
       height: 1px;
-      background: $gray-200;
+      background: rgba(255, 255, 255, 0.1);
       margin: 20px 0 16px;
     }
     .footer-bottom {

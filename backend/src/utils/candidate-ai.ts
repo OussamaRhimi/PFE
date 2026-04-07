@@ -412,12 +412,21 @@ const KNOWN_TECHNOLOGIES = new Set([
 function normalizeCvText(input: string): string {
   let out = String(input ?? '');
   out = out.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  out = out.replace(/[–—]/g, '-');
   out = out.replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n');
+  // Insert line breaks around common headings and labels when PDFs flatten text.
+  out = out.replace(/\b(Professional Summary|Summary|Profile|Technical Skills|Work Experience|Professional Experience|Education|Projects?|Languages?|Skills)\b/gi, '\n$1');
+  out = out.replace(/\b(Email|Phone|Location|LinkedIn|Portfolio|Website|Github|GitHub)\b\s*[:\-]?\s*(?=[A-Za-z0-9])/gi, '\n$1: ');
+  out = out.replace(/\b(Professional Summary|Summary|Profile|Technical Skills|Work Experience|Professional Experience|Education|Projects?|Languages?|Skills)\b\s*[:\-]\s*/gi, '$1\n');
+  out = out.replace(/\b(Professional Summary|Summary|Profile|Work Experience|Professional Experience|Education|Projects?|Languages?)\b\s+(?=[A-Z])/g, '$1\n');
+  out = out.replace(/\b(github|gitlab|linkedin)\s*[:\-]?\s*\.?\s*com\//gi, '$1.com/');
+  out = out.replace(/\n\s*[-:]\s+/g, '\n');
   // Split concatenated dates/roles (e.g., "2025Web developer")
   out = out.replace(/(\d{4})(?=[A-Z])/g, '$1\n');
   // Split merged date ranges (e.g., "June 2025 - August 2025Web")
   out = out.replace(/((?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4})(?=[A-Z])/gi, '$1\n');
-  return out;
+  out = out.replace(/\n{3,}/g, '\n\n');
+  return out.trim();
 }
 
 // Extract skills from technology pattern "Tech(Lang)" like "Springboot(JAVA)"
@@ -649,6 +658,36 @@ function isLikelyLocationValue(value: string): boolean {
 
 const EMAIL_RX = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
 const PHONE_RX = /\+?\d[\d\s().-]{6,}\d/;
+const LINK_RX = /(https?:\/\/[^\s]+|www\.[^\s]+|linkedin\.com\/[^\s]+|github\.com\/[^\s]+|gitlab\.com\/[^\s]+|bitbucket\.org\/[^\s]+|(?:[a-z0-9-]+\.)+(?:com|io|dev|net|org|me|tn)(?:\/[\w\-./?%#=&+]*)?)/gi;
+const ACTION_VERB_RX = /^(built|created|developed|designed|implemented|managed|led|reduced|improved|introduced|wrote|deployed|integrated|maintained|established|architected|automated|configured|migrated|optimized|launched|delivered|collaborated|coordinated|conducted)/i;
+
+function normalizeLooseUrl(raw: string): string {
+  let out = raw.trim().replace(/[),.;]+$/, '');
+  out = out.replace(/^(github|gitlab|linkedin)\s*:\s*\.?\s*com\//i, '$1.com/');
+  out = out.replace(/^(github|gitlab|linkedin)\s*\.?\s*com\//i, '$1.com/');
+  out = out.replace(/^www\./i, 'https://www.');
+  if (!/^https?:\/\//i.test(out) && /^(github\.com|gitlab\.com|linkedin\.com|bitbucket\.org)/i.test(out)) {
+    out = `https://${out}`;
+  }
+  if (!/^https?:\/\//i.test(out) && /^[a-z0-9.-]+\.(com|io|dev|net|org|me|tn)(\/|$)/i.test(out)) {
+    out = `https://${out}`;
+  }
+  return out;
+}
+
+function extractLinksFromLine(line: string): string[] {
+  if (!line) return [];
+  const fixed = line
+    .replace(/\b(github|gitlab|linkedin)\s*:\s*\.?\s*com\//ig, '$1.com/')
+    .replace(/\b(github|gitlab|linkedin)\s*\.?\s*com\//ig, '$1.com/')
+    .replace(/\s+\/\s+/g, '/');
+  const matches = fixed.match(LINK_RX) || [];
+  return uniqStrings(
+    matches
+      .map(normalizeLooseUrl)
+      .filter((value) => value && !value.includes('@'))
+  );
+}
 
 function findLocationLine(lines: string[]): string | undefined {
   const emailIndex = lines.findIndex((line) => EMAIL_RX.test(line));
@@ -676,16 +715,14 @@ function extractContactFromText(lines: string[]): ResumeContact {
     .map((p) => p.replace(/[^\d+]/g, ''))
     .sort((a, b) => b.length - a.length)[0];
 
-  const linkMatches = joined.match(/(https?:\/\/[^\s]+|www\.[^\s]+|linkedin\.com\/[^\s]+|github\.com\/[^\s]+|[a-z]+\.[a-z]+\.com\/[^\s]+)/gi) || [];
-  const links = uniqStrings(linkMatches.map(l => l.replace(/[),.;]+$/, '')));
+  const links = uniqStrings([
+    ...extractLinksFromLine(joined),
+    ...lines.flatMap((line) => extractLinksFromLine(line)),
+  ]);
 
   const linkedin = links.find(l => l.toLowerCase().includes('linkedin.com'));
   const github = links.find(l => l.toLowerCase().includes('github.com'));
-  const portfolio = links.find(l => 
-    !l.toLowerCase().includes('linkedin.com') && 
-    !l.toLowerCase().includes('github.com') &&
-    (l.includes('.com') || l.includes('.io') || l.includes('.dev'))
-  );
+  const portfolio = pickPortfolioLink(links);
 
   // Skip patterns that look like language entries or section headers
   const skipPatterns = [
@@ -734,9 +771,24 @@ function extractContactFromText(lines: string[]): ResumeContact {
     phone: phone ? phone.trim() : undefined,
     location: locationLine ? locationLine.trim() : undefined,
     linkedin: linkedin ? linkedin.trim() : undefined,
-    portfolio: portfolio || github ? (portfolio || github)?.trim() : undefined,
+    portfolio: portfolio ? portfolio.trim() : (github ? github.trim() : undefined),
     links,
   };
+}
+
+function isPersonalLink(link: string): boolean {
+  const lower = link.toLowerCase();
+  if (lower.includes('linkedin.com')) return false;
+  if (lower.includes('github.com')) return false;
+  if (lower.includes('gitlab.com')) return false;
+  if (lower.includes('bitbucket.org')) return false;
+  return /\.(com|io|dev|net|org|me|tn)(\/|$)/i.test(lower);
+}
+
+function pickPortfolioLink(links: string[]): string | undefined {
+  const personal = links.find(isPersonalLink);
+  if (personal) return personal;
+  return links.find((link) => link.toLowerCase().includes('github.com'));
 }
 
 function splitSkillTokens(line: string): string[] {
@@ -821,45 +873,192 @@ function extractEducationFromSection(lines: string[]): Array<Record<string, unkn
   return entries;
 }
 
-function extractExperienceFromSection(lines: string[]): Array<Record<string, unknown>> {
-  const entries: Array<Record<string, unknown>> = [];
-  const buffer: string[] = [];
+const JOB_TITLE_RX = /\b(web\s*developer|software\s*engineer|developer|engineer|devops|backend|frontend|full\s*stack|intern|stagiaire|stage)\b/i;
 
-  for (let i = 0; i < lines.length; i += 1) {
-    const line = lines[i];
-    const range = parseDateRange(line);
-    if (range && isMostlyDateLine(line)) {
-      const title = buffer.pop();
-      const company = buffer.pop();
-      const highlights: string[] = [];
-      let j = i + 1;
-      while (j < lines.length && /^[-•\u2022]/.test(lines[j])) {
-        highlights.push(lines[j].replace(/^[-•\u2022]+/, '').trim());
-        j += 1;
-      }
-      entries.push({
-        ...(title ? { title } : {}),
-        ...(company ? { company } : {}),
-        ...(formatDateFromDate(range.start) ? { startDate: formatDateFromDate(range.start) } : {}),
-        ...(formatDateFromDate(range.end) ? { endDate: formatDateFromDate(range.end) } : {}),
-        ...(highlights.length ? { highlights } : {}),
-      });
-      buffer.length = 0;
-      continue;
+function splitInlineHighlights(line: string): { head: string; highlights: string[] } | null {
+  if (!line.includes(' - ')) return null;
+  const parts = line.split(/\s+-\s+/).map((p) => p.trim()).filter(Boolean);
+  if (parts.length < 2) return null;
+  const headParts: string[] = [parts[0]];
+  const highlights: string[] = [];
+
+  for (const part of parts.slice(1)) {
+    if (ACTION_VERB_RX.test(part)) {
+      highlights.push(part);
+    } else {
+      headParts.push(part);
     }
-    if (line) buffer.push(line);
   }
 
+  if (highlights.length === 0) return null;
+  return { head: headParts.join(' - '), highlights };
+}
+
+function expandInlineHighlights(lines: string[]): string[] {
+  const expanded: string[] = [];
+  for (const line of lines) {
+    const inline = splitInlineHighlights(line);
+    if (inline) {
+      expanded.push(inline.head);
+      for (const h of inline.highlights) expanded.push(`- ${h}`);
+      continue;
+    }
+    expanded.push(line);
+  }
+  return expanded;
+}
+
+function isExperienceStartLine(line: string): boolean {
+  const trimmed = line.trim();
+  if (!trimmed) return false;
+  if (/^(experience|work experience|professional experience)$/i.test(trimmed)) return false;
+  if (JOB_TITLE_RX.test(trimmed)) return true;
+  return COMPANY_PATTERNS.some((p) => p.test(trimmed));
+}
+
+function parseTitleCompany(line: string): { title?: string; company?: string } {
+  const cleaned = stripDateTokens(line).replace(/[()]/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!cleaned) return {};
+
+  const dashParts = cleaned.split(/\s+[\-–—]\s+/).map((p) => p.trim()).filter(Boolean);
+  if (dashParts.length >= 2) {
+    const left = dashParts[0];
+    const right = dashParts.slice(1).join(' - ');
+    const leftIsTitle = JOB_TITLE_RX.test(left);
+    const rightIsTitle = JOB_TITLE_RX.test(right);
+    if (!leftIsTitle && rightIsTitle) return { title: right, company: left };
+    return { title: left, company: right };
+  }
+
+  if (cleaned.includes(',')) {
+    const parts = cleaned.split(',').map((p) => p.trim()).filter(Boolean);
+    if (parts.length >= 2) return { title: parts[0], company: parts.slice(1).join(', ') };
+  }
+
+  if (/\bat\b/i.test(cleaned)) {
+    const parts = cleaned.split(/\bat\b/i).map((p) => p.trim()).filter(Boolean);
+    if (parts.length >= 2) return { title: parts[0], company: parts.slice(1).join(' at ') };
+  }
+
+  return { title: cleaned };
+}
+
+function extractExperienceFromSection(lines: string[]): Array<Record<string, unknown>> {
+  const entries: Array<Record<string, unknown>> = [];
+  const expanded = expandInlineHighlights(lines);
+  let current: { title?: string; company?: string; startDate?: string; endDate?: string; highlights?: string[] } | null = null;
+
+  const flush = () => {
+    if (!current) return;
+    if (!current.title && !current.company && !(current.highlights && current.highlights.length)) {
+      current = null;
+      return;
+    }
+    const payload = { ...current } as { highlights?: string[] };
+    if (!payload.highlights || payload.highlights.length === 0) {
+      delete payload.highlights;
+    }
+    entries.push(payload);
+    current = null;
+  };
+
+  for (const raw of expanded) {
+    const line = raw.trim();
+    if (!line) continue;
+    if (detectHeading(line) === 'experience') continue;
+
+    const range = parseDateRange(line);
+    if (current && range && isMostlyDateLine(line)) {
+      current.startDate = formatDateFromDate(range.start) ?? current.startDate;
+      current.endDate = formatDateFromDate(range.end) ?? current.endDate;
+      continue;
+    }
+
+    if (/^[-•\u2022]/.test(line)) {
+      if (current) {
+        const highlight = line.replace(/^[-•\u2022]+/, '').trim();
+        if (highlight) {
+          current.highlights = current.highlights ?? [];
+          current.highlights.push(highlight);
+        }
+      }
+      continue;
+    }
+
+    if (ACTION_VERB_RX.test(line) && current) {
+      current.highlights = current.highlights ?? [];
+      current.highlights.push(line);
+      continue;
+    }
+
+    if (isExperienceStartLine(line)) {
+      flush();
+      const parsed = parseTitleCompany(line);
+      const inlineRange = parseDateRange(line);
+      current = {
+        ...(parsed.title ? { title: parsed.title } : {}),
+        ...(parsed.company ? { company: parsed.company } : {}),
+        ...(inlineRange?.start ? { startDate: formatDateFromDate(inlineRange.start) } : {}),
+        ...(inlineRange?.end ? { endDate: formatDateFromDate(inlineRange.end) } : {}),
+      };
+      continue;
+    }
+
+    if (current && !current.company && line.length <= 80) {
+      current.company = line;
+      continue;
+    }
+    if (current && !current.title && line.length <= 80) {
+      current.title = line;
+      continue;
+    }
+  }
+
+  flush();
   return entries;
 }
 
 function extractProjectsFromSection(lines: string[]): Array<Record<string, unknown>> {
   const entries: Array<Record<string, unknown>> = [];
-  for (const line of lines) {
-    if (!line) continue;
-    const name = line.replace(/^[-•\u2022]+/, '').trim();
-    if (name.length < 3) continue;
-    entries.push({ name });
+  for (let i = 0; i < lines.length; i += 1) {
+    const raw = lines[i];
+    if (!raw) continue;
+    const cleaned = raw.replace(/^[-•\u2022]+/, '').trim();
+    if (!cleaned || /^(projects|project)$/i.test(cleaned)) continue;
+
+    const links = extractLinksFromLine(cleaned);
+    const parts = cleaned.split(/\s+-\s+/).map((p) => p.trim()).filter(Boolean);
+    let name = parts.shift() ?? '';
+    let description = parts.length ? parts.join(' - ') : null;
+
+    if (links.length) {
+      for (const link of links) {
+        name = name.replace(link, '').trim();
+      }
+      name = name.replace(/^(github|gitlab|website|portfolio|project)\s*[:\-]?\s*/i, '').trim();
+    }
+
+    for (let j = i + 1; j < Math.min(lines.length, i + 3); j += 1) {
+      const near = lines[j].trim();
+      if (!near) continue;
+      if (detectHeading(near)) break;
+      const nearLinks = extractLinksFromLine(near);
+      if (nearLinks.length) links.push(...nearLinks);
+      if (!description && (ACTION_VERB_RX.test(near) || near.length > 20) && !/^[-•\u2022]/.test(near)) {
+        description = near;
+      } else if (!description && /^[-•\u2022]/.test(near)) {
+        description = near.replace(/^[-•\u2022]+/, '').trim();
+      }
+    }
+
+    if (!name && links.length) name = links[0].replace(/^https?:\/\//i, '');
+    if (!name && !description && links.length === 0) continue;
+
+    entries.push({
+      ...(name ? { name } : {}),
+      ...(description ? { description } : {}),
+      ...(links.length ? { links: uniqStrings(links) } : {}),
+    });
   }
   return entries;
 }
@@ -974,8 +1173,25 @@ function extractEducationFromText(text: string): Array<Record<string, unknown>> 
     if (parseDateRange(line)) continue;
     
     // Check if line matches university pattern
-    if (UNIVERSITY_PATTERNS.some(p => p.test(line))) {
-      const school = line.replace(/\([^)]*\)$/, '').trim(); // Remove trailing parenthetical
+    if (UNIVERSITY_PATTERNS.some(p => p.test(candidateLine))) {
+      let school = candidateLine;
+      let degreeFromLine: string | null = null;
+      const dashSplit = candidateLine.split(/\s+[\-–—]\s+/).map((p) => p.trim()).filter(Boolean);
+      if (dashSplit.length >= 2) {
+        const left = dashSplit[0];
+        const right = dashSplit.slice(1).join(' - ');
+        const rightHasUni = UNIVERSITY_PATTERNS.some((p) => p.test(right));
+        const leftHasUni = UNIVERSITY_PATTERNS.some((p) => p.test(left));
+        if (rightHasUni && !leftHasUni) {
+          school = right;
+          degreeFromLine = left;
+        } else if (leftHasUni && !rightHasUni) {
+          school = left;
+          degreeFromLine = right;
+        }
+      }
+
+      school = school.replace(/\([^)]*\)$/, '').trim(); // Remove trailing parenthetical
       if (seen.has(school.toLowerCase())) continue;
       seen.add(school.toLowerCase());
       
@@ -987,6 +1203,13 @@ function extractEducationFromText(text: string): Array<Record<string, unknown>> 
       let bestDateSpan = 0;
       
       // Search for dates - prefer multi-year ranges (education typically 2-5 years)
+      if (inlineRange && inlineRange.start && inlineRange.end) {
+        const span = inlineRange.end.getFullYear() - inlineRange.start.getFullYear();
+        if (span >= 0 && span <= 10) {
+          bestDateRange = inlineRange;
+          bestDateSpan = span;
+        }
+      }
       for (let j = Math.max(0, i - 10); j < Math.min(lines.length, i + 10); j++) {
         const nearLine = lines[j];
         
@@ -1013,6 +1236,7 @@ function extractEducationFromText(text: string): Array<Record<string, unknown>> 
         }
       }
       
+      if (!degree && degreeFromLine) degree = degreeFromLine;
       if (bestDateRange) {
         startDate = formatDateFromDate(bestDateRange.start);
         endDate = formatDateFromDate(bestDateRange.end);
@@ -1060,8 +1284,12 @@ function extractExperienceFromText(text: string): Array<Record<string, unknown>>
       let title: string | null = null;
       let company: string | null = null;
       
-      // Try to parse "Title, Company" or "Title at Company" format
-      if (candidateLine.includes(',')) {
+      // Try to parse "Title - Company", "Title, Company", or "Title at Company" formats
+      const dashParts = candidateLine.split(/\s+[\-–—]\s+/).map((p) => p.trim()).filter(Boolean);
+      if (dashParts.length >= 2) {
+        title = dashParts[0];
+        company = dashParts.slice(1).join(' - ');
+      } else if (candidateLine.includes(',')) {
         const parts = candidateLine.split(',').map(p => p.trim());
         title = parts[0];
         company = parts[1];
@@ -1185,8 +1413,11 @@ function extractProjectsFromText(text: string): Array<Record<string, unknown>> {
       
       // Look for description and technologies nearby
       let description: string | null = null;
+      const links: string[] = [];
       const technologies: string[] = [];
       
+      links.push(...extractLinksFromLine(line));
+
       for (let j = i + 1; j < Math.min(lines.length, i + 5); j++) {
         const nearLine = lines[j];
         
@@ -1198,12 +1429,16 @@ function extractProjectsFromText(text: string): Array<Record<string, unknown>> {
         // Extract technologies mentioned
         const techs = extractTechnologiesFromText(nearLine);
         technologies.push(...techs);
+
+        const nearLinks = extractLinksFromLine(nearLine);
+        if (nearLinks.length) links.push(...nearLinks);
       }
       
       entries.push({
         name,
         ...(description ? { description } : {}),
         ...(technologies.length ? { technologies: [...new Set(technologies)] } : {}),
+        ...(links.length ? { links: uniqStrings(links) } : {}),
       });
     }
   }
@@ -1636,11 +1871,7 @@ function normalizeParsedData(parsed: Record<string, unknown>): Record<string, un
 
   const links = uniqStrings(asStringArray(contactRaw.links));
   const derivedLinkedin = links.find(l => l.toLowerCase().includes('linkedin.com'));
-  const derivedPortfolio = links.find(l =>
-    !l.toLowerCase().includes('linkedin.com') &&
-    !l.toLowerCase().includes('github.com') &&
-    (l.includes('.com') || l.includes('.io') || l.includes('.dev'))
-  );
+  const derivedPortfolio = pickPortfolioLink(links);
 
   const contact = {
     fullName: sanitizeFullName(asTrimmedString(contactRaw.fullName)),
@@ -1673,6 +1904,19 @@ function normalizeParsedData(parsed: Record<string, unknown>): Record<string, un
       };
     })
     .filter(Boolean) as Array<Record<string, unknown>>;
+
+  experience = experience.map((row: any) => {
+    if (row.company && typeof row.company === 'string' && row.company.includes(' - ')) {
+      const parts = row.company.split(/\s+-\s+/).map((p: string) => p.trim()).filter(Boolean);
+      const head = parts.shift();
+      const tail = parts.filter((p: string) => ACTION_VERB_RX.test(p));
+      if (head && tail.length) {
+        const mergedHighlights = uniqStrings([...(row.highlights ?? []), ...tail]);
+        return { ...row, company: head, highlights: mergedHighlights };
+      }
+    }
+    return row;
+  });
 
   const educationRaw = Array.isArray(parsed.education) ? parsed.education : [];
   let education = educationRaw
@@ -1770,9 +2014,18 @@ function normalizeParsedData(parsed: Record<string, unknown>): Record<string, un
   const projectsRaw = Array.isArray(parsed.projects) ? parsed.projects : [];
   const projects = projectsRaw
     .map((row: any) => {
-      const name = asTrimmedString(row?.name);
+      let name = asTrimmedString(row?.name);
       const description = asTrimmedString(row?.description);
-      const links = uniqStrings(asStringArray(row?.links));
+      const linkCandidates = uniqStrings([
+        ...asStringArray(row?.links),
+        ...(name ? extractLinksFromLine(name) : []),
+      ]);
+      const links = uniqStrings(linkCandidates);
+      if (name && links.length) {
+        for (const link of links) {
+          name = name.replace(link, '').trim();
+        }
+      }
       if (!name && !description && links.length === 0) return null;
       return {
         ...(name ? { name } : {}),
@@ -2150,38 +2403,48 @@ function normalizeSkills(skills: string[]): string[] {
   return skills.map((skill) => skill.toLowerCase().trim()).filter(Boolean);
 }
 
-function calculateCompletenessScore(parsed: Record<string, unknown>, contact: ResumeContact): number {
+function calculateCompletenessScore(
+  parsed: Record<string, unknown>,
+  contact: ResumeContact,
+  pointsConfig: CompletenessPointsConfig,
+  candidateMeta?: { linkedin?: string; portfolio?: string }
+): number {
   let points = 0;
-  const maxPoints = 100;
+  const maxPoints = Object.values(pointsConfig).reduce((sum, val) => sum + val, 0);
+  if (!Number.isFinite(maxPoints) || maxPoints <= 0) return 0;
 
-  if (contact.fullName) points += 10;
-  if (contact.email) points += 15;
-  if (contact.phone) points += 5;
-  if (contact.location) points += 5;
-
-  if (contact.linkedin) points += 5;
-  if (contact.portfolio) points += 5;
-
-  if (asTrimmedString(parsed.summary)) points += 10;
-  if (asStringArray(parsed.skills).length > 0) points += 5;
-
+  const hasLinks = Array.isArray(contact.links) && contact.links.length > 0;
+  const competencies = asStringArray(parsed.competencies);
   const experience = Array.isArray(parsed.experience) ? parsed.experience : [];
-  if (experience.length > 0) points += 15;
-  if (experience.some((row: any) => normalizeDateText(row?.startDate) && normalizeDateText(row?.endDate))) {
-    points += 10;
-  }
-
   const education = Array.isArray(parsed.education) ? parsed.education : [];
-  if (education.length > 0) points += 10;
+  const hasExperienceDates = experience.some((row: any) =>
+    normalizeDateText(row?.startDate) && normalizeDateText(row?.endDate)
+  );
 
-  const projects = Array.isArray(parsed.projects) ? parsed.projects : [];
-  if (projects.length > 0) points += 5;
+  if (contact.fullName) points += pointsConfig.fullName;
+  if (contact.email) points += pointsConfig.email;
+  if (contact.phone) points += pointsConfig.phone;
+  if (contact.location) points += pointsConfig.location;
+  if (hasLinks) points += pointsConfig.links;
 
-  return Math.min(points, maxPoints);
+  if (contact.linkedin || candidateMeta?.linkedin) points += pointsConfig.linkedin;
+  if (contact.portfolio || candidateMeta?.portfolio) points += pointsConfig.portfolio;
+
+  if (asTrimmedString(parsed.summary)) points += pointsConfig.summary;
+  if (competencies.length > 0) points += pointsConfig.competencies;
+
+  if (experience.length > 0) points += pointsConfig.experience;
+  if (hasExperienceDates) points += pointsConfig.experienceDates;
+
+  if (education.length > 0) points += pointsConfig.education;
+
+  return clampPercent((points / maxPoints) * 100);
 }
 
 function computeMissingFields(parsed: Record<string, unknown>, contact: ResumeContact, candidateMeta?: { linkedin?: string; portfolio?: string }): string[] {
   const missing: string[] = [];
+  const links = Array.isArray(contact.links) ? contact.links : [];
+  const competencies = asStringArray(parsed.competencies);
   const skills = asStringArray(parsed.skills);
   const experience = Array.isArray(parsed.experience) ? parsed.experience : [];
   const education = Array.isArray(parsed.education) ? parsed.education : [];
@@ -2191,9 +2454,11 @@ function computeMissingFields(parsed: Record<string, unknown>, contact: ResumeCo
   if (!contact.email) missing.push('email');
   if (!contact.phone) missing.push('phone');
   if (!contact.location) missing.push('location');
+  if (links.length === 0) missing.push('links');
   if (!contact.linkedin && !candidateMeta?.linkedin) missing.push('linkedin');
   if (!contact.portfolio && !candidateMeta?.portfolio) missing.push('portfolio');
   if (!asTrimmedString(parsed.summary)) missing.push('summary');
+  if (competencies.length === 0) missing.push('competencies');
   if (skills.length === 0) missing.push('skills');
 
   if (experience.length === 0) {
@@ -2217,9 +2482,11 @@ function computeParseConfidence(missingFields: string[]): number {
     email: 1,
     phone: 0.5,
     location: 0.5,
+    links: 0.5,
     linkedin: 0.5,
     portfolio: 0.5,
     summary: 1,
+    competencies: 1,
     skills: 2,
     experience: 2,
     experienceDates: 1,
@@ -2289,6 +2556,31 @@ function calculateProjectComplexityScore(parsed: Record<string, unknown>): numbe
   return Math.min(100, score);
 }
 
+function matchesCriterionKeyword(keyword: string, evidence: { textNormalized: string; textCompact: string }): boolean {
+  const normalized = normalizeSkillKey(keyword);
+  if (!normalized) return false;
+  const compact = compactSkillKey(keyword);
+  if (normalized.includes(' ')) {
+    return evidence.textNormalized.includes(normalized);
+  }
+  return evidence.textCompact.includes(compact);
+}
+
+function applyCustomCriteria(
+  criteria: CustomCriterion[],
+  evidence: { textNormalized: string; textCompact: string }
+): number {
+  let delta = 0;
+  for (const criterion of criteria) {
+    if (!criterion || !Array.isArray(criterion.keywords) || criterion.keywords.length === 0) continue;
+    const checks = criterion.keywords.map((kw) => matchesCriterionKeyword(kw, evidence));
+    const matched = criterion.requireAll ? checks.every(Boolean) : checks.some(Boolean);
+    if (!matched) continue;
+    delta += criterion.type === 'penalty' ? -criterion.points : criterion.points;
+  }
+  return delta;
+}
+
 // Check if skills are from the same ecosystem
 function checkEcosystemMatch(requiredSkill: string, candidateSkills: string[]): boolean {
   const reqLower = requiredSkill.toLowerCase();
@@ -2312,6 +2604,7 @@ export function deterministicEvaluate(
   candidateMeta?: { linkedin?: string; portfolio?: string }
 ): EvaluationResult {
   const requirementsObj = (requirements && typeof requirements === 'object' ? requirements : {}) as Record<string, unknown>;
+  const evaluationConfig = mergeEvaluationConfig((requirementsObj as any).evaluationConfig);
   const requiredSkills = asStringArray((requirementsObj as any).skillsRequired);
   const niceToHaveSkills = asStringArray((requirementsObj as any).skillsNiceToHave);
 
@@ -2350,21 +2643,37 @@ export function deterministicEvaluate(
   // Calculate project complexity score
   const complexityScore = calculateProjectComplexityScore(parsed);
 
-  // Enhanced scoring formula:
-  // - Skills fit: 50% (was 60%, reduced to balance)
-  // - Nice-to-have: 15% (was 10%, increased for better differentiation)
-  // - Experience: 15% (was 10%, increased to value real experience)
-  // - Project complexity: 20% (same)
-  const fitScore = (requiredCoverage * 0.50) + (niceToHaveCoverage * 0.15) + (experienceScore * 0.15) + (complexityScore * 0.20);
+  // Fit score uses configurable weights (normalized to 100%).
+  // Complexity is blended into the experience component so it stays configurable.
+  const fitWeightTotal = evaluationConfig.requiredSkillsWeight
+    + evaluationConfig.niceToHaveSkillsWeight
+    + evaluationConfig.experienceWeight;
+  const reqWeight = fitWeightTotal > 0 ? evaluationConfig.requiredSkillsWeight / fitWeightTotal : 1 / 3;
+  const niceWeight = fitWeightTotal > 0 ? evaluationConfig.niceToHaveSkillsWeight / fitWeightTotal : 1 / 3;
+  const expWeight = fitWeightTotal > 0 ? evaluationConfig.experienceWeight / fitWeightTotal : 1 / 3;
+  const experienceComposite = (experienceScore * 0.7) + (complexityScore * 0.3);
+  const fitScore = (requiredCoverage * reqWeight)
+    + (niceToHaveCoverage * niceWeight)
+    + (experienceComposite * expWeight);
 
   const contact = buildContact(parsed);
-  const completenessScore = calculateCompletenessScore(parsed, {
-    ...contact,
-    linkedin: contact.linkedin ?? candidateMeta?.linkedin,
-    portfolio: contact.portfolio ?? candidateMeta?.portfolio,
-  });
+  const completenessScore = calculateCompletenessScore(
+    parsed,
+    {
+      ...contact,
+      linkedin: contact.linkedin ?? candidateMeta?.linkedin,
+      portfolio: contact.portfolio ?? candidateMeta?.portfolio,
+    },
+    evaluationConfig.completenessPoints,
+    candidateMeta
+  );
 
-  let score = (fitScore * 0.75) + (completenessScore * 0.25);
+  const mainWeightTotal = evaluationConfig.fitWeight + evaluationConfig.completenessWeight;
+  const fitWeight = mainWeightTotal > 0 ? evaluationConfig.fitWeight / mainWeightTotal : 0.5;
+  const completenessWeight = mainWeightTotal > 0 ? evaluationConfig.completenessWeight / mainWeightTotal : 0.5;
+
+  let score = (fitScore * fitWeight) + (completenessScore * completenessWeight);
+  score += applyCustomCriteria(evaluationConfig.customCriteria, evidence);
   const experienceRows = Array.isArray(parsed.experience) ? parsed.experience : [];
   const skillRows = asStringArray(parsed.skills);
   const criticalMissing = [
@@ -2391,7 +2700,19 @@ export function deterministicEvaluate(
     score = Math.min(score, parseConfidence + 5);
   }
 
-  const qualityLabelValue: 'excellent' | 'good' | 'fair' | 'poor' = score >= 80 ? 'excellent' : score >= 60 ? 'good' : score >= 40 ? 'fair' : 'poor';
+  const qt = evaluationConfig.qualityThresholds;
+  const excellent = Math.max(qt.excellent, qt.good, qt.fair);
+  const good = Math.min(Math.max(qt.good, qt.fair), excellent);
+  const fair = Math.min(qt.fair, good);
+  score = clampPercent(score);
+
+  const qualityLabelValue: 'excellent' | 'good' | 'fair' | 'poor' = score >= excellent
+    ? 'excellent'
+    : score >= good
+      ? 'good'
+      : score >= fair
+        ? 'fair'
+        : 'poor';
   let qualityLabel: 'excellent' | 'good' | 'fair' | 'poor' = qualityLabelValue;
   if (parseConfidence < 50) {
     qualityLabel = 'poor';

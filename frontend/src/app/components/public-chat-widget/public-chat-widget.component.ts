@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { AfterViewInit, Component, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CandidateService } from '../../services/candidate.service';
@@ -14,15 +14,37 @@ interface ChatMessage {
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="chat-widget" [class.open]="open">
+    <div class="chat-widget" [class.open]="open" [style.bottom.px]="20 + footerOffset">
       <button class="chat-toggle" type="button" (click)="toggle()">
-        <span *ngIf="!open">{{ i18n.t('chat.help') }}</span>
-        <span *ngIf="open">{{ i18n.t('chat.close') }}</span>
+        <span class="toggle-icon" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2a5 5 0 00-5 5v3H6a3 3 0 00-3 3v2a3 3 0 003 3h2l1 3h6l1-3h2a3 3 0 003-3v-2a3 3 0 00-3-3h-1V7a5 5 0 00-5-5z"/>
+            <circle cx="9" cy="12" r="1"/>
+            <circle cx="15" cy="12" r="1"/>
+          </svg>
+        </span>
+        <span class="toggle-text">
+          <span class="toggle-title">AI</span>
+          <span class="toggle-label" *ngIf="!open">{{ i18n.t('chat.help') }}</span>
+          <span class="toggle-label" *ngIf="open">{{ i18n.t('chat.close') }}</span>
+        </span>
       </button>
 
       <div class="chat-panel" *ngIf="open">
         <div class="chat-header">
-          <div class="chat-title">{{ i18n.t('chat.title') }}</div>
+          <div class="chat-brand">
+            <span class="chat-brand-icon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2a5 5 0 00-5 5v3H6a3 3 0 00-3 3v2a3 3 0 003 3h2l1 3h6l1-3h2a3 3 0 003-3v-2a3 3 0 00-3-3h-1V7a5 5 0 00-5-5z"/>
+                <circle cx="9" cy="12" r="1"/>
+                <circle cx="15" cy="12" r="1"/>
+              </svg>
+            </span>
+            <div>
+              <div class="chat-title">{{ i18n.t('chat.title') }}</div>
+              <div class="chat-sub">AI assistant</div>
+            </div>
+          </div>
           <button class="chat-clear" type="button" (click)="clear()">{{ i18n.t('chat.clear') }}</button>
         </div>
 
@@ -61,7 +83,6 @@ interface ChatMessage {
       .chat-widget {
         position: fixed;
         right: 20px;
-        bottom: 20px;
         z-index: 1200;
         display: flex;
         flex-direction: column;
@@ -71,13 +92,41 @@ interface ChatMessage {
       .chat-toggle {
         border: none;
         border-radius: 999px;
-        padding: 10px 16px;
+        padding: 10px 14px 10px 10px;
         background: linear-gradient(135deg, $logo-red-deep, $logo-red);
         color: #fff;
-        font-size: 13px;
+        font-size: 12.5px;
         font-weight: 700;
         cursor: pointer;
         box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        letter-spacing: 0.02em;
+      }
+      .toggle-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .toggle-text {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+      }
+      .toggle-title {
+        font-size: 11px;
+        text-transform: uppercase;
+        opacity: 0.9;
+      }
+      .toggle-label {
+        font-size: 12.5px;
+        font-weight: 700;
       }
       .chat-panel {
         width: min(360px, calc(100vw - 32px));
@@ -93,12 +142,31 @@ interface ChatMessage {
         justify-content: space-between;
         padding: 12px 14px;
         border-bottom: 1px solid $gray-200;
-        background: $gray-100;
+        background: linear-gradient(180deg, $gray-100 0%, #fff 100%);
+      }
+      .chat-brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .chat-brand-icon {
+        width: 30px;
+        height: 30px;
+        border-radius: 10px;
+        background: rgba(139, 31, 31, 0.12);
+        color: $logo-red-deep;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
       }
       .chat-title {
         font-size: 13px;
         font-weight: 700;
         color: $gray-800;
+      }
+      .chat-sub {
+        font-size: 11px;
+        color: $gray-400;
       }
       .chat-clear {
         border: none;
@@ -141,6 +209,7 @@ interface ChatMessage {
         gap: 8px;
         padding: 10px 12px;
         border-top: 1px solid $gray-200;
+        background: #fff;
       }
       .chat-input input {
         flex: 1;
@@ -162,14 +231,41 @@ interface ChatMessage {
     `,
   ],
 })
-export class PublicChatWidgetComponent {
+export class PublicChatWidgetComponent implements AfterViewInit {
   open = false;
   loading = false;
   draft = '';
   messages: ChatMessage[] = [];
+  footerOffset = 0;
 
   constructor(private candidateService: CandidateService, public i18n: I18nService) {
     this.resetMessages();
+  }
+
+  ngAfterViewInit(): void {
+    this.updateFooterOffset();
+  }
+
+  @HostListener('window:scroll')
+  @HostListener('window:resize')
+  onViewportChange(): void {
+    this.updateFooterOffset();
+  }
+
+  private updateFooterOffset(): void {
+    const footers = Array.from(document.querySelectorAll('.page-footer')) as HTMLElement[];
+    if (footers.length === 0) {
+      this.footerOffset = 0;
+      return;
+    }
+    let maxOffset = 0;
+    for (const footer of footers) {
+      const rect = footer.getBoundingClientRect();
+      const overlap = Math.max(0, window.innerHeight - rect.top);
+      const offset = Math.min(overlap, rect.height);
+      if (offset > maxOffset) maxOffset = offset;
+    }
+    this.footerOffset = maxOffset;
   }
 
   toggle(): void {

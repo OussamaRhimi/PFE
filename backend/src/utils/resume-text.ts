@@ -51,9 +51,63 @@ function getFileExtension(file: UploadFileLike): string {
   return match ? match[0].toLowerCase() : '';
 }
 
+function normalizeExtractedText(raw: string): string {
+  let text = raw.replace(/\r\n?/g, '\n');
+  text = text.replace(/[–—]/g, '-');
+  // Merge hyphenated line breaks: "devel-\noper" -> "developer"
+  text = text.replace(/([A-Za-z])\s*-\s*\n\s*([A-Za-z])/g, '$1$2');
+  text = text.replace(
+    /\b(Email|E-mail|Phone|Tel|Telephone|Mobile|Location|Address|Adresse|LinkedIn|Linkedin|GitHub|Github|Portfolio|Website|Web)\b\s*:?(?=\S)/g,
+    '$1: '
+  );
+  text = text.replace(
+    /\b(Professional Summary|Technical Skills|Work Experience|Education|Projects|Languages|Skills)\b/gi,
+    '\n$1\n'
+  );
+  text = text.replace(/[ \t]+\n/g, '\n');
+  text = text.replace(/[ \t]{2,}/g, ' ');
+  text = text.replace(/\n{3,}/g, '\n\n');
+  return text.trim();
+}
+
+async function extractPdfText(buffer: Buffer): Promise<string> {
+  try {
+    const pdfParse = (await import('pdf-parse')).default;
+    const parsed = await pdfParse(buffer);
+    return parsed.text;
+  } catch (error) {
+    // Fallback to pdfjs for PDFs with malformed xref tables.
+    try {
+      const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
+      const loadingTask = pdfjs.getDocument({
+        data: new Uint8Array(buffer),
+        disableFontFace: true,
+        useSystemFonts: true,
+        stopAtErrors: false,
+        disableRange: true,
+        disableStream: true,
+      } as any);
+      const doc = await loadingTask.promise;
+      let text = '';
+      for (let i = 1; i <= doc.numPages; i += 1) {
+        const page = await doc.getPage(i);
+        const content = await page.getTextContent();
+        const pageText = (content.items as any[])
+          .map((item) => (typeof item?.str === 'string' ? item.str : ''))
+          .filter((str) => str)
+          .join(' ');
+        text += `${pageText}\n`;
+      }
+      return text;
+    } catch {
+      throw error;
+    }
+  }
+}
+
 /**
  * Extract text from resume file (PDF, DOCX, or TXT)
- * 
+ *
  * @param file - Strapi upload file object
  * @param strapi - Strapi instance for file access
  * @returns Extracted text content
@@ -64,23 +118,21 @@ export async function extractTextFromResume(file: UploadFileLike, strapi: Core.S
   const mime = String(file.mime ?? file.mimetype ?? '').toLowerCase().trim();
   const ext = getFileExtension(file);
 
-  // PDF extraction using pdf-parse
+  // PDF extraction using pdf-parse with pdfjs fallback
   if (mime.includes('pdf') || ext === '.pdf') {
-    const pdfParse = (await import('pdf-parse')).default;
-    const parsed = await pdfParse(buffer);
-    return parsed.text;
+    return normalizeExtractedText(await extractPdfText(buffer));
   }
 
   // DOCX extraction using mammoth
   if (mime.includes('officedocument') || mime.includes('wordprocessingml') || ext === '.docx') {
     const mammoth = await import('mammoth');
     const result = await mammoth.extractRawText({ buffer });
-    return result.value;
+    return normalizeExtractedText(result.value);
   }
 
   // TXT extraction (plain text)
   if (mime.startsWith('text/') || ext === '.txt') {
-    return buffer.toString('utf8');
+    return normalizeExtractedText(buffer.toString('utf8'));
   }
 
   throw new Error(`Unsupported resume file type: ${mime || ext}`);

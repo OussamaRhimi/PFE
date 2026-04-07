@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
-import { JobPostingService, JobPostingPayload, Requirements, emptyRequirements, EvaluationConfig } from '../../services/job-posting.service';
+import { JobPostingService, JobPostingPayload, Requirements, emptyRequirements } from '../../services/job-posting.service';
 import { SkillService, Skill } from '../../services/skill.service';
 import { DepartmentService, Department } from '../../services/department.service';
 import { I18nService } from '../../services/i18n.service';
@@ -45,8 +45,12 @@ import { I18nService } from '../../services/i18n.service';
                 <button type="button" class="chip-x" (click)="removeTag('skillsRequired', i)">&times;</button>
               </span>
             </div>
-            <select (change)="onSelect('skillsRequired', $event)">
-              <option value="" selected>{{ i18n.t('form.addSkillRequired') }}</option>
+            <select
+              class="chip-select"
+              [ngModel]="selectedSkillRequired"
+              (ngModelChange)="onSelectValue('skillsRequired', $event)"
+            >
+              <option [ngValue]="null" disabled>{{ i18n.t('form.addSkillRequired') }}</option>
               <option *ngFor="let s of availableSkills('skillsRequired')" [value]="s.name">{{ s.name }}</option>
             </select>
           </div>
@@ -60,8 +64,12 @@ import { I18nService } from '../../services/i18n.service';
                 <button type="button" class="chip-x" (click)="removeTag('skillsNiceToHave', i)">&times;</button>
               </span>
             </div>
-            <select (change)="onSelect('skillsNiceToHave', $event)">
-              <option value="" selected>{{ i18n.t('form.addSkillNice') }}</option>
+            <select
+              class="chip-select"
+              [ngModel]="selectedSkillNice"
+              (ngModelChange)="onSelectValue('skillsNiceToHave', $event)"
+            >
+              <option [ngValue]="null" disabled>{{ i18n.t('form.addSkillNice') }}</option>
               <option *ngFor="let s of availableSkills('skillsNiceToHave')" [value]="s.name">{{ s.name }}</option>
             </select>
           </div>
@@ -75,8 +83,12 @@ import { I18nService } from '../../services/i18n.service';
                 <button type="button" class="chip-x" (click)="removeTag('departments', i)">&times;</button>
               </span>
             </div>
-            <select (change)="onSelect('departments', $event)">
-              <option value="" selected>{{ i18n.t('form.addDepartment') }}</option>
+            <select
+              class="chip-select"
+              [ngModel]="selectedDepartment"
+              (ngModelChange)="onSelectValue('departments', $event)"
+            >
+              <option [ngValue]="null" disabled>{{ i18n.t('form.addDepartment') }}</option>
               <option *ngFor="let d of availableDepartments()" [value]="d.name">{{ d.name }}</option>
             </select>
           </div>
@@ -91,50 +103,6 @@ import { I18nService } from '../../services/i18n.service';
           <div class="field">
             <label>{{ i18n.t('form.notes') }}</label>
             <textarea [(ngModel)]="reqs.notes" name="reqNotes" rows="3" [placeholder]="i18n.t('form.notesPlaceholder')"></textarea>
-          </div>
-        </fieldset>
-
-        <fieldset class="requirements-fieldset eval-config">
-          <legend>{{ i18n.t('form.evalConfig') }}</legend>
-
-          <div class="field">
-            <label>{{ i18n.t('form.evalFitWeight') }}</label>
-            <input type="number" [(ngModel)]="evalConfig.fitWeight" name="fitWeight" min="0" max="100" />
-          </div>
-
-          <div class="field">
-            <label>{{ i18n.t('form.evalCompletenessWeight') }}</label>
-            <input type="number" [(ngModel)]="evalConfig.completenessWeight" name="completenessWeight" min="0" max="100" />
-          </div>
-
-          <div class="field">
-            <label>{{ i18n.t('form.evalRequiredWeight') }}</label>
-            <input type="number" [(ngModel)]="evalConfig.requiredSkillsWeight" name="requiredSkillsWeight" min="0" max="100" />
-          </div>
-
-          <div class="field">
-            <label>{{ i18n.t('form.evalNiceWeight') }}</label>
-            <input type="number" [(ngModel)]="evalConfig.niceToHaveSkillsWeight" name="niceToHaveSkillsWeight" min="0" max="100" />
-          </div>
-
-          <div class="field">
-            <label>{{ i18n.t('form.evalExperienceWeight') }}</label>
-            <input type="number" [(ngModel)]="evalConfig.experienceWeight" name="experienceWeight" min="0" max="100" />
-          </div>
-
-          <div class="field">
-            <label>{{ i18n.t('form.evalExcellent') }}</label>
-            <input type="number" [(ngModel)]="evalConfig.qualityThresholds!.excellent" name="qualityExcellent" min="0" max="100" />
-          </div>
-
-          <div class="field">
-            <label>{{ i18n.t('form.evalGood') }}</label>
-            <input type="number" [(ngModel)]="evalConfig.qualityThresholds!.good" name="qualityGood" min="0" max="100" />
-          </div>
-
-          <div class="field">
-            <label>{{ i18n.t('form.evalFair') }}</label>
-            <input type="number" [(ngModel)]="evalConfig.qualityThresholds!.fair" name="qualityFair" min="0" max="100" />
           </div>
         </fieldset>
 
@@ -288,23 +256,8 @@ import { I18nService } from '../../services/i18n.service';
       letter-spacing: 0.7px;
       margin-bottom: 8px;
     }
-    .chip-field > select {
+    .chip-select {
       width: 100%;
-      padding: 11px 14px;
-      border: 1.5px solid $gray-200;
-      border-radius: 12px;
-      font-size: 14px;
-      font-family: inherit;
-      outline: none;
-      box-sizing: border-box;
-      color: $gray-600;
-      background: white;
-      cursor: pointer;
-      transition: all 0.25s;
-    }
-    .chip-field > select:focus {
-      border-color: $logo-red-deep;
-      box-shadow: 0 0 0 3px rgba($logo-red-deep, 0.08);
     }
 
     .chip-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
@@ -397,14 +350,9 @@ export class JobPostingFormComponent implements OnInit {
 
   form: JobPostingPayload = { title: '', description: '' };
   reqs: Requirements = emptyRequirements();
-  evalConfig: EvaluationConfig = {
-    fitWeight: 75,
-    completenessWeight: 25,
-    requiredSkillsWeight: 75,
-    niceToHaveSkillsWeight: 15,
-    experienceWeight: 10,
-    qualityThresholds: { excellent: 80, good: 60, fair: 40 },
-  };
+  selectedSkillRequired: string | null = null;
+  selectedSkillNice: string | null = null;
+  selectedDepartment: string | null = null;
   skills: Skill[] = [];
   departments: Department[] = [];
 
@@ -435,19 +383,6 @@ export class JobPostingFormComponent implements OnInit {
           this.reqs = job.requirements
             ? { ...emptyRequirements(), ...job.requirements }
             : emptyRequirements();
-          const incoming = job.requirements?.evaluationConfig ?? {};
-          this.evalConfig = {
-            fitWeight: typeof incoming.fitWeight === 'number' ? incoming.fitWeight : 75,
-            completenessWeight: typeof incoming.completenessWeight === 'number' ? incoming.completenessWeight : 25,
-            requiredSkillsWeight: typeof incoming.requiredSkillsWeight === 'number' ? incoming.requiredSkillsWeight : 75,
-            niceToHaveSkillsWeight: typeof incoming.niceToHaveSkillsWeight === 'number' ? incoming.niceToHaveSkillsWeight : 15,
-            experienceWeight: typeof incoming.experienceWeight === 'number' ? incoming.experienceWeight : 10,
-            qualityThresholds: {
-              excellent: typeof incoming.qualityThresholds?.excellent === 'number' ? incoming.qualityThresholds.excellent : 80,
-              good: typeof incoming.qualityThresholds?.good === 'number' ? incoming.qualityThresholds.good : 60,
-              fair: typeof incoming.qualityThresholds?.fair === 'number' ? incoming.qualityThresholds.fair : 40,
-            },
-          };
         },
         error: () => { this.error = this.i18n.t('form.loadError'); }
       });
@@ -464,10 +399,12 @@ export class JobPostingFormComponent implements OnInit {
   }
 
   /** Called when user picks from a dropdown — adds the chip and resets the select */
-  onSelect(field: 'skillsRequired' | 'skillsNiceToHave' | 'departments', event: Event): void {
-    const sel = event.target as HTMLSelectElement;
-    this.addTag(field, sel.value);
-    sel.value = ''; // reset to placeholder
+  onSelectValue(field: 'skillsRequired' | 'skillsNiceToHave' | 'departments', value: string | null): void {
+    if (!value) return;
+    this.addTag(field, value);
+    if (field === 'skillsRequired') this.selectedSkillRequired = null;
+    if (field === 'skillsNiceToHave') this.selectedSkillNice = null;
+    if (field === 'departments') this.selectedDepartment = null;
   }
 
   /** Skills not yet chosen for the given field */
@@ -487,7 +424,7 @@ export class JobPostingFormComponent implements OnInit {
 
     const payload: JobPostingPayload = {
       ...this.form,
-      requirements: { ...this.reqs, evaluationConfig: { ...this.evalConfig } },
+      requirements: { ...this.reqs },
     };
 
     const obs = this.isEdit

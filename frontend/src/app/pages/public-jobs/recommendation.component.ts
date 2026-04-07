@@ -44,7 +44,23 @@ interface RecommendationResponse {
 
         <div class="upload">
           <label class="label">{{ i18n.t('recommend.uploadLabel') }}</label>
-          <input type="file" (change)="onFileSelect($event)" accept=".pdf,.docx,.txt,application/pdf" />
+          <label class="upload-drop">
+            <input type="file" (change)="onFileSelect($event)" accept=".pdf,.docx,.txt,application/pdf" />
+            <div class="upload-content">
+              <div class="upload-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+              </div>
+              <div class="upload-text">
+                <span class="upload-title">{{ i18n.t('recommend.uploadLabel') }}</span>
+                <span class="upload-sub">{{ i18n.t('recommend.uploadHint') }}</span>
+              </div>
+            </div>
+            <div class="upload-cta">{{ i18n.t('recommend.uploadCta') }}</div>
+          </label>
           <div class="file-meta" *ngIf="selectedFile">
             <span>{{ selectedFile.name }}</span>
             <span>{{ (selectedFile.size / 1024 / 1024).toFixed(1) }} MB</span>
@@ -103,7 +119,18 @@ interface RecommendationResponse {
       $gray-700: #3d4358;
       $gray-800: #252b3b;
 
+      :host {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        background:
+          radial-gradient(900px 380px at 10% -10%, rgba(139, 31, 31, 0.12), transparent 60%),
+          radial-gradient(700px 300px at 90% 0%, rgba(163, 26, 26, 0.08), transparent 55%),
+          $gray-50;
+      }
+
       .recommend-page {
+        flex: 1;
         max-width: 980px;
         margin: 32px auto;
         padding: 0 24px 48px;
@@ -116,15 +143,16 @@ interface RecommendationResponse {
         font-size: 1.8rem;
         font-weight: 800;
         color: $gray-800;
+        letter-spacing: -0.01em;
       }
       .hero p { color: $gray-400; margin: 0; }
 
       .card {
-        background: #fff;
-        border: 1px solid $gray-200;
+        background: linear-gradient(180deg, #fff 0%, #fff 60%, #fafafa 100%);
+        border: 1px solid rgba(203, 208, 220, 0.7);
         border-radius: 18px;
-        padding: 20px;
-        box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+        padding: 22px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
         margin-bottom: 24px;
       }
 
@@ -138,9 +166,75 @@ interface RecommendationResponse {
       .alert.error { background: #fff5f5; border-color: #fbd5d5; color: #b91c1c; }
       .alert button { background: none; border: none; margin-left: 8px; }
 
-      .upload { display: grid; gap: 8px; }
+      .upload { display: grid; gap: 10px; }
       .label { font-size: 12px; font-weight: 700; color: $gray-700; text-transform: uppercase; }
-      .file-meta { display: flex; gap: 12px; align-items: center; font-size: 12px; color: $gray-400; }
+      .upload-drop {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 16px 18px;
+        border: 2px dashed rgba(139, 31, 31, 0.2);
+        border-radius: 14px;
+        background: #fff;
+        cursor: pointer;
+        transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+      }
+      .upload-drop:hover {
+        border-color: rgba(139, 31, 31, 0.55);
+        box-shadow: 0 6px 18px rgba(139, 31, 31, 0.08);
+      }
+      .upload-drop input {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        cursor: pointer;
+      }
+      .upload-content {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .upload-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 12px;
+        background: rgba(139, 31, 31, 0.08);
+        color: $logo-red-deep;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .upload-text {
+        display: grid;
+        gap: 2px;
+      }
+      .upload-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: $gray-800;
+      }
+      .upload-sub {
+        font-size: 12px;
+        color: $gray-400;
+      }
+      .upload-cta {
+        padding: 8px 12px;
+        background: $gray-100;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+        color: $gray-700;
+        border: 1px solid $gray-200;
+      }
+      .file-meta {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        font-size: 12px;
+        color: $gray-400;
+      }
       .btn-ghost {
         border: 1px solid $gray-200;
         background: #fff;
@@ -160,7 +254,9 @@ interface RecommendationResponse {
         color: #fff;
         font-weight: 600;
         cursor: pointer;
+        box-shadow: 0 8px 18px rgba(139, 31, 31, 0.2);
       }
+      .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
       .btn-secondary {
         padding: 10px 18px;
         border-radius: 10px;
@@ -169,6 +265,7 @@ interface RecommendationResponse {
         text-decoration: none;
         font-weight: 600;
       }
+      .btn-secondary:hover { background: $gray-200; }
 
       .skills { margin-top: 18px; }
       .chip-wrap { display: flex; flex-wrap: wrap; gap: 8px; }

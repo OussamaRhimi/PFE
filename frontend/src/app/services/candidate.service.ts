@@ -113,6 +113,7 @@ export interface AnalyticsCandidate {
   createdAt: string | null;
   updatedAt: string | null;
   jobId: number | null;
+  jobKey: string | null;
   jobTitle: string | null;
   missing: string[];
 }
@@ -282,16 +283,11 @@ export class CandidateService {
    */
   listForAnalytics(pageSize = 2000): Observable<AnalyticsCandidate[]> {
     const params = new HttpParams()
-      .set('pagination[pageSize]', String(pageSize))
-      .set('fields[0]', 'status')
-      .set('fields[1]', 'score')
-      .set('fields[2]', 'createdAt')
-      .set('fields[3]', 'updatedAt')
-      .set('fields[4]', 'extractedData')
-      .set('fields[5]', 'documentId')
-      .set('populate[job_posting][fields][0]', 'title');
+      .set('page', '1')
+      .set('pageSize', String(pageSize))
+      .set('sort', 'createdAt:desc');
 
-    return this.http.get<any>(this.apiUrl, { params }).pipe(
+    return this.http.get<any>(`${this.apiUrl}/hr`, { params }).pipe(
       map((res) => this.normalizeAnalyticsCandidates(res))
     );
   }
@@ -340,7 +336,43 @@ export class CandidateService {
   }
 
   private normalizeAnalyticsCandidates(res: any): AnalyticsCandidate[] {
+    const isHrResponse = Array.isArray(res?.data) && res?.meta?.pagination;
     const items = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
+    if (isHrResponse) {
+      return items
+        .map((item: any) => {
+          const evaluation = item?.extractedData?.evaluation ?? null;
+          const missingRaw = Array.isArray(evaluation?.missingFields)
+            ? evaluation.missingFields
+            : Array.isArray(evaluation?.missing)
+              ? evaluation.missing
+              : [];
+          const missing = missingRaw.filter((v: unknown) => typeof v === 'string');
+
+          const scoreValue = typeof item?.score === 'number'
+            ? item.score
+            : item?.score != null
+              ? Number(item.score)
+              : null;
+
+          const jobKey = typeof item?.jobPostingId === 'string' ? item.jobPostingId : null;
+
+          return {
+            id: typeof item?.id === 'number' ? item.id : Number(item?.id) || 0,
+            documentId: typeof item?.documentId === 'string' ? item.documentId : null,
+            status: typeof item?.status === 'string' ? item.status : null,
+            score: Number.isFinite(scoreValue as number) ? (scoreValue as number) : null,
+            createdAt: typeof item?.createdAt === 'string' ? item.createdAt : null,
+            updatedAt: typeof item?.updatedAt === 'string' ? item.updatedAt : null,
+            jobId: null,
+            jobKey,
+            jobTitle: typeof item?.jobTitle === 'string' ? item.jobTitle : null,
+            missing,
+          } as AnalyticsCandidate;
+        })
+        .filter((c: AnalyticsCandidate) => Number.isFinite(c.id) && c.id > 0);
+    }
+
     return items
       .map((raw: any) => {
         const item = this.unwrapAttributes(raw);
@@ -361,6 +393,12 @@ export class CandidateService {
             ? Number(item.score)
             : null;
 
+        const jobKey = typeof job?.documentId === 'string'
+          ? job.documentId
+          : job?.id != null
+            ? String(job.id)
+            : null;
+
         return {
           id: typeof item?.id === 'number' ? item.id : Number(item?.id) || 0,
           documentId: typeof item?.documentId === 'string' ? item.documentId : null,
@@ -369,6 +407,7 @@ export class CandidateService {
           createdAt: typeof item?.createdAt === 'string' ? item.createdAt : null,
           updatedAt: typeof item?.updatedAt === 'string' ? item.updatedAt : null,
           jobId: typeof job?.id === 'number' ? job.id : job?.id != null ? Number(job.id) : null,
+          jobKey,
           jobTitle: typeof job?.title === 'string' ? job.title : null,
           missing,
         } as AnalyticsCandidate;

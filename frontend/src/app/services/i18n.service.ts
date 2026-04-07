@@ -273,6 +273,8 @@ const TRANSLATIONS: Record<string, Record<Lang, string>> = {
   'recommend.title':          { fr: 'Recommandations personnalisées', en: 'Personalized Recommendations' },
   'recommend.subtitle':       { fr: 'Téléversez votre CV pour découvrir les meilleures offres.', en: 'Upload your resume to discover your best matches.' },
   'recommend.uploadLabel':    { fr: 'Téléverser un CV',         en: 'Upload a resume' },
+  'recommend.uploadHint':     { fr: 'PDF, DOCX, TXT -- 5 Mo max', en: 'PDF, DOCX, TXT -- 5 MB max' },
+  'recommend.uploadCta':      { fr: 'Cliquer pour televerser',  en: 'Click to upload' },
   'recommend.remove':         { fr: 'Retirer',                  en: 'Remove' },
   'recommend.loading':        { fr: 'Analyse en cours…',        en: 'Analyzing…' },
   'recommend.cta':            { fr: 'Voir mes recommandations', en: 'Get Recommendations' },

@@ -80,6 +80,7 @@ import { PublicFooterComponent } from '../../components/public-footer/public-foo
             <div class="field">
               <label>{{ i18n.t('apply.country') }} *</label>
               <select
+                class="select-field"
                 [(ngModel)]="form.country"
                 name="country"
                 (change)="onCountryChange()"
@@ -93,6 +94,7 @@ import { PublicFooterComponent } from '../../components/public-footer/public-foo
             <div class="field">
               <label>{{ i18n.t('apply.city') }} *</label>
               <select
+                class="select-field"
                 [(ngModel)]="form.city"
                 name="city"
                 [disabled]="!form.country"
@@ -264,23 +266,34 @@ import { PublicFooterComponent } from '../../components/public-footer/public-foo
     }
     .field input,
     .field textarea,
-    .field select {
-      padding: 10px 14px;
-      border: 1.5px solid $gray-200;
+    .select-field {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid $gray-200;
       border-radius: 10px;
       font-size: 14px;
-      transition: border-color 0.2s;
+      font-family: inherit;
+      color: $gray-800;
       background: #fff;
+      outline: none;
+      box-sizing: border-box;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .field input::placeholder,
+    .field textarea::placeholder {
+      color: $gray-400;
     }
     .field input:focus,
     .field textarea:focus,
-    .field select:focus {
-      outline: none;
+    .select-field:focus {
       border-color: $logo-red;
+      box-shadow: 0 0 0 3px rgba($logo-red, 0.12);
     }
     .field input.invalid,
-    .field textarea.invalid {
+    .field textarea.invalid,
+    .select-field.invalid {
       border-color: $error;
+      box-shadow: none;
     }
 
     .field-error {

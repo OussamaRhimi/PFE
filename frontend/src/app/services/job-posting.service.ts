@@ -92,9 +92,29 @@ export class JobPostingService {
 
   constructor(private http: HttpClient) {}
 
+  private normalizeJob(item: any): JobPosting {
+    if (!item) return item as JobPosting;
+    if (item.attributes) {
+      return {
+        id: item.id,
+        documentId: item.documentId ?? item.attributes?.documentId ?? null,
+        ...item.attributes,
+      } as JobPosting;
+    }
+    return {
+      documentId: item.documentId ?? item?.attributes?.documentId ?? item?.documentId ?? null,
+      ...item,
+    } as JobPosting;
+  }
+
+  private normalizeList(data: any): JobPosting[] {
+    if (!Array.isArray(data)) return [];
+    return data.map((item) => this.normalizeJob(item));
+  }
+
   getAll(): Observable<JobPosting[]> {
     return this.http.get<StrapiResponse<JobPosting>>(this.apiUrl).pipe(
-      map(res => res.data)
+      map(res => this.normalizeList(res?.data))
     );
   }
 
@@ -103,25 +123,25 @@ export class JobPostingService {
    */
   getPublicJobs(): Observable<JobPosting[]> {
     return this.http.get<StrapiResponse<JobPosting>>(`${this.apiUrl}/public`).pipe(
-      map(res => res.data)
+      map(res => this.normalizeList(res?.data))
     );
   }
 
   getOne(documentId: string): Observable<JobPosting> {
     return this.http.get<StrapiSingle<JobPosting>>(`${this.apiUrl}/${documentId}`).pipe(
-      map(res => res.data)
+      map(res => this.normalizeJob(res?.data))
     );
   }
 
   create(payload: JobPostingPayload): Observable<JobPosting> {
     return this.http.post<StrapiSingle<JobPosting>>(this.apiUrl, { data: payload }).pipe(
-      map(res => res.data)
+      map(res => this.normalizeJob(res?.data))
     );
   }
 
   update(documentId: string, payload: Partial<JobPostingPayload>): Observable<JobPosting> {
     return this.http.put<StrapiSingle<JobPosting>>(`${this.apiUrl}/${documentId}`, { data: payload }).pipe(
-      map(res => res.data)
+      map(res => this.normalizeJob(res?.data))
     );
   }
 
@@ -134,7 +154,7 @@ export class JobPostingService {
    */
   changeStatus(documentId: string, status: string): Observable<JobPosting> {
     return this.http.put<StrapiSingle<JobPosting>>(`${this.apiUrl}/${documentId}/status`, { status }).pipe(
-      map(res => res.data)
+      map(res => this.normalizeJob(res?.data))
     );
   }
 

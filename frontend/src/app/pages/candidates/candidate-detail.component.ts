@@ -113,7 +113,7 @@ import { LocationMapComponent } from '../../components/location-map/location-map
                 </button>
               </ng-container>
               <ng-container *ngIf="editingStatus">
-                <select [(ngModel)]="statusDraft" class="status-select" [disabled]="statusSaving">
+                <select class="status-select" [(ngModel)]="statusDraft" [disabled]="statusSaving">
                   <option *ngFor="let status of statusOptions" [value]="status">{{ status }}</option>
                 </select>
                 <button class="btn-save" (click)="saveStatus()" [disabled]="statusSaving">
@@ -376,7 +376,8 @@ import { LocationMapComponent } from '../../components/location-map/location-map
               <select
                 class="template-select"
                 [(ngModel)]="selectedTemplateKey"
-                (change)="selectTemplate(selectedTemplateKey)">
+                (ngModelChange)="selectTemplate($event)"
+              >
                 <option *ngFor="let template of cvTemplates" [value]="template.key">{{ template.name }}</option>
               </select>
               <div class="template-override-note" *ngIf="selectedTemplateKey === defaultTemplateKey">
@@ -1057,23 +1058,8 @@ import { LocationMapComponent } from '../../components/location-map/location-map
     }
 
     .status-select {
-      padding: 8px 12px;
-      border: 1px solid $gray-300;
-      border-radius: 10px;
-      font-size: 14px;
-      color: $gray-800;
-      background: #fff;
-      cursor: pointer;
+      min-width: 160px;
       margin-right: 8px;
-    }
-    .status-select:focus {
-      outline: none;
-      border-color: $red;
-      box-shadow: 0 0 0 3px rgba($red, 0.1);
-    }
-    .status-select:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
     }
 
     .notes-textarea {
@@ -1344,19 +1330,7 @@ import { LocationMapComponent } from '../../components/location-map/location-map
     }
 
     .template-select {
-      padding: 10px 12px;
-      border-radius: 12px;
-      border: 1px solid $gray-300;
-      font-size: 14px;
-      font-weight: 600;
-      color: $gray-800;
-      background: #fff;
-    }
-
-    .template-select:focus {
-      outline: none;
-      border-color: $red;
-      box-shadow: 0 0 0 3px rgba($red, 0.1);
+      width: 100%;
     }
 
     .template-override-note {

@@ -25,7 +25,7 @@ import { JobPostingService, JobPosting } from '../../services/job-posting.servic
       <!-- Filters row -->
       <div class="filters-row">
         <div class="search-box">
-          <select [(ngModel)]="searchField" (change)="applyFilters()" class="search-field-filter">
+          <select class="search-field-filter" [(ngModel)]="searchField" (change)="applyFilters()">
             <option *ngFor="let option of searchFieldOptions" [value]="option.value">{{ option.label }}</option>
           </select>
           <div class="search-divider" aria-hidden="true"></div>
@@ -39,11 +39,11 @@ import { JobPostingService, JobPosting } from '../../services/job-posting.servic
             [placeholder]="getSearchPlaceholder()"
           />
         </div>
-        <select [(ngModel)]="statusFilter" (change)="applyFilters()" class="status-filter">
+        <select class="status-filter" [(ngModel)]="statusFilter" (change)="applyFilters()">
           <option value="">All statuses</option>
           <option *ngFor="let s of statusOptions" [value]="s">{{ s }}</option>
         </select>
-        <select [(ngModel)]="jobPostingFilter" (change)="applyFilters()" class="job-filter">
+        <select class="job-filter" [(ngModel)]="jobPostingFilter" (change)="applyFilters()">
           <option value="">All job postings</option>
           <option *ngFor="let job of jobPostings" [value]="job.documentId">{{ job.title }}</option>
         </select>
@@ -53,10 +53,10 @@ import { JobPostingService, JobPosting } from '../../services/job-posting.servic
             <span>Score</span>
           </label>
           <select
+            class="score-operator"
             [(ngModel)]="scoreOperator"
             (change)="applyFilters()"
             [disabled]="!scoreFilterEnabled"
-            class="score-operator"
           >
             <option value="gt">Above</option>
             <option value="lt">Below</option>
@@ -80,7 +80,7 @@ import { JobPostingService, JobPosting } from '../../services/job-posting.servic
         <div class="bulk-actions">
           <button class="bulk-btn" type="button" (click)="selectAllCurrent()" [disabled]="loading">Select page</button>
           <button class="bulk-btn" type="button" (click)="clearSelection()" [disabled]="loading || selectedCandidateIds.length === 0">Clear</button>
-          <select [(ngModel)]="bulkStatus" class="bulk-select" [disabled]="loading || selectedCandidateIds.length === 0">
+          <select class="bulk-select" [(ngModel)]="bulkStatus" [disabled]="loading || selectedCandidateIds.length === 0">
             <option value="">Set status...</option>
             <option *ngFor="let s of statusOptions" [value]="s">{{ s }}</option>
           </select>
@@ -274,14 +274,7 @@ import { JobPostingService, JobPosting } from '../../services/job-posting.servic
       max-width: 520px;
     }
     .search-field-filter {
-      border: none;
-      outline: none;
-      background: transparent;
-      color: $gray-600;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      max-width: 120px;
+      max-width: 140px;
     }
     .search-divider {
       width: 1px;
@@ -299,18 +292,7 @@ import { JobPostingService, JobPosting } from '../../services/job-posting.servic
     .search-box input::placeholder { color: $gray-300; }
 
     .status-filter {
-      padding: 8px 14px;
-      border: 1px solid $gray-200;
-      border-radius: 10px;
-      font-size: 14px;
-      color: $gray-700;
-      background: #fff;
-      cursor: pointer;
       min-width: 140px;
-    }
-    .status-filter:focus {
-      outline: none;
-      border-color: $red;
     }
 
     .bulk-toolbar {
@@ -364,31 +346,11 @@ import { JobPostingService, JobPosting } from '../../services/job-posting.servic
       background: linear-gradient(135deg, $red, $red-deep);
     }
     .bulk-select {
-      padding: 6px 10px;
-      border-radius: 8px;
-      border: 1px solid $gray-200;
-      font-size: 12px;
-      color: $gray-700;
-      background: #fff;
-    }
-    .bulk-select:disabled {
-      background: $gray-50;
-      color: $gray-300;
+      min-width: 140px;
     }
 
     .job-filter {
-      padding: 8px 14px;
-      border: 1px solid $gray-200;
-      border-radius: 10px;
-      font-size: 14px;
-      color: $gray-700;
-      background: #fff;
-      cursor: pointer;
       min-width: 180px;
-    }
-    .job-filter:focus {
-      outline: none;
-      border-color: $red;
     }
 
     .score-filter {
@@ -411,16 +373,7 @@ import { JobPostingService, JobPosting } from '../../services/job-posting.servic
       white-space: nowrap;
     }
     .score-operator {
-      border: 1px solid $gray-200;
-      border-radius: 8px;
-      padding: 4px 8px;
-      font-size: 12px;
-      color: $gray-700;
-      background: #fff;
-    }
-    .score-operator:disabled {
-      background: $gray-50;
-      color: $gray-300;
+      min-width: 90px;
     }
     .score-slider {
       width: 120px;

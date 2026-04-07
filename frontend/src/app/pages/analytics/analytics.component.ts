@@ -239,9 +239,14 @@ function inc(counts: Record<string, number>, key: string, n = 1) {
           <div class="cmp-selectors">
             <div class="cmp-select-wrap">
               <label class="cmp-label cmp-label--a" for="cmpJobA">Job A</label>
-              <select id="cmpJobA" class="cmp-select" [ngModel]="compareJobA ?? ''" (ngModelChange)="onCompareJobChange('A', $event)">
+              <select
+                id="cmpJobA"
+                class="cmp-select"
+                [ngModel]="compareJobA ?? ''"
+                (ngModelChange)="onCompareJobChange('A', $event)"
+              >
                 <option value="">- Select a job posting -</option>
-                <option *ngFor="let job of comparableJobs" [value]="job.id" [disabled]="job.id === compareJobB">
+                <option *ngFor="let job of comparableJobs" [value]="jobKey(job)" [disabled]="jobKey(job) === compareJobB">
                   {{ job.title || 'Untitled' }}
                 </option>
               </select>
@@ -249,9 +254,14 @@ function inc(counts: Record<string, number>, key: string, n = 1) {
             <span class="cmp-vs">vs</span>
             <div class="cmp-select-wrap">
               <label class="cmp-label cmp-label--b" for="cmpJobB">Job B</label>
-              <select id="cmpJobB" class="cmp-select" [ngModel]="compareJobB ?? ''" (ngModelChange)="onCompareJobChange('B', $event)">
+              <select
+                id="cmpJobB"
+                class="cmp-select"
+                [ngModel]="compareJobB ?? ''"
+                (ngModelChange)="onCompareJobChange('B', $event)"
+              >
                 <option value="">- Select a job posting -</option>
-                <option *ngFor="let job of comparableJobs" [value]="job.id" [disabled]="job.id === compareJobA">
+                <option *ngFor="let job of comparableJobs" [value]="jobKey(job)" [disabled]="jobKey(job) === compareJobA">
                   {{ job.title || 'Untitled' }}
                 </option>
               </select>
@@ -590,17 +600,13 @@ function inc(counts: Record<string, number>, key: string, n = 1) {
 
       .cmp-select {
         width: 100%;
-        padding: 8px 10px;
+        padding: 0.5rem 0.65rem;
         border: 1px solid var(--border);
-        border-radius: var(--radius-sm);
+        border-radius: 10px;
         background: var(--panel);
         color: var(--text);
-        font-size: 0.88rem;
-        appearance: auto;
-        cursor: pointer;
-        transition: border-color 180ms ease;
+        font-size: 0.9rem;
       }
-
       .cmp-select:focus {
         outline: none;
         border-color: var(--accent);
@@ -691,6 +697,7 @@ function inc(counts: Record<string, number>, key: string, n = 1) {
         font-size: 0.88rem;
       }
 
+
       .muted {
         color: var(--muted);
       }
@@ -771,8 +778,8 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
   candidateStatuses: string[] = [];
   lastRefreshedAt: string | null = null;
 
-  compareJobA: number | null = null;
-  compareJobB: number | null = null;
+  compareJobA: string | null = null;
+  compareJobB: string | null = null;
 
   @ViewChild('chartCandidatesByDay', { static: false }) chartCandidatesByDay?: ElementRef<HTMLCanvasElement>;
   @ViewChild('chartCandidatesByStatus', { static: false }) chartCandidatesByStatus?: ElementRef<HTMLCanvasElement>;
@@ -839,7 +846,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   get comparableJobs(): JobPosting[] {
-    return this.jobs.filter((j) => this.candidates.some((c) => c.jobId === j.id));
+    return this.jobs;
   }
 
   get cmpData() {
@@ -847,11 +854,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     const b = this.compareJobB;
     if (a == null || b == null || a === b) return null;
 
-    const candA = this.candidates.filter((c) => c.jobId === a);
-    const candB = this.candidates.filter((c) => c.jobId === b);
-    const jobA = this.jobs.find((j) => j.id === a);
-    const jobB = this.jobs.find((j) => j.id === b);
+    const jobA = this.jobs.find((j) => this.jobKey(j) === a);
+    const jobB = this.jobs.find((j) => this.jobKey(j) === b);
     if (!jobA || !jobB) return null;
+
+    const candA = this.candidates.filter((c) => this.matchesJobCandidate(jobA, c));
+    const candB = this.candidates.filter((c) => this.matchesJobCandidate(jobB, c));
 
     const scoresFn = (cands: AnalyticsCandidate[]) =>
       cands.map((c) => c.score).filter((n): n is number => typeof n === 'number' && Number.isFinite(n));
@@ -937,6 +945,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     };
   }
 
+
   async ngOnInit() {
     await this.refresh();
   }
@@ -953,10 +962,31 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onCompareJobChange(slot: 'A' | 'B', value: string) {
-    const id = value ? Number(value) : null;
-    if (slot === 'A') this.compareJobA = id;
-    else this.compareJobB = id;
+    const key = value || null;
+    if (slot === 'A') this.compareJobA = key;
+    else this.compareJobB = key;
     window.setTimeout(() => this.renderCompareCharts(), 0);
+  }
+
+  jobKey(job: JobPosting): string {
+    if (job.documentId) return job.documentId;
+    if (job.id != null) return String(job.id);
+    return '';
+  }
+
+  private matchesJobCandidate(job: JobPosting, candidate: AnalyticsCandidate): boolean {
+    const jobId = job.id != null ? String(job.id) : null;
+    const jobDoc = job.documentId || null;
+    const jobTitle = job.title ? job.title.trim().toLowerCase() : null;
+    const candidateKey = candidate.jobKey || null;
+    const candidateId = candidate.jobId != null ? String(candidate.jobId) : null;
+    const candidateTitle = candidate.jobTitle ? candidate.jobTitle.trim().toLowerCase() : null;
+
+    if (candidateKey && jobDoc && candidateKey === jobDoc) return true;
+    if (candidateKey && jobId && candidateKey === jobId) return true;
+    if (candidateId && jobId && candidateId === jobId) return true;
+    if (candidateTitle && jobTitle && candidateTitle === jobTitle) return true;
+    return false;
   }
 
   async refresh() {
