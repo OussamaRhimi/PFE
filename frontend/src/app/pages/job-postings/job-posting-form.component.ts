@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
-import { JobPostingService, JobPostingPayload, Requirements, emptyRequirements } from '../../services/job-posting.service';
+import { JobPostingService, JobPostingPayload, Requirements, emptyRequirements, EvaluationConfig } from '../../services/job-posting.service';
 import { SkillService, Skill } from '../../services/skill.service';
 import { DepartmentService, Department } from '../../services/department.service';
 import { I18nService } from '../../services/i18n.service';
@@ -91,6 +91,50 @@ import { I18nService } from '../../services/i18n.service';
           <div class="field">
             <label>{{ i18n.t('form.notes') }}</label>
             <textarea [(ngModel)]="reqs.notes" name="reqNotes" rows="3" [placeholder]="i18n.t('form.notesPlaceholder')"></textarea>
+          </div>
+        </fieldset>
+
+        <fieldset class="requirements-fieldset eval-config">
+          <legend>{{ i18n.t('form.evalConfig') }}</legend>
+
+          <div class="field">
+            <label>{{ i18n.t('form.evalFitWeight') }}</label>
+            <input type="number" [(ngModel)]="evalConfig.fitWeight" name="fitWeight" min="0" max="100" />
+          </div>
+
+          <div class="field">
+            <label>{{ i18n.t('form.evalCompletenessWeight') }}</label>
+            <input type="number" [(ngModel)]="evalConfig.completenessWeight" name="completenessWeight" min="0" max="100" />
+          </div>
+
+          <div class="field">
+            <label>{{ i18n.t('form.evalRequiredWeight') }}</label>
+            <input type="number" [(ngModel)]="evalConfig.requiredSkillsWeight" name="requiredSkillsWeight" min="0" max="100" />
+          </div>
+
+          <div class="field">
+            <label>{{ i18n.t('form.evalNiceWeight') }}</label>
+            <input type="number" [(ngModel)]="evalConfig.niceToHaveSkillsWeight" name="niceToHaveSkillsWeight" min="0" max="100" />
+          </div>
+
+          <div class="field">
+            <label>{{ i18n.t('form.evalExperienceWeight') }}</label>
+            <input type="number" [(ngModel)]="evalConfig.experienceWeight" name="experienceWeight" min="0" max="100" />
+          </div>
+
+          <div class="field">
+            <label>{{ i18n.t('form.evalExcellent') }}</label>
+            <input type="number" [(ngModel)]="evalConfig.qualityThresholds!.excellent" name="qualityExcellent" min="0" max="100" />
+          </div>
+
+          <div class="field">
+            <label>{{ i18n.t('form.evalGood') }}</label>
+            <input type="number" [(ngModel)]="evalConfig.qualityThresholds!.good" name="qualityGood" min="0" max="100" />
+          </div>
+
+          <div class="field">
+            <label>{{ i18n.t('form.evalFair') }}</label>
+            <input type="number" [(ngModel)]="evalConfig.qualityThresholds!.fair" name="qualityFair" min="0" max="100" />
           </div>
         </fieldset>
 
@@ -353,6 +397,14 @@ export class JobPostingFormComponent implements OnInit {
 
   form: JobPostingPayload = { title: '', description: '' };
   reqs: Requirements = emptyRequirements();
+  evalConfig: EvaluationConfig = {
+    fitWeight: 75,
+    completenessWeight: 25,
+    requiredSkillsWeight: 75,
+    niceToHaveSkillsWeight: 15,
+    experienceWeight: 10,
+    qualityThresholds: { excellent: 80, good: 60, fair: 40 },
+  };
   skills: Skill[] = [];
   departments: Department[] = [];
 
@@ -383,6 +435,19 @@ export class JobPostingFormComponent implements OnInit {
           this.reqs = job.requirements
             ? { ...emptyRequirements(), ...job.requirements }
             : emptyRequirements();
+          const incoming = job.requirements?.evaluationConfig ?? {};
+          this.evalConfig = {
+            fitWeight: typeof incoming.fitWeight === 'number' ? incoming.fitWeight : 75,
+            completenessWeight: typeof incoming.completenessWeight === 'number' ? incoming.completenessWeight : 25,
+            requiredSkillsWeight: typeof incoming.requiredSkillsWeight === 'number' ? incoming.requiredSkillsWeight : 75,
+            niceToHaveSkillsWeight: typeof incoming.niceToHaveSkillsWeight === 'number' ? incoming.niceToHaveSkillsWeight : 15,
+            experienceWeight: typeof incoming.experienceWeight === 'number' ? incoming.experienceWeight : 10,
+            qualityThresholds: {
+              excellent: typeof incoming.qualityThresholds?.excellent === 'number' ? incoming.qualityThresholds.excellent : 80,
+              good: typeof incoming.qualityThresholds?.good === 'number' ? incoming.qualityThresholds.good : 60,
+              fair: typeof incoming.qualityThresholds?.fair === 'number' ? incoming.qualityThresholds.fair : 40,
+            },
+          };
         },
         error: () => { this.error = this.i18n.t('form.loadError'); }
       });
@@ -422,7 +487,7 @@ export class JobPostingFormComponent implements OnInit {
 
     const payload: JobPostingPayload = {
       ...this.form,
-      requirements: { ...this.reqs },
+      requirements: { ...this.reqs, evaluationConfig: { ...this.evalConfig } },
     };
 
     const obs = this.isEdit

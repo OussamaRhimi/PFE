@@ -19,6 +19,7 @@
     "@strapi/plugin-users-permissions": "5.36.1",
     "@strapi/strapi": "5.36.1",
     "mammoth": "^1.6.0",
+    "marked": "^15.0.7",
     "nodemailer": "^8.0.2",
     "pdf-parse": "^1.1.1",
     "playwright": "^1.49.0",
@@ -31,9 +32,10 @@
   "devDependencies": {
     "@types/node": "^20",
     "@types/nodemailer": "^7.0.11",
+    "@types/pdf-parse": "^1.1.4",
     "@types/react": "^18",
     "@types/react-dom": "^18",
-    "typescript": "^5"
+    "typescript": "~5.9.2"
   },
   "engines": {
     "node": ">=20.0.0 <=24.x.x",

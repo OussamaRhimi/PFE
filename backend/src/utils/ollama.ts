@@ -6,7 +6,7 @@
 import { safeParseJson } from './json';
 import type { ExtractedData } from './types';
 
-const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
+const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || process.env.OLLAMA_URL || 'http://localhost:11434';
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'llama3.2';
 
 export type OllamaChatOptions = {
@@ -16,6 +16,8 @@ export type OllamaChatOptions = {
   format?: 'json' | 'text';
   timeoutMs?: number;
   ollamaOptions?: Record<string, unknown>;
+  keepAlive?: string | number;
+  messages?: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>;
 };
 
 /**
@@ -148,33 +150,54 @@ export async function ollamaChat(
     ? { system: arg1, user: userPrompt ?? '' }
     : arg1;
 
+  let messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> | null =
+    Array.isArray(options.messages) && options.messages.length > 0 ? [...options.messages] : null;
+
+  if (messages) {
+    const hasSystem = messages.some((m) => m.role === 'system');
+    if (options.system && !hasSystem) {
+      messages = [{ role: 'system', content: options.system }, ...messages];
+    }
+  } else {
+    messages = [
+      { role: 'system', content: options.system },
+      { role: 'user', content: options.user },
+    ];
+  }
+
+  const promptFromMessages = (items: Array<{ role: string; content: string }>) =>
+    items
+      .map((m) => {
+        if (m.role === 'system') return `System:\n${m.content}`;
+        if (m.role === 'assistant') return `Assistant:\n${m.content}`;
+        return `User:\n${m.content}`;
+      })
+      .join('\n\n');
+
   const baseUrl = OLLAMA_BASE_URL.replace(/\/+$/, '');
   const apiBase = baseUrl.endsWith('/api') ? baseUrl : `${baseUrl}/api`;
 
-  const controller = options.timeoutMs ? new AbortController() : null;
-  const timeoutId = options.timeoutMs
-    ? setTimeout(() => controller?.abort(), options.timeoutMs)
-    : null;
+  const timeoutMs = options.timeoutMs ?? 240000;
+  const keepAlive = options.keepAlive ?? process.env.OLLAMA_KEEP_ALIVE ?? '5m';
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   const chatResponse = await fetch(`${apiBase}/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: options.model || OLLAMA_MODEL,
-      messages: [
-        { role: 'system', content: options.system },
-        { role: 'user', content: options.user },
-      ],
+      messages,
       stream: false,
       ...(options.format ? { format: options.format } : {}),
       ...(options.ollamaOptions ? { options: options.ollamaOptions } : {}),
+      ...(options.format === 'json' ? { options: { temperature: 0, ...(options.ollamaOptions ?? {}) } } : {}),
+      keep_alive: keepAlive,
     }),
     signal: controller?.signal,
   });
 
-  if (timeoutId) {
-    clearTimeout(timeoutId);
-  }
+  clearTimeout(timeoutId);
 
   if (chatResponse.ok) {
     const data = (await chatResponse.json()) as { message?: { content?: string } };
@@ -190,10 +213,12 @@ export async function ollamaChat(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: options.model || OLLAMA_MODEL,
-      prompt: `System:\n${options.system}\n\nUser:\n${options.user}`,
+      prompt: promptFromMessages(messages),
       stream: false,
       ...(options.format ? { format: options.format } : {}),
       ...(options.ollamaOptions ? { options: options.ollamaOptions } : {}),
+      ...(options.format === 'json' ? { options: { temperature: 0, ...(options.ollamaOptions ?? {}) } } : {}),
+      keep_alive: keepAlive,
     }),
     signal: controller?.signal,
   });

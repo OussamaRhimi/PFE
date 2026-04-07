@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CandidateService, CandidateListItem } from '../../services/candidate.service';
+import { JobPostingService, JobPosting } from '../../services/job-posting.service';
 
 @Component({
   selector: 'app-candidates-list',
@@ -24,15 +25,74 @@ import { CandidateService, CandidateListItem } from '../../services/candidate.se
       <!-- Filters row -->
       <div class="filters-row">
         <div class="search-box">
+          <select [(ngModel)]="searchField" (change)="applyFilters()" class="search-field-filter">
+            <option *ngFor="let option of searchFieldOptions" [value]="option.value">{{ option.label }}</option>
+          </select>
+          <div class="search-divider" aria-hidden="true"></div>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
           </svg>
-          <input type="text" [(ngModel)]="searchQuery" (keyup.enter)="load()" placeholder="Search by name or email..." />
+          <input
+            type="text"
+            [(ngModel)]="searchQuery"
+            (keyup.enter)="applyFilters()"
+            [placeholder]="getSearchPlaceholder()"
+          />
         </div>
-        <select [(ngModel)]="statusFilter" (change)="load()" class="status-filter">
+        <select [(ngModel)]="statusFilter" (change)="applyFilters()" class="status-filter">
           <option value="">All statuses</option>
           <option *ngFor="let s of statusOptions" [value]="s">{{ s }}</option>
         </select>
+        <select [(ngModel)]="jobPostingFilter" (change)="applyFilters()" class="job-filter">
+          <option value="">All job postings</option>
+          <option *ngFor="let job of jobPostings" [value]="job.documentId">{{ job.title }}</option>
+        </select>
+        <div class="score-filter">
+          <label class="score-toggle">
+            <input type="checkbox" [(ngModel)]="scoreFilterEnabled" (change)="applyFilters()" />
+            <span>Score</span>
+          </label>
+          <select
+            [(ngModel)]="scoreOperator"
+            (change)="applyFilters()"
+            [disabled]="!scoreFilterEnabled"
+            class="score-operator"
+          >
+            <option value="gt">Above</option>
+            <option value="lt">Below</option>
+          </select>
+          <input
+            type="range"
+            class="score-slider"
+            min="0"
+            max="100"
+            step="1"
+            [(ngModel)]="scoreThreshold"
+            (input)="applyFilters()"
+            [disabled]="!scoreFilterEnabled"
+          />
+          <span class="score-unit">{{ scoreThreshold }}%</span>
+        </div>
+      </div>
+
+      <div class="bulk-toolbar" *ngIf="candidates.length > 0">
+        <div class="bulk-info">{{ selectedCandidateIds.length }} selected</div>
+        <div class="bulk-actions">
+          <button class="bulk-btn" type="button" (click)="selectAllCurrent()" [disabled]="loading">Select page</button>
+          <button class="bulk-btn" type="button" (click)="clearSelection()" [disabled]="loading || selectedCandidateIds.length === 0">Clear</button>
+          <select [(ngModel)]="bulkStatus" class="bulk-select" [disabled]="loading || selectedCandidateIds.length === 0">
+            <option value="">Set status...</option>
+            <option *ngFor="let s of statusOptions" [value]="s">{{ s }}</option>
+          </select>
+          <button
+            class="bulk-btn bulk-btn-primary"
+            type="button"
+            (click)="applyBulkStatus()"
+            [disabled]="loading || selectedCandidateIds.length === 0 || !bulkStatus"
+          >
+            Apply
+          </button>
+        </div>
       </div>
 
       <div class="alert error" *ngIf="error">
@@ -54,6 +114,14 @@ import { CandidateService, CandidateListItem } from '../../services/candidate.se
         <table>
           <thead>
             <tr>
+              <th class="select-col">
+                <input
+                  type="checkbox"
+                  [checked]="allCurrentSelected()"
+                  (change)="toggleSelectAllCurrent($any($event.target).checked)"
+                  aria-label="Select all on page"
+                />
+              </th>
               <th class="sortable" (click)="toggleSort('fullName')">
                 Candidate
                 <span class="sort-icon" *ngIf="sortField === 'fullName'">
@@ -84,6 +152,14 @@ import { CandidateService, CandidateListItem } from '../../services/candidate.se
           </thead>
           <tbody>
             <tr *ngFor="let c of candidates" [routerLink]="['/candidates', c.documentId]" class="clickable-row">
+              <td class="select-col" (click)="$event.stopPropagation()">
+                <input
+                  type="checkbox"
+                  [checked]="isSelected(c.id)"
+                  (change)="toggleCandidateSelection(c.id, $any($event.target).checked)"
+                  aria-label="Select candidate"
+                />
+              </td>
               <td>
                 <div class="candidate-info">
                   <span class="avatar">{{ c.fullName.charAt(0).toUpperCase() }}</span>
@@ -195,7 +271,22 @@ import { CandidateService, CandidateListItem } from '../../services/candidate.se
       padding: 8px 14px;
       flex: 1;
       min-width: 200px;
-      max-width: 360px;
+      max-width: 520px;
+    }
+    .search-field-filter {
+      border: none;
+      outline: none;
+      background: transparent;
+      color: $gray-600;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      max-width: 120px;
+    }
+    .search-divider {
+      width: 1px;
+      height: 18px;
+      background: $gray-200;
     }
     .search-box svg { color: $gray-400; flex-shrink: 0; }
     .search-box input {
@@ -220,6 +311,132 @@ import { CandidateService, CandidateListItem } from '../../services/candidate.se
     .status-filter:focus {
       outline: none;
       border-color: $red;
+    }
+
+    .bulk-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: #fff;
+      border: 1px solid $gray-200;
+      border-radius: 12px;
+      padding: 10px 14px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .bulk-info {
+      font-size: 13px;
+      font-weight: 600;
+      color: $gray-600;
+    }
+    .bulk-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .bulk-btn {
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid $gray-200;
+      background: #fff;
+      color: $gray-600;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .bulk-btn:hover:not(:disabled) {
+      border-color: $red;
+      color: $red-deep;
+    }
+    .bulk-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .bulk-btn-primary {
+      background: linear-gradient(135deg, $red-deep, $red);
+      color: #fff;
+      border-color: transparent;
+    }
+    .bulk-btn-primary:hover:not(:disabled) {
+      background: linear-gradient(135deg, $red, $red-deep);
+    }
+    .bulk-select {
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid $gray-200;
+      font-size: 12px;
+      color: $gray-700;
+      background: #fff;
+    }
+    .bulk-select:disabled {
+      background: $gray-50;
+      color: $gray-300;
+    }
+
+    .job-filter {
+      padding: 8px 14px;
+      border: 1px solid $gray-200;
+      border-radius: 10px;
+      font-size: 14px;
+      color: $gray-700;
+      background: #fff;
+      cursor: pointer;
+      min-width: 180px;
+    }
+    .job-filter:focus {
+      outline: none;
+      border-color: $red;
+    }
+
+    .score-filter {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border: 1px solid $gray-200;
+      border-radius: 10px;
+      background: #fff;
+      min-width: 220px;
+    }
+    .score-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: $gray-600;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .score-operator {
+      border: 1px solid $gray-200;
+      border-radius: 8px;
+      padding: 4px 8px;
+      font-size: 12px;
+      color: $gray-700;
+      background: #fff;
+    }
+    .score-operator:disabled {
+      background: $gray-50;
+      color: $gray-300;
+    }
+    .score-slider {
+      width: 120px;
+      accent-color: $red;
+      cursor: pointer;
+    }
+    .score-slider:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+    .score-unit {
+      font-size: 12px;
+      color: $gray-600;
+      font-weight: 600;
+      min-width: 42px;
+      text-align: right;
     }
 
     .alert.error {
@@ -301,6 +518,10 @@ import { CandidateService, CandidateListItem } from '../../services/candidate.se
       vertical-align: middle;
     }
     tr:last-child td { border-bottom: none; }
+
+    .select-col {
+      width: 34px;
+    }
 
     .clickable-row {
       cursor: pointer;
@@ -421,6 +642,7 @@ import { CandidateService, CandidateListItem } from '../../services/candidate.se
 })
 export class CandidatesListComponent implements OnInit {
   candidates: CandidateListItem[] = [];
+  jobPostings: Array<{ documentId: string; title: string }> = [];
   loading = false;
   error = '';
 
@@ -430,9 +652,23 @@ export class CandidatesListComponent implements OnInit {
 
   // Filtering
   searchQuery = '';
+  searchField: 'all' | 'name' | 'email' | 'status' | 'job' = 'all';
   statusFilter = '';
   jobPostingFilter = '';
+  scoreFilterEnabled = false;
+  scoreOperator: 'gt' | 'lt' = 'gt';
+  scoreThreshold = 70;
+  searchFieldOptions = [
+    { value: 'all' as const, label: 'All fields' },
+    { value: 'name' as const, label: 'Name' },
+    { value: 'email' as const, label: 'Email' },
+    { value: 'status' as const, label: 'Status' },
+    { value: 'job' as const, label: 'Job title' },
+  ];
   statusOptions = ['new', 'processing', 'processed', 'reviewing', 'shortlisted', 'rejected', 'hired', 'error'];
+
+  selectedCandidateIds: number[] = [];
+  bulkStatus = '';
 
   // Pagination
   currentPage = 1;
@@ -442,6 +678,7 @@ export class CandidatesListComponent implements OnInit {
 
   constructor(
     private candidateService: CandidateService,
+    private jobPostingService: JobPostingService,
     private route: ActivatedRoute
   ) {}
 
@@ -449,23 +686,58 @@ export class CandidatesListComponent implements OnInit {
     // Read jobPostingId from query params if present
     this.route.queryParams.subscribe(params => {
       this.jobPostingFilter = params['jobPostingId'] || '';
-      this.load();
+      this.applyFilters();
     });
+    this.loadJobPostings();
+  }
+
+  loadJobPostings(): void {
+    this.jobPostingService.getAll().subscribe({
+      next: (jobs: JobPosting[]) => {
+        this.jobPostings = jobs
+          .map(job => ({ documentId: job.documentId, title: job.title }))
+          .filter(job => job.documentId && job.title)
+          .sort((a, b) => a.title.localeCompare(b.title));
+      },
+      error: () => {
+        this.jobPostings = [];
+      }
+    });
+  }
+
+  applyFilters(): void {
+    this.currentPage = 1;
+    this.load();
   }
 
   load(): void {
     this.loading = true;
     const sortParam = `${this.sortField}:${this.sortOrder}`;
-    const filters: { status?: string; search?: string; jobPostingId?: string } = {};
+    const filters: {
+      status?: string;
+      search?: string;
+      searchField?: 'all' | 'name' | 'email' | 'status' | 'job';
+      jobPostingId?: string;
+      scoreOperator?: 'gt' | 'lt';
+      scoreThreshold?: number;
+    } = {};
 
     if (this.statusFilter) {
       filters.status = this.statusFilter;
     }
     if (this.searchQuery.trim()) {
       filters.search = this.searchQuery.trim();
+      filters.searchField = this.searchField;
     }
     if (this.jobPostingFilter) {
       filters.jobPostingId = this.jobPostingFilter;
+    }
+    if (this.scoreFilterEnabled) {
+      const threshold = Number(this.scoreThreshold);
+      if (Number.isFinite(threshold)) {
+        filters.scoreOperator = this.scoreOperator;
+        filters.scoreThreshold = Math.min(100, Math.max(0, Math.round(threshold)));
+      }
     }
 
     this.candidateService.getAllHr(this.currentPage, this.pageSize, sortParam, filters).subscribe({
@@ -473,6 +745,8 @@ export class CandidatesListComponent implements OnInit {
         this.candidates = res.data;
         this.totalCount = res.meta.pagination.total;
         this.totalPages = res.meta.pagination.pageCount;
+        const currentIds = new Set(this.candidates.map(c => c.id).filter((id): id is number => Number.isFinite(id)));
+        this.selectedCandidateIds = this.selectedCandidateIds.filter(id => currentIds.has(id));
         this.loading = false;
       },
       error: () => {
@@ -480,6 +754,21 @@ export class CandidatesListComponent implements OnInit {
         this.loading = false;
       }
     });
+  }
+
+  getSearchPlaceholder(): string {
+    switch (this.searchField) {
+      case 'name':
+        return 'Search candidate name...';
+      case 'email':
+        return 'Search email...';
+      case 'status':
+        return 'Search status...';
+      case 'job':
+        return 'Search job title...';
+      default:
+        return 'Search by name, email, status, or job...';
+    }
   }
 
   toggleSort(field: string): void {
@@ -498,5 +787,69 @@ export class CandidatesListComponent implements OnInit {
       this.currentPage = page;
       this.load();
     }
+  }
+
+  isSelected(id?: number): boolean {
+    if (!Number.isFinite(id)) return false;
+    return this.selectedCandidateIds.includes(id as number);
+  }
+
+  toggleCandidateSelection(id: number | undefined, checked: boolean): void {
+    if (!Number.isFinite(id)) return;
+    const value = id as number;
+    if (checked && !this.selectedCandidateIds.includes(value)) {
+      this.selectedCandidateIds = [...this.selectedCandidateIds, value];
+      return;
+    }
+    if (!checked) {
+      this.selectedCandidateIds = this.selectedCandidateIds.filter(item => item !== value);
+    }
+  }
+
+  selectAllCurrent(): void {
+    const ids = this.candidates
+      .map(c => c.id)
+      .filter((id): id is number => Number.isFinite(id));
+    const merged = new Set([...this.selectedCandidateIds, ...ids]);
+    this.selectedCandidateIds = Array.from(merged);
+  }
+
+  toggleSelectAllCurrent(checked: boolean): void {
+    if (checked) {
+      this.selectAllCurrent();
+      return;
+    }
+    const pageIds = new Set(this.candidates.map(c => c.id).filter((id): id is number => Number.isFinite(id)));
+    this.selectedCandidateIds = this.selectedCandidateIds.filter(id => !pageIds.has(id));
+  }
+
+  allCurrentSelected(): boolean {
+    const pageIds = this.candidates.map(c => c.id).filter((id): id is number => Number.isFinite(id));
+    if (pageIds.length === 0) return false;
+    return pageIds.every(id => this.selectedCandidateIds.includes(id));
+  }
+
+  clearSelection(): void {
+    this.selectedCandidateIds = [];
+    this.bulkStatus = '';
+  }
+
+  applyBulkStatus(): void {
+    if (!this.bulkStatus || this.selectedCandidateIds.length === 0) return;
+    this.loading = true;
+    this.candidateService.bulkUpdateStatus(this.selectedCandidateIds, this.bulkStatus).subscribe({
+      next: (res) => {
+        const updated = new Set(res.updatedIds ?? []);
+        this.candidates = this.candidates.map(c =>
+          updated.has(c.id as number) ? { ...c, status: this.bulkStatus } : c
+        );
+        this.clearSelection();
+        this.loading = false;
+      },
+      error: () => {
+        this.error = 'Failed to update candidate statuses.';
+        this.loading = false;
+      }
+    });
   }
 }

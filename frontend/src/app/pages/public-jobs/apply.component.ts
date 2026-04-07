@@ -78,6 +78,35 @@ import { PublicFooterComponent } from '../../components/public-footer/public-foo
 
           <div class="form-row">
             <div class="field">
+              <label>{{ i18n.t('apply.country') }} *</label>
+              <select
+                [(ngModel)]="form.country"
+                name="country"
+                (change)="onCountryChange()"
+                [class.invalid]="attemptedSubmit && !form.country"
+              >
+                <option value="" disabled>{{ i18n.t('apply.selectCountry') }}</option>
+                <option *ngFor="let c of countries" [value]="c">{{ c }}</option>
+              </select>
+              <span class="field-error" *ngIf="attemptedSubmit && !form.country">{{ i18n.t('apply.required') }}</span>
+            </div>
+            <div class="field">
+              <label>{{ i18n.t('apply.city') }} *</label>
+              <select
+                [(ngModel)]="form.city"
+                name="city"
+                [disabled]="!form.country"
+                [class.invalid]="attemptedSubmit && !form.city"
+              >
+                <option value="" disabled>{{ i18n.t('apply.selectCity') }}</option>
+                <option *ngFor="let city of cityOptions" [value]="city">{{ city }}</option>
+              </select>
+              <span class="field-error" *ngIf="attemptedSubmit && !form.city">{{ i18n.t('apply.required') }}</span>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="field">
               <label>{{ i18n.t('apply.yearsExp') }}</label>
               <input type="number" [(ngModel)]="form.selfReportedYearsExperience" name="yearsExp" min="0" max="50"
                      [placeholder]="i18n.t('apply.yearsExpPh')" />
@@ -234,7 +263,8 @@ import { PublicFooterComponent } from '../../components/public-footer/public-foo
       color: $gray-700;
     }
     .field input,
-    .field textarea {
+    .field textarea,
+    .field select {
       padding: 10px 14px;
       border: 1.5px solid $gray-200;
       border-radius: 10px;
@@ -243,7 +273,8 @@ import { PublicFooterComponent } from '../../components/public-footer/public-foo
       background: #fff;
     }
     .field input:focus,
-    .field textarea:focus {
+    .field textarea:focus,
+    .field select:focus {
       outline: none;
       border-color: $logo-red;
     }
@@ -487,11 +518,45 @@ export class ApplyComponent implements OnInit {
   form = {
     fullName: '',
     email: '',
+    country: 'Tunisia',
+    city: '',
     linkedin: '',
     portfolio: '',
     candidateNotes: '',
     selfReportedYearsExperience: null as number | null,
     consent: false,
+  };
+
+  countries = ['Tunisia'];
+
+  citiesByCountry: Record<string, string[]> = {
+    Tunisia: [
+      'Tunis',
+      'Sfax',
+      'Sousse',
+      'Kairouan',
+      'Bizerte',
+      'Gabes',
+      'Ariana',
+      'Gafsa',
+      'Monastir',
+      'Ben Arous',
+      'Kasserine',
+      'Medenine',
+      'Nabeul',
+      'Tataouine',
+      'Beja',
+      'Jendouba',
+      'Mahdia',
+      'Ksour Essef',
+      'Sidi Bouzid',
+      'Siliana',
+      'Kef',
+      'Tozeur',
+      'Kebili',
+      'Zaghouan',
+      'Manouba',
+    ],
   };
 
   selectedFile: File | null = null;
@@ -543,6 +608,14 @@ export class ApplyComponent implements OnInit {
     });
   }
 
+  get cityOptions(): string[] {
+    return this.citiesByCountry[this.form.country] || [];
+  }
+
+  onCountryChange(): void {
+    this.form.city = '';
+  }
+
   isValidEmail(): boolean {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.form.email.trim());
   }
@@ -576,6 +649,8 @@ export class ApplyComponent implements OnInit {
     if (
       !this.form.fullName.trim() ||
       !this.isValidEmail() ||
+      !this.form.country ||
+      !this.form.city ||
       !this.selectedFile ||
       !this.form.consent ||
       this.fileError
@@ -588,6 +663,8 @@ export class ApplyComponent implements OnInit {
     const payload: ApplyPayload = {
       fullName: this.form.fullName,
       email: this.form.email,
+      country: this.form.country,
+      city: this.form.city,
       linkedin: this.form.linkedin,
       portfolio: this.form.portfolio,
       candidateNotes: this.form.candidateNotes,

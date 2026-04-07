@@ -3,6 +3,9 @@ import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 import path from 'path';
 import fs from 'fs';
+import { parseJsonWithRecovery } from '../../../utils/json';
+import { ollamaChat } from '../../../utils/ollama';
+import { extractTextFromResume } from '../../../utils/resume-text';
 
 /** GDPR retention period: 24 months from consent date */
 const RETENTION_MONTHS = 24;
@@ -149,6 +152,212 @@ function addMonths(date: Date, months: number): Date {
   return d;
 }
 
+function coerceNumber(value: unknown): number | null {
+  const n = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+function toPositiveIntArrayUnique(value: unknown): number[] {
+  if (!Array.isArray(value)) return [];
+  const out: number[] = [];
+  const seen = new Set<number>();
+  for (const raw of value) {
+    const n = coerceNumber(raw);
+    if (!n || !Number.isFinite(n)) continue;
+    const id = Math.trunc(n);
+    if (id <= 0 || seen.has(id)) continue;
+    seen.add(id);
+    out.push(id);
+  }
+  return out;
+}
+
+function getSingleFile(files: any): any | null {
+  if (!files) return null;
+  if (Array.isArray(files)) return files[0] ?? null;
+  return files;
+}
+
+function toStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((v) => (typeof v === 'string' ? v.trim() : '')).filter(Boolean);
+}
+
+const RECOMMENDATION_PARSER_SYSTEM_PROMPT =
+  'Extract skills from the provided resume text. Return ONLY valid JSON with this shape: ' +
+  '{ "skills": string[] }. ' +
+  'Rules: include technical tools, frameworks, programming languages, cloud/devops skills, and professional domains. ' +
+  'Deduplicate, keep concise labels, do not include explanations.';
+
+const SKILL_ALIAS_GROUPS: Record<string, string[]> = {
+  angular: ['angularjs', 'angular js', 'angular.js'],
+  vue: ['vuejs', 'vue js', 'vue.js'],
+  react: ['reactjs', 'react js', 'react.js'],
+  'react native': ['reactnative', 'react-native'],
+  nextjs: ['next js', 'next.js'],
+  nodejs: ['node js', 'node.js'],
+  express: ['expressjs', 'express js', 'express.js'],
+  tailwindcss: ['tailwind css', 'tailwind'],
+  socketio: ['socket io', 'socket.io'],
+  mongodb: ['mongo db', 'mongo-db', 'mango db', 'mangodb'],
+  postgresql: ['postgres', 'postgre sql'],
+  mysql: ['my sql'],
+  springboot: ['spring boot', 'spring-boot'],
+  typescript: ['type script'],
+  javascript: ['java script'],
+  cplusplus: ['c++', 'cpp', 'c plus plus'],
+  csharp: ['c#', 'c sharp'],
+  dotnet: ['.net', 'dot net'],
+  graphql: ['graph ql'],
+  tensorflow: ['tensor flow'],
+  kubernetes: ['k8s'],
+};
+
+const SHORT_SKILL_NAMES = new Set(['c', 'r', 'go', 'ui', 'ux', 'qa', 'ai', 'ml', 'ci', 'cd']);
+
+function truncateForModel(text: string, maxChars: number): string {
+  const raw = String(text ?? '');
+  if (raw.length <= maxChars) return raw;
+  const head = raw.slice(0, Math.floor(maxChars * 0.7));
+  const tail = raw.slice(raw.length - Math.floor(maxChars * 0.2));
+  return `${head}\n\n[...truncated...]\n\n${tail}`;
+}
+
+function normalizeSkill(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[\u2010-\u2015]/g, '-')
+    .replace(/[()]/g, ' ')
+    .replace(/[^a-z0-9+#.\s-]/g, ' ')
+    .replace(/[._-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function compactSkill(value: string): string {
+  return normalizeSkill(value).replace(/\s+/g, '');
+}
+
+function resolveAliasGroup(compact: string): { canonical: string; aliases: string[] } {
+  for (const [canonical, aliases] of Object.entries(SKILL_ALIAS_GROUPS)) {
+    const canonicalCompact = compactSkill(canonical);
+    if (compact === canonicalCompact) return { canonical, aliases };
+    if (aliases.some((alias) => compact === compactSkill(alias))) {
+      return { canonical, aliases };
+    }
+  }
+  return { canonical: '', aliases: [] };
+}
+
+function buildSkillVariants(skill: string): Set<string> {
+  const variants = new Set<string>();
+  const normalized = normalizeSkill(skill);
+  const compact = compactSkill(skill);
+  if (normalized) variants.add(normalized);
+  if (compact) variants.add(compact);
+
+  if (!compact) return variants;
+  const { canonical, aliases } = resolveAliasGroup(compact);
+  if (!canonical) return variants;
+
+  for (const value of [canonical, ...aliases]) {
+    const key = normalizeSkill(value);
+    const short = compactSkill(value);
+    if (key) variants.add(key);
+    if (short) variants.add(short);
+  }
+  return variants;
+}
+
+function buildTextEvidence(cvText: string): { textNormalized: string; textCompact: string } {
+  const textNormalized = normalizeSkill(cvText);
+  const textCompact = textNormalized.replace(/\s+/g, '');
+  return { textNormalized, textCompact };
+}
+
+function hasSkillEvidence(skill: string, evidence: { textNormalized: string; textCompact: string }): boolean {
+  const variants = buildSkillVariants(skill);
+  const compact = compactSkill(skill);
+  const isShort = SHORT_SKILL_NAMES.has(compact) || compact.length <= 2;
+
+  for (const variant of variants) {
+    if (!variant) continue;
+    if (variant.includes(' ')) {
+      if (evidence.textNormalized.includes(variant)) return true;
+    } else if (isShort) {
+      const boundary = new RegExp(`\\b${variant.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}\\b`);
+      if (boundary.test(evidence.textNormalized)) return true;
+    } else if (evidence.textCompact.includes(variant)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function dedupeSkills(skills: string[]): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const raw of skills) {
+    const skill = typeof raw === 'string' ? raw.trim() : '';
+    if (!skill) continue;
+    const key = normalizeSkill(skill);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    out.push(skill);
+  }
+  return out;
+}
+
+function parseSkillListFromModel(raw: string): string[] {
+  const parsed = parseJsonWithRecovery<any>(raw);
+  if (!parsed.ok) return [];
+
+  const value = parsed.value;
+  if (Array.isArray(value)) return dedupeSkills(value.filter((v) => typeof v === 'string'));
+  if (value && typeof value === 'object') {
+    const direct = toStringArray((value as any).skills);
+    if (direct.length) return dedupeSkills(direct);
+
+    const nested = toStringArray((value as any).data?.skills);
+    if (nested.length) return dedupeSkills(nested);
+  }
+  return [];
+}
+
+function extractSkillsHeuristically(cvText: string, knownSkills: string[]): string[] {
+  const evidence = buildTextEvidence(cvText);
+  if (!evidence.textNormalized) return [];
+
+  const matched: string[] = [];
+  for (const skill of knownSkills) {
+    if (hasSkillEvidence(skill, evidence)) matched.push(skill);
+  }
+  return dedupeSkills(matched);
+}
+
+function buildSkillKeySet(skills: string[]): Set<string> {
+  const out = new Set<string>();
+  for (const skill of skills) {
+    for (const variant of buildSkillVariants(skill)) {
+      if (variant) out.add(variant);
+    }
+  }
+  return out;
+}
+
+function hasSkillMatch(requiredSkill: string, candidateSkillKeys: Set<string>): boolean {
+  const variants = buildSkillVariants(requiredSkill);
+  for (const variant of variants) {
+    if (candidateSkillKeys.has(variant)) return true;
+  }
+  return false;
+}
+
+function clampPercent(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.min(100, Math.round(value * 100) / 100));
+}
+
 export default factories.createCoreController('api::candidate.candidate', ({ strapi }) => ({
   //  GET /api/candidates/by-job/:documentId   (public)
   //  Return candidates linked to a job posting (by documentId)
@@ -202,6 +411,7 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
     const {
       fullName, email, jobPostingId, consent,
       linkedin, portfolio, candidateNotes, selfReportedYearsExperience,
+      country, city,
     } = body;
 
     if (!fullName?.trim() || !email?.trim()) {
@@ -210,6 +420,10 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
 
     if (!jobPostingId) {
       return ctx.badRequest('jobPostingId is required.');
+    }
+
+    if (!country?.trim() || !city?.trim()) {
+      return ctx.badRequest('country and city are required.');
     }
 
     // ── Consent validation (US3) ──
@@ -276,6 +490,8 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
         email: email.trim().toLowerCase(),
         linkedin: linkedin?.trim() || null,
         portfolio: portfolio?.trim() || null,
+        country: country.trim(),
+        city: city.trim(),
         candidateNotes: candidateNotes?.trim() || null,
         selfReportedYearsExperience: yearsExp,
         job_posting: jobPostingId,
@@ -303,7 +519,7 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
       });
       responseStatus = 'processing';
 
-      const { processCandidate } = await import('../services/candidate');
+      const { processCandidate } = await import('../services/candidate.js');
       processCandidate(internalId, strapi).catch((err) => {
         console.error(`Auto-process failed for candidate ${candidate.documentId}:`, err);
       });
@@ -519,6 +735,8 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
         email: candidate.email,
         linkedin: (candidate as any).linkedin || null,
         portfolio: (candidate as any).portfolio || null,
+        country: (candidate as any).country || null,
+        city: (candidate as any).city || null,
         selfReportedYearsExperience: (candidate as any).selfReportedYearsExperience ?? null,
         status: candidate.status,
         score: candidate.score,
@@ -642,6 +860,9 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
       status,
       jobPostingId,
       search,
+      searchField = 'all',
+      scoreOp,
+      scoreValue,
     } = ctx.query;
 
     // Build filters
@@ -656,10 +877,31 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
     }
 
     if (search) {
-      filters.$or = [
-        { fullName: { $containsi: search } },
-        { email: { $containsi: search } },
-      ];
+      const normalizedField = String(searchField || 'all').toLowerCase();
+
+      if (normalizedField === 'name') {
+        filters.fullName = { $containsi: search };
+      } else if (normalizedField === 'email') {
+        filters.email = { $containsi: search };
+      } else if (normalizedField === 'status') {
+        filters.status = { $containsi: search };
+      } else if (normalizedField === 'job') {
+        filters.job_posting = { ...(filters.job_posting || {}), title: { $containsi: search } };
+      } else {
+        filters.$or = [
+          { fullName: { $containsi: search } },
+          { email: { $containsi: search } },
+          { status: { $containsi: search } },
+          { job_posting: { title: { $containsi: search } } },
+        ];
+      }
+    }
+
+    const scoreNumberRaw = typeof scoreValue === 'number' ? scoreValue : Number(scoreValue);
+    if (Number.isFinite(scoreNumberRaw)) {
+      const scoreNumber = Math.min(100, Math.max(0, scoreNumberRaw));
+      const op = scoreOp === 'lt' ? '$lt' : '$gt';
+      filters.score = { $notNull: true, [op]: scoreNumber };
     }
 
     // Parse sort parameter (e.g., "createdAt:desc" or "score:asc")
@@ -679,6 +921,7 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
     const total = await strapi.documents('api::candidate.candidate').count({ filters });
 
     const data = candidates.map((candidate) => ({
+      id: (candidate as any).id ?? null,
       documentId: candidate.documentId,
       fullName: candidate.fullName,
       email: candidate.email,
@@ -800,7 +1043,7 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
   //  Returns list of available CV templates
   // ─────────────────────────────────────────────────────────────
   async listCvTemplates(ctx) {
-    const { CV_TEMPLATES } = await import('../services/candidate');
+    const { CV_TEMPLATES } = await import('../services/candidate.js');
     return ctx.send({ data: CV_TEMPLATES });
   },
 
@@ -810,7 +1053,7 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
   // ─────────────────────────────────────────────────────────────
   async previewCvTemplate(ctx) {
     const { templateKey } = ctx.query as any;
-    const { isCvTemplateKey, renderCvMarkdownFromTemplate, markdownToHtml } = await import('../services/candidate');
+    const { isCvTemplateKey, renderCvMarkdownFromTemplate, markdownToHtml } = await import('../services/candidate.js');
 
     if (!isCvTemplateKey(templateKey)) {
       return ctx.badRequest(`Invalid template key: ${templateKey}`);
@@ -875,7 +1118,7 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
   //  Return the persisted default CV template key
   // ─────────────────────────────────────────────────────────────
   async getDefaultCvTemplate(ctx) {
-    const { isCvTemplateKey } = await import('../services/candidate');
+    const { isCvTemplateKey } = await import('../services/candidate.js');
     const store = strapi.store({ type: 'core', name: 'cv-templates' });
     const stored = await store.get({ key: 'defaultCvTemplateKey' });
     const templateKey = isCvTemplateKey(stored) ? stored : 'standard';
@@ -889,7 +1132,7 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
   // ─────────────────────────────────────────────────────────────
   async setDefaultCvTemplate(ctx) {
     const { templateKey } = ctx.request.body as any;
-    const { isCvTemplateKey } = await import('../services/candidate');
+    const { isCvTemplateKey } = await import('../services/candidate.js');
 
     if (!isCvTemplateKey(templateKey)) {
       return ctx.badRequest(`Invalid template key: ${templateKey}`);
@@ -913,7 +1156,7 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
       return ctx.badRequest('Candidate ID is required.');
     }
 
-    const { isCvTemplateKey } = await import('../services/candidate');
+    const { isCvTemplateKey } = await import('../services/candidate.js');
 
     if (!isCvTemplateKey(templateKey)) {
       return ctx.badRequest(`Invalid template key: ${templateKey}`);
@@ -971,7 +1214,7 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
       return ctx.badRequest('CV not yet generated. Please wait for processing to complete.');
     }
 
-    const { markdownToHtml, convertHtmlToPdf } = await import('../services/candidate');
+    const { markdownToHtml, convertHtmlToPdf } = await import('../services/candidate.js');
 
     const html = markdownToHtml(cvMarkdown);
     const pdfBuffer = await convertHtmlToPdf(html);
@@ -1021,7 +1264,7 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
     });
 
     if (internalCandidate && internalCandidate.length > 0) {
-      const { processCandidate } = await import('../services/candidate');
+      const { processCandidate } = await import('../services/candidate.js');
 
       // Re-trigger pipeline (async - don't await)
       processCandidate((internalCandidate[0] as any).id, strapi).catch((err) => {
@@ -1061,7 +1304,7 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
     const cvMarkdown = (candidate as any).standardizedCvMarkdown;
     const extractedData = (candidate as any).extractedData;
 
-    const { markdownToHtml, isCvTemplateKey, renderCvMarkdownFromTemplate } = await import('../services/candidate');
+    const { markdownToHtml, isCvTemplateKey, renderCvMarkdownFromTemplate } = await import('../services/candidate.js');
     const store = strapi.store({ type: 'core', name: 'cv-templates' });
     const storedDefault = await store.get({ key: 'defaultCvTemplateKey' });
     const fallbackTemplateKey = isCvTemplateKey(storedDefault) ? storedDefault : 'standard';
@@ -1162,7 +1405,7 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
       return ctx.notFound('Candidate internal record not found.');
     }
 
-    const { processCandidate } = await import('../services/candidate');
+    const { processCandidate } = await import('../services/candidate.js');
 
     // Trigger pipeline (async - don't await)
     processCandidate((internalCandidate[0] as any).id, strapi).catch((err) => {
@@ -1177,5 +1420,277 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
         status: 'processing',
       },
     });
+  },
+
+  // ─────────────────────────────────────────────────────────────
+  //  S4-US4: POST /api/candidates/hr/bulk-status   (HR)
+  //  Bulk update candidate statuses
+  // ─────────────────────────────────────────────────────────────
+  async hrBulkUpdateStatus(ctx) {
+    const body = ((ctx.request as any).body ?? {}) as Record<string, unknown>;
+    const ids = toPositiveIntArrayUnique(body.ids);
+    const status = typeof body.status === 'string' ? body.status.trim() : '';
+
+    if (!status) return ctx.badRequest('status is required.');
+    if (ids.length === 0) return ctx.badRequest('ids must contain at least one candidate id.');
+
+    const candidateContentType = strapi.contentType('api::candidate.candidate') as any;
+    const allowedStatuses = Array.isArray(candidateContentType?.attributes?.status?.enum)
+      ? (candidateContentType.attributes.status.enum as string[])
+      : [];
+    if (!allowedStatuses.includes(status)) return ctx.badRequest('Invalid status value.');
+
+    const existing = await strapi.entityService.findMany('api::candidate.candidate', {
+      filters: { id: { $in: ids } } as any,
+      fields: ['id'] as any,
+      limit: ids.length,
+    });
+
+    const existingIds = (existing ?? [])
+      .map((item: any) => (typeof item?.id === 'number' ? item.id : Number(item?.id)))
+      .filter((id: number) => Number.isFinite(id));
+
+    for (const id of existingIds) {
+      await strapi.entityService.update('api::candidate.candidate', id, {
+        data: { status } as any,
+      });
+    }
+
+    const updatedSet = new Set<number>(existingIds);
+    const notFoundIds = ids.filter((id) => !updatedSet.has(id));
+
+    ctx.body = {
+      ok: true,
+      status,
+      updatedCount: existingIds.length,
+      updatedIds: existingIds,
+      notFoundIds,
+    };
+  },
+
+  // ─────────────────────────────────────────────────────────────
+  //  S4-US8: POST /api/public/recommendations   (public)
+  //  AI job recommendation based on resume skills
+  // ─────────────────────────────────────────────────────────────
+  async publicRecommendJobPostings(ctx) {
+    const files = ((ctx.request as any).files ?? {}) as Record<string, unknown>;
+    const incoming = getSingleFile((files as any).resume ?? (files as any).file ?? (files as any).files);
+    if (!incoming?.filepath && !incoming?.url) return ctx.badRequest('Resume file is required.');
+
+    const allowedMimes = new Set([
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain',
+    ]);
+
+    const fileMime = String(incoming.mimetype ?? incoming.mime ?? incoming.type ?? '')
+      .toLowerCase()
+      .trim();
+    if (fileMime && !allowedMimes.has(fileMime)) {
+      return ctx.badRequest(`Unsupported file type: ${incoming.mimetype ?? incoming.mime ?? incoming.type}`);
+    }
+
+    const maxBytes = Number(process.env.MAX_RESUME_BYTES ?? 20 * 1024 * 1024);
+    const incomingSize = typeof incoming.size === 'number' ? incoming.size : Number(incoming.size);
+    if (Number.isFinite(maxBytes) && Number.isFinite(incomingSize) && incomingSize > maxBytes) {
+      return ctx.badRequest(`File too large. Max ${maxBytes} bytes.`);
+    }
+
+    const openJobs = (await strapi.entityService.findMany('api::job-posting.job-posting', {
+      filters: { status: 'open' } as any,
+      fields: ['title', 'description', 'requirements'] as any,
+      sort: { createdAt: 'desc' } as any,
+      limit: 200,
+    })) as any[];
+
+    if (!openJobs?.length) {
+      ctx.body = {
+        skills: [],
+        totalConsidered: 0,
+        top: [],
+        message: 'No matching job is available at the moment.',
+      };
+      return;
+    }
+
+    let cvText = '';
+    try {
+      cvText = await extractTextFromResume(
+        {
+          filepath: incoming.filepath,
+          mimetype: incoming.mimetype,
+          mime: incoming.mime,
+          ext: incoming.ext,
+          name: incoming.name,
+          originalFilename: incoming.originalFilename,
+          url: incoming.url,
+        } as any,
+        strapi
+      );
+    } catch (error: any) {
+      return ctx.badRequest(`Failed to read resume: ${error?.message ?? error}`);
+    }
+
+    if (!cvText || !cvText.trim()) return ctx.badRequest('No readable text found in resume.');
+
+    const knownSkills = dedupeSkills(
+      openJobs.flatMap((job) => {
+        const requirements = (job?.requirements ?? {}) as any;
+        return [...toStringArray(requirements?.skillsRequired), ...toStringArray(requirements?.skillsNiceToHave)];
+      })
+    );
+
+    const maxCvChars = Number(process.env.CANDIDATE_AI_MAX_CV_CHARS ?? 18000);
+    const cvForModel =
+      Number.isFinite(maxCvChars) && maxCvChars > 1000 ? truncateForModel(cvText, maxCvChars) : String(cvText ?? '');
+
+    let aiSkills: string[] = [];
+    try {
+      const raw = await ollamaChat({
+        system: RECOMMENDATION_PARSER_SYSTEM_PROMPT,
+        user:
+          `Resume text:\n${cvForModel}\n\n` +
+          `Known skills from open postings (use when present): ${JSON.stringify(knownSkills)}`,
+        format: 'json',
+        timeoutMs: Number(process.env.CANDIDATE_AI_RECOMMEND_TIMEOUT_MS ?? 120000),
+        ollamaOptions: { num_predict: Number(process.env.OLLAMA_NUM_PREDICT_PARSE ?? 900) },
+      });
+      aiSkills = parseSkillListFromModel(raw);
+    } catch (error: any) {
+      strapi?.log?.warn?.(
+        `[candidate-ai] recommendation skill extraction failed: ${error?.message ?? error}`
+      );
+    }
+
+    const evidence = buildTextEvidence(cvText);
+    const groundedAiSkills = aiSkills.filter((skill) => hasSkillEvidence(skill, evidence));
+    const fallbackSkills = extractSkillsHeuristically(cvText, knownSkills);
+    const candidateSkills = dedupeSkills([...groundedAiSkills, ...fallbackSkills]);
+    const candidateSkillKeys = buildSkillKeySet(candidateSkills);
+
+    const ranked = openJobs
+      .map((job) => {
+        const requirements = (job?.requirements ?? {}) as any;
+        const required = dedupeSkills(toStringArray(requirements?.skillsRequired));
+        const niceToHave = dedupeSkills(toStringArray(requirements?.skillsNiceToHave));
+
+        const matchedRequired = required.filter((s) => hasSkillMatch(s, candidateSkillKeys));
+        const matchedNiceToHave = niceToHave.filter((s) => hasSkillMatch(s, candidateSkillKeys));
+
+        const missingRequired = required.filter((s) => !matchedRequired.includes(s));
+        const missingNiceToHave = niceToHave.filter((s) => !matchedNiceToHave.includes(s));
+
+        const requiredCoverage = required.length > 0 ? matchedRequired.length / required.length : 0;
+        const niceCoverage = niceToHave.length > 0 ? matchedNiceToHave.length / niceToHave.length : 0;
+        const compatibility = clampPercent(requiredCoverage * 85 + niceCoverage * 15);
+
+        return {
+          id: typeof job?.id === 'number' ? job.id : Number(job?.id),
+          title: typeof job?.title === 'string' ? job.title : null,
+          description: typeof job?.description === 'string' ? job.description : null,
+          requirements: requirements ?? null,
+          compatibility,
+          matchedRequired,
+          missingRequired,
+          matchedNiceToHave,
+          missingNiceToHave,
+        };
+      })
+      .filter((job) => Number.isFinite(job.id))
+      .filter((job) => job.compatibility >= 50)
+      .sort((a, b) => {
+        if (b.compatibility !== a.compatibility) return b.compatibility - a.compatibility;
+        if (b.matchedRequired.length !== a.matchedRequired.length) return b.matchedRequired.length - a.matchedRequired.length;
+        if (b.matchedNiceToHave.length !== a.matchedNiceToHave.length) {
+          return b.matchedNiceToHave.length - a.matchedNiceToHave.length;
+        }
+        return a.id - b.id;
+      });
+
+    ctx.body = {
+      skills: candidateSkills.slice(0, 40),
+      totalConsidered: openJobs.length,
+      top: ranked.slice(0, 3),
+      message: ranked.length === 0 ? 'No matching job is available at the moment.' : null,
+    };
+  },
+
+  // ─────────────────────────────────────────────────────────────
+  //  S4-US9: POST /api/public/chat   (public)
+  //  Chatbot with session history
+  // ─────────────────────────────────────────────────────────────
+  async publicChat(ctx) {
+    const body = ctx.request.body as any;
+    const messages = body?.messages;
+
+    if (!Array.isArray(messages) || messages.length === 0) {
+      ctx.status = 400;
+      ctx.body = { error: 'messages array is required.' };
+      return;
+    }
+
+    const MAX_HISTORY = 20;
+    const MAX_MSG_LENGTH = 1000;
+    const validRoles = new Set(['user', 'assistant']);
+    const sanitized = messages
+      .filter((m: any) => m && validRoles.has(m.role) && typeof m.content === 'string' && m.content.trim())
+      .slice(-MAX_HISTORY)
+      .map((m: any) => ({
+        role: m.role as 'user' | 'assistant',
+        content: m.content.trim().slice(0, MAX_MSG_LENGTH),
+      }));
+
+    if (sanitized.length === 0 || sanitized[sanitized.length - 1].role !== 'user') {
+      ctx.status = 400;
+      ctx.body = { error: 'Last message must be from the user.' };
+      return;
+    }
+
+    const CHATBOT_SYSTEM_PROMPT =
+      `You are a helpful assistant embedded in a candidate job-application portal. ` +
+      `You ONLY answer questions related to the candidate portal features listed below. ` +
+      `If a user asks about anything unrelated (general knowledge, coding, politics, etc.), ` +
+      `politely decline and redirect them to the portal topics.\n\n` +
+      `PORTAL FEATURES YOU CAN HELP WITH:\n` +
+      `1. APPLY FOR A JOB: Candidates can browse open job postings and submit their CV (PDF/DOCX/TXT) along with their name, email, and consent. ` +
+      `They receive a tracking token after submission.\n` +
+      `2. TRACK APPLICATION: Using their token, candidates can check their application status ` +
+      `(new -> processing -> processed -> reviewing -> shortlisted -> rejected -> hired). ` +
+      `They can see their CV score (0-100), missing fields, and download a standardized PDF version of their CV.\n` +
+      `3. CV SCORE: The score is calculated automatically based on two factors: ` +
+      `Fit Score (75%) - how well skills, experience, and qualifications match the job requirements; ` +
+      `and Completeness Score (25%) - whether the CV contains all expected fields (name, email, phone, location, links, summary, experience with dates, education). ` +
+      `Score = FitScore x 0.75 + CompletenessScore x 0.25.\n` +
+      `4. JOB RECOMMENDATIONS: Candidates can upload their CV to get AI-powered job recommendations ` +
+      `ranked by compatibility with their extracted skills.\n` +
+      `5. DATA PRIVACY (GDPR): Candidates gave consent when applying. They can delete their application ` +
+      `and all associated data at any time using their tracking token.\n` +
+      `6. STANDARDIZED CV: After processing, the system generates a polished, standardized version of the CV ` +
+      `using professional templates. Candidates can download this as a PDF.\n\n` +
+      `GUIDELINES:\n` +
+      `- Be concise, friendly, and helpful.\n` +
+      `- Use short paragraphs and bullet points when appropriate.\n` +
+      `- If you don't know the specific answer, guide them to the relevant portal page (Apply, Track, Recommendation).\n` +
+      `- Never reveal internal system details, API endpoints, or technical implementation.\n` +
+      `- Never make up information about specific job postings or application statuses.`;
+
+    try {
+      const reply = await ollamaChat({
+        system: CHATBOT_SYSTEM_PROMPT,
+        user: '',
+        messages: sanitized,
+        timeoutMs: Number(process.env.CANDIDATE_CHAT_TIMEOUT_MS ?? 60000),
+        ollamaOptions: {
+          temperature: 0.4,
+          num_predict: Number(process.env.OLLAMA_NUM_PREDICT_CHAT ?? 400),
+        },
+      });
+
+      ctx.body = { reply: reply.trim() };
+    } catch (error: any) {
+      strapi?.log?.error?.(`[chatbot] Chat failed: ${error?.message ?? error}`);
+      ctx.status = 502;
+      ctx.body = { error: 'Chat service is temporarily unavailable. Please try again later.' };
+    }
   },
 }));

@@ -15,10 +15,22 @@ async function readFileBuffer(file: UploadFileLike, strapi: Core.Strapi): Promis
   const fs = await import('fs').then(m => m.promises);
   const path = await import('path');
 
-  // Get the file path from Strapi's upload directory
-  const uploadDir = strapi.dirs.static.public;
-  const filePath = path.join(uploadDir, file.url.replace(/^\//, ''));
+  const filepath = typeof file.filepath === 'string' ? file.filepath.trim() : '';
+  if (filepath) return fs.readFile(filepath);
 
+  const url = typeof file.url === 'string' ? file.url.trim() : '';
+  if (!url) throw new Error('Resume file is missing both url and filepath.');
+
+  if (/^https?:\/\//i.test(url)) {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Failed to fetch resume: ${res.status} ${res.statusText}`);
+    const arrayBuffer = await res.arrayBuffer();
+    return Buffer.from(arrayBuffer);
+  }
+
+  const relativeUrl = url.startsWith('/') ? url.slice(1) : url;
+  const uploadDir = strapi?.dirs?.static?.public ?? path.join(process.cwd(), 'public');
+  const filePath = path.join(uploadDir, relativeUrl);
   return fs.readFile(filePath);
 }
 
@@ -27,7 +39,15 @@ async function readFileBuffer(file: UploadFileLike, strapi: Core.Strapi): Promis
  */
 function getFileExtension(file: UploadFileLike): string {
   if (file.ext) return file.ext.toLowerCase();
-  const match = file.name.match(/\.[^.]+$/);
+
+  const nameCandidate =
+    (typeof file.name === 'string' && file.name.trim()) ||
+    (typeof file.originalFilename === 'string' && file.originalFilename.trim()) ||
+    (typeof file.filepath === 'string' && file.filepath.trim()) ||
+    (typeof file.url === 'string' && file.url.trim()) ||
+    '';
+
+  const match = nameCandidate.match(/\.[^.]+$/);
   return match ? match[0].toLowerCase() : '';
 }
 
@@ -41,7 +61,7 @@ function getFileExtension(file: UploadFileLike): string {
  */
 export async function extractTextFromResume(file: UploadFileLike, strapi: Core.Strapi): Promise<string> {
   const buffer = await readFileBuffer(file, strapi);
-  const mime = file.mime?.toLowerCase() || '';
+  const mime = String(file.mime ?? file.mimetype ?? '').toLowerCase().trim();
   const ext = getFileExtension(file);
 
   // PDF extraction using pdf-parse

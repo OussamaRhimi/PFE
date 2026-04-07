@@ -11,11 +11,12 @@ import {
   CvPreviewResponse
 } from '../../services/candidate.service';
 import { AuthService } from '../../services/auth.service';
+import { LocationMapComponent } from '../../components/location-map/location-map.component';
 
 @Component({
   selector: 'app-candidate-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, LocationMapComponent],
   template: `
     <div class="page">
       <!-- Back navigation -->
@@ -164,6 +165,18 @@ import { AuthService } from '../../services/auth.service';
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
                 Portfolio / Website
               </a>
+            </div>
+          </div>
+
+          <!-- Location card (candidate-provided) -->
+          <div class="card card-location">
+            <div class="card-label">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              Location
+            </div>
+            <div class="location-card-body">
+              <app-location-map *ngIf="candidateLocation" [location]="candidateLocation" [height]="360"></app-location-map>
+              <span *ngIf="!candidateLocation" class="text-muted">Location not available</span>
             </div>
           </div>
         </div>
@@ -428,9 +441,11 @@ import { AuthService } from '../../services/auth.service';
                     <div class="kv-label">Phone</div>
                     <div class="kv-value">{{ contact.phone }}</div>
                   </div>
-                  <div class="kv-item">
+                  <div class="kv-item kv-item-full">
                     <div class="kv-label">Location</div>
-                    <div class="kv-value">{{ contact.location }}</div>
+                    <div class="kv-value location-value">
+                      <span>{{ contact.location }}</span>
+                    </div>
                   </div>
                 </div>
               </section>
@@ -868,6 +883,16 @@ import { AuthService } from '../../services/auth.service';
     .linkedin-link:hover { background: rgba(#0077b5, 0.15); }
     .portfolio-link { background: rgba($gray-600, 0.08); color: $gray-700; }
     .portfolio-link:hover { background: rgba($gray-600, 0.15); }
+
+    .card-location .location-card-body {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .card-location {
+      grid-column: 1 / -1;
+    }
 
     /* Notes */
     .notes-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 20px; }
@@ -1497,6 +1522,10 @@ import { AuthService } from '../../services/auth.service';
       border: 1px solid $gray-200;
     }
 
+    .kv-item-full {
+      grid-column: 1 / -1;
+    }
+
     .kv-label {
       font-size: 11px;
       color: $gray-400;
@@ -1509,6 +1538,10 @@ import { AuthService } from '../../services/auth.service';
       font-size: 13px;
       font-weight: 600;
       color: $gray-800;
+    }
+
+    .location-value {
+      margin-top: 8px;
     }
 
     .kv-link {
@@ -1876,6 +1909,7 @@ export class CandidateDetailComponent implements OnInit {
   cvZoom = 1;
   processingAction = false;
   showReprocessConfirm = false;
+  candidateLocation = '';
   private pollHandle: ReturnType<typeof setInterval> | null = null;
   private pollTimeout: ReturnType<typeof setTimeout> | null = null;
 
@@ -1903,6 +1937,7 @@ export class CandidateDetailComponent implements OnInit {
     this.candidateService.getHrDetail(id).subscribe({
       next: (data) => {
         this.candidate = data;
+        this.candidateLocation = this.buildCandidateLocation(data);
         this.loading = false;
         this.statusDraft = data.status;
         this.applyTemplateSelection();
@@ -2168,6 +2203,7 @@ export class CandidateDetailComponent implements OnInit {
             this.pollHandle = null;
             this.pollTimeout = null;
             this.candidate = data;
+            this.candidateLocation = this.buildCandidateLocation(data);
             this.loadCvPreview(id);
           }
         },
@@ -2220,6 +2256,13 @@ export class CandidateDetailComponent implements OnInit {
   getTemplateName(key: CvTemplateKey): string {
     const match = this.cvTemplates.find(t => t.key === key);
     return match ? match.name : key;
+  }
+
+  private buildCandidateLocation(candidate?: CandidateDetail | null): string {
+    const city = candidate?.city?.trim() || '';
+    const country = candidate?.country?.trim() || '';
+    if (city && country) return `${city}, ${country}`;
+    return city || country;
   }
 
   getExtractedContact(extracted: any): {

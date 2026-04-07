@@ -39,7 +39,7 @@ services:
       DATABASE_PASSWORD: strapi
       DATABASE_SSL: "false"
       OLLAMA_BASE_URL: http://ollama:11434
-      OLLAMA_MODEL: llama3.2:3b
+      OLLAMA_MODEL: llama3.2:latest
     ports:
       - "1337:1337"
     volumes:
@@ -74,7 +74,7 @@ services:
       - "11434:11434"
     volumes:
       - ollama_data:/root/.ollama
-    entrypoint: ["/bin/sh", "-c", "ollama serve & sleep 5 && ollama pull llama3.2 && wait"]
+    entrypoint: ["/bin/sh", "-c", "ollama serve & sleep 5 && ollama pull llama3.2:latest && wait"]
 
 volumes:
   postgres_data:

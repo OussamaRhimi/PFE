@@ -17,6 +17,8 @@ import { I18nService } from '../../services/i18n.service';
           </div>
           <nav class="footer-links">
             <a routerLink="/jobs">{{ i18n.t('public.navJobs') }}</a>
+            <a routerLink="/recommendations">{{ i18n.t('public.navRecommend') }}</a>
+            <a routerLink="/track">{{ i18n.t('public.trackApp') }}</a>
             <a routerLink="/login">{{ i18n.t('public.login') }}</a>
           </nav>
         </div>

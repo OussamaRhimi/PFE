@@ -189,6 +189,9 @@ export interface UploadFileLike {
   name: string;
   url: string;
   mime?: string;
+  mimetype?: string;
   ext?: string;
   size?: number;
+  filepath?: string;
+  originalFilename?: string;
 }

@@ -69,6 +69,8 @@ export interface CandidateDetail {
   email: string;
   linkedin: string | null;
   portfolio: string | null;
+  country?: string | null;
+  city?: string | null;
   selfReportedYearsExperience: number | null;
   status: string;
   score: number;
@@ -90,6 +92,7 @@ export interface CandidateDetail {
 
 /* ── HR candidate list item (from dedicated HR endpoint) ── */
 export interface CandidateListItem {
+  id?: number;
   documentId: string;
   fullName: string;
   email: string;
@@ -100,6 +103,18 @@ export interface CandidateListItem {
   jobTitle?: string | null;
   jobPostingId?: string | null;
   jobPosting?: { documentId: string; title: string } | null;
+}
+
+export interface AnalyticsCandidate {
+  id: number;
+  documentId: string | null;
+  status: string | null;
+  score: number | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+  jobId: number | null;
+  jobTitle: string | null;
+  missing: string[];
 }
 
 /* ── HR list response with pagination ── */
@@ -130,10 +145,20 @@ export interface HrNotesUpdateResponse {
   updatedAt: string;
 }
 
+export interface BulkStatusResponse {
+  ok: boolean;
+  status: string;
+  updatedCount: number;
+  updatedIds: number[];
+  notFoundIds: number[];
+}
+
 /* ── Payload for the application form ── */
 export interface ApplyPayload {
   fullName: string;
   email: string;
+  country: string;
+  city: string;
   linkedin?: string;
   portfolio?: string;
   candidateNotes?: string;
@@ -156,6 +181,8 @@ export class CandidateService {
     const fd = new FormData();
     fd.append('fullName', payload.fullName.trim());
     fd.append('email', payload.email.trim());
+    fd.append('country', payload.country.trim());
+    fd.append('city', payload.city.trim());
     if (payload.linkedin) fd.append('linkedin', payload.linkedin.trim());
     if (payload.portfolio) fd.append('portfolio', payload.portfolio.trim());
     if (payload.candidateNotes) fd.append('candidateNotes', payload.candidateNotes.trim());
@@ -216,7 +243,14 @@ export class CandidateService {
     page = 1,
     pageSize = 25,
     sort = 'createdAt:desc',
-    filters?: { status?: string; jobPostingId?: string; search?: string }
+    filters?: {
+      status?: string;
+      jobPostingId?: string;
+      search?: string;
+      searchField?: 'all' | 'name' | 'email' | 'status' | 'job';
+      scoreOperator?: 'gt' | 'lt';
+      scoreThreshold?: number;
+    }
   ): Observable<HrListResponse> {
     let params = new HttpParams()
       .set('page', String(page))
@@ -232,8 +266,34 @@ export class CandidateService {
     if (filters?.search) {
       params = params.set('search', filters.search);
     }
+    if (filters?.searchField) {
+      params = params.set('searchField', filters.searchField);
+    }
+    if (filters?.scoreOperator && Number.isFinite(filters.scoreThreshold)) {
+      params = params.set('scoreOp', filters.scoreOperator);
+      params = params.set('scoreValue', String(filters.scoreThreshold));
+    }
 
     return this.http.get<HrListResponse>(`${this.apiUrl}/hr`, { params });
+  }
+
+  /**
+   * Analytics: fetch a larger candidate list with evaluation data.
+   */
+  listForAnalytics(pageSize = 2000): Observable<AnalyticsCandidate[]> {
+    const params = new HttpParams()
+      .set('pagination[pageSize]', String(pageSize))
+      .set('fields[0]', 'status')
+      .set('fields[1]', 'score')
+      .set('fields[2]', 'createdAt')
+      .set('fields[3]', 'updatedAt')
+      .set('fields[4]', 'extractedData')
+      .set('fields[5]', 'documentId')
+      .set('populate[job_posting][fields][0]', 'title');
+
+    return this.http.get<any>(this.apiUrl, { params }).pipe(
+      map((res) => this.normalizeAnalyticsCandidates(res))
+    );
   }
 
   /**
@@ -271,6 +331,63 @@ export class CandidateService {
       .pipe(map(res => res.data));
   }
 
+  /**
+   * S4-US4: Bulk update candidate statuses.
+   */
+  bulkUpdateStatus(ids: number[], status: string): Observable<BulkStatusResponse> {
+    return this.http
+      .post<BulkStatusResponse>(`${this.apiUrl}/hr/bulk-status`, { ids, status });
+  }
+
+  private normalizeAnalyticsCandidates(res: any): AnalyticsCandidate[] {
+    const items = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
+    return items
+      .map((raw: any) => {
+        const item = this.unwrapAttributes(raw);
+        const jobRel = item?.job_posting?.data ?? item?.job_posting ?? null;
+        const job = this.unwrapAttributes(jobRel);
+
+        const evaluation = item?.extractedData?.evaluation ?? null;
+        const missingRaw = Array.isArray(evaluation?.missingFields)
+          ? evaluation.missingFields
+          : Array.isArray(evaluation?.missing)
+            ? evaluation.missing
+            : [];
+        const missing = missingRaw.filter((v: unknown) => typeof v === 'string');
+
+        const scoreValue = typeof item?.score === 'number'
+          ? item.score
+          : item?.score != null
+            ? Number(item.score)
+            : null;
+
+        return {
+          id: typeof item?.id === 'number' ? item.id : Number(item?.id) || 0,
+          documentId: typeof item?.documentId === 'string' ? item.documentId : null,
+          status: typeof item?.status === 'string' ? item.status : null,
+          score: Number.isFinite(scoreValue as number) ? (scoreValue as number) : null,
+          createdAt: typeof item?.createdAt === 'string' ? item.createdAt : null,
+          updatedAt: typeof item?.updatedAt === 'string' ? item.updatedAt : null,
+          jobId: typeof job?.id === 'number' ? job.id : job?.id != null ? Number(job.id) : null,
+          jobTitle: typeof job?.title === 'string' ? job.title : null,
+          missing,
+        } as AnalyticsCandidate;
+      })
+      .filter((c: AnalyticsCandidate) => Number.isFinite(c.id) && c.id > 0);
+  }
+
+  private unwrapAttributes(raw: any): any {
+    if (!raw || typeof raw !== 'object') return null;
+    if (raw.attributes && typeof raw.attributes === 'object') {
+      return {
+        id: raw.id ?? raw.attributes.id ?? null,
+        documentId: raw.documentId ?? raw.attributes.documentId ?? null,
+        ...raw.attributes,
+      };
+    }
+    return raw;
+  }
+
   // Compatibility methods used by legacy pages added during merge.
   getCandidatesByJob(jobId: string, page = 1, sort = 'fullName:asc'): Observable<StrapiResponse> {
     const params = new HttpParams()
@@ -289,6 +406,22 @@ export class CandidateService {
 
   changeStatus(documentId: string, newStatus: string): Observable<StatusUpdateResponse> {
     return this.updateStatus(documentId, newStatus);
+  }
+
+  /**
+   * S4-US8: Public job recommendations based on resume.
+   */
+  recommendJobPostings(resume: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('resume', resume);
+    return this.http.post('http://localhost:1337/api/public/recommendations', formData);
+  }
+
+  /**
+   * S4-US9: Public chatbot.
+   */
+  publicChat(messages: Array<{ role: 'user' | 'assistant'; content: string }>): Observable<{ reply: string }> {
+    return this.http.post<{ reply: string }>('http://localhost:1337/api/public/chat', { messages });
   }
 
   // ══════════════════════════════════════════════════════════════════════════

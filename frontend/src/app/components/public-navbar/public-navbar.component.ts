@@ -17,6 +17,8 @@ import { I18nService } from '../../services/i18n.service';
         <div class="header-actions">
           <a routerLink="/jobs" class="nav-link" routerLinkActive="active"
              [routerLinkActiveOptions]="{ exact: true }">{{ i18n.t('public.navJobs') }}</a>
+           <a routerLink="/recommendations" class="nav-link" routerLinkActive="active"
+             [routerLinkActiveOptions]="{ exact: true }">{{ i18n.t('public.navRecommend') }}</a>
           <a routerLink="/track" class="nav-link" routerLinkActive="active"
              [routerLinkActiveOptions]="{ exact: true }">{{ i18n.t('public.trackApp') }}</a>
           <div class="lang-toggle" (click)="i18n.toggle()" [class.en]="i18n.lang === 'en'">

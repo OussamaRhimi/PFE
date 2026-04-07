@@ -164,6 +164,18 @@ export default {
         description: 'HR endpoint – update HR notes for candidate',
       },
     },
+    // ── S4-US4: HR bulk status update ──
+    {
+      method: 'POST',
+      path: '/candidates/hr/bulk-status',
+      handler: 'candidate.hrBulkUpdateStatus',
+      config: {
+        auth: false,
+        policies: [],
+        middlewares: [],
+        description: 'HR endpoint – bulk update candidate statuses',
+      },
+    },
 
     {
       method: 'GET',
@@ -240,6 +252,30 @@ export default {
         policies: [],
         middlewares: [],
         description: 'Public GDPR endpoint - delete application and data by token',
+      },
+    },
+    // ── S4-US8: Public job recommendations ──
+    {
+      method: 'POST',
+      path: '/public/recommendations',
+      handler: 'candidate.publicRecommendJobPostings',
+      config: {
+        auth: false,
+        policies: [],
+        middlewares: [],
+        description: 'Public endpoint - recommend job postings from a resume',
+      },
+    },
+    // ── S4-US9: Public chatbot ──
+    {
+      method: 'POST',
+      path: '/public/chat',
+      handler: 'candidate.publicChat',
+      config: {
+        auth: false,
+        policies: [],
+        middlewares: [],
+        description: 'Public endpoint - chatbot assistant',
       },
     },
   ],

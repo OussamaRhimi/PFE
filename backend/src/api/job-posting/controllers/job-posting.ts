@@ -1,4 +1,5 @@
 import { factories } from '@strapi/strapi';
+import { DEFAULT_EVALUATION_CONFIG, mergeEvaluationConfig } from '../../../utils/candidate-ai';
 
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
@@ -8,6 +9,49 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
 };
 
 export default factories.createCoreController('api::job-posting.job-posting', ({ strapi }) => ({
+  async publicList(ctx) {
+    const items = await strapi.entityService.findMany('api::job-posting.job-posting', {
+      filters: { status: 'open' },
+      fields: ['title', 'description', 'requirements'],
+      sort: { createdAt: 'desc' },
+    });
+
+    ctx.body = (items ?? []).map((jp: any) => ({
+      id: jp.id,
+      title: jp.title ?? null,
+      description: jp.description ?? null,
+      requirements: jp.requirements ?? null,
+    }));
+  },
+
+  async publicFindOne(ctx) {
+    const rawId = String(ctx.params?.id ?? '').trim();
+    if (!rawId) return ctx.badRequest('Invalid id');
+
+    const numericId = Number(rawId);
+    let jp: any | null = null;
+
+    if (Number.isFinite(numericId)) {
+      jp = await strapi.entityService.findOne('api::job-posting.job-posting', numericId, {
+        fields: ['title', 'description', 'status', 'requirements'],
+      });
+    } else {
+      jp = await strapi.documents('api::job-posting.job-posting').findOne({
+        documentId: rawId,
+        fields: ['title', 'description', 'status', 'requirements'] as any,
+      });
+    }
+
+    if (!jp || jp.status === 'closed' || jp.status === 'draft') return ctx.notFound();
+
+    ctx.body = {
+      id: jp.id ?? null,
+      title: jp.title ?? null,
+      description: jp.description ?? null,
+      requirements: jp.requirements ?? null,
+    };
+  },
+
   /**
    * GET /api/job-postings/public
    * Returns only job postings with status "open" (no auth required).
@@ -60,5 +104,70 @@ export default factories.createCoreController('api::job-posting.job-posting', ({
     });
 
     return (this as any).transformResponse(updated);
+  },
+
+  async hrGetEvalConfig(ctx) {
+    const rawId = String(ctx.params?.id ?? '').trim();
+    if (!rawId) return ctx.badRequest('Invalid id');
+
+    const numericId = Number(rawId);
+    let jp: any | null = null;
+
+    if (Number.isFinite(numericId)) {
+      jp = await strapi.entityService.findOne('api::job-posting.job-posting', numericId, {
+        fields: ['requirements'] as any,
+      });
+    } else {
+      jp = await strapi.documents('api::job-posting.job-posting').findOne({
+        documentId: rawId,
+        fields: ['requirements'] as any,
+      });
+    }
+
+    if (!jp) return ctx.notFound();
+
+    const raw = jp.requirements?.evaluationConfig ?? null;
+    ctx.body = { evaluationConfig: mergeEvaluationConfig(raw), defaults: DEFAULT_EVALUATION_CONFIG };
+  },
+
+  async hrSetEvalConfig(ctx) {
+    const rawId = String(ctx.params?.id ?? '').trim();
+    if (!rawId) return ctx.badRequest('Invalid id');
+
+    const body = (ctx.request as any).body ?? {};
+    const incoming = body.evaluationConfig;
+    if (!incoming || typeof incoming !== 'object') return ctx.badRequest('evaluationConfig object is required.');
+
+    const numericId = Number(rawId);
+    let jp: any | null = null;
+
+    if (Number.isFinite(numericId)) {
+      jp = await strapi.entityService.findOne('api::job-posting.job-posting', numericId, {
+        fields: ['requirements'] as any,
+      });
+    } else {
+      jp = await strapi.documents('api::job-posting.job-posting').findOne({
+        documentId: rawId,
+        fields: ['requirements'] as any,
+      });
+    }
+
+    if (!jp) return ctx.notFound();
+
+    const validated = mergeEvaluationConfig(incoming);
+    const requirements = { ...(jp.requirements ?? {}), evaluationConfig: validated };
+
+    if (Number.isFinite(numericId)) {
+      await strapi.entityService.update('api::job-posting.job-posting', numericId, {
+        data: { requirements } as any,
+      });
+    } else {
+      await strapi.documents('api::job-posting.job-posting').update({
+        documentId: rawId,
+        data: { requirements } as any,
+      });
+    }
+
+    ctx.body = { ok: true, evaluationConfig: validated };
   },
 }));

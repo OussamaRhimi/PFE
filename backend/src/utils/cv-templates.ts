@@ -86,13 +86,14 @@ function renderStandardTemplate(contact: ResumeContact, content: ResumeContent):
   return `
 <div class="cv-container cv-standard">
 <style>
-.cv-standard { font-family: 'Segoe UI', Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 40px; color: #333; }
-.cv-standard h1 { color: #2563eb; margin-bottom: 5px; font-size: 28px; }
-.cv-standard .contact-info { color: #666; margin-bottom: 20px; }
-.cv-standard h2 { color: #2563eb; border-bottom: 2px solid #2563eb; padding-bottom: 5px; margin-top: 25px; }
-.cv-standard h3 { color: #1f2937; margin-bottom: 5px; }
-.cv-standard .skills-list { display: flex; flex-wrap: wrap; gap: 8px; }
-.cv-standard .skill-tag { background: #e0e7ff; color: #3730a3; padding: 4px 12px; border-radius: 15px; font-size: 14px; }
+.cv-standard { font-family: 'Source Sans 3', 'Segoe UI', sans-serif; max-width: 860px; margin: 24px auto; padding: 48px 52px; color: #0f172a; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 24px; box-shadow: 0 18px 45px rgba(15, 23, 42, 0.12); position: relative; overflow: hidden; }
+.cv-standard::before { content: ''; position: absolute; inset: -30% 0 auto 0; height: 220px; background: radial-gradient(circle at 20% 20%, rgba(59, 130, 246, 0.18), transparent 60%), radial-gradient(circle at 80% 10%, rgba(14, 165, 233, 0.16), transparent 55%); pointer-events: none; }
+.cv-standard h1 { font-family: 'Playfair Display', 'Times New Roman', serif; color: #0f172a; margin-bottom: 6px; font-size: 34px; letter-spacing: 0.3px; }
+.cv-standard .contact-info { color: #475569; margin-bottom: 24px; font-size: 14px; display: flex; flex-wrap: wrap; gap: 8px; }
+.cv-standard h2 { color: #1d4ed8; border-bottom: 2px solid rgba(29, 78, 216, 0.2); padding-bottom: 6px; margin-top: 26px; text-transform: uppercase; font-size: 13px; letter-spacing: 1.4px; }
+.cv-standard h3 { color: #0f172a; margin-bottom: 6px; font-size: 16px; }
+.cv-standard .skills-list { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+.cv-standard .skill-tag { background: linear-gradient(135deg, rgba(59, 130, 246, 0.12), rgba(14, 165, 233, 0.14)); color: #1e3a8a; padding: 6px 14px; border-radius: 999px; font-size: 13px; font-weight: 600; }
 </style>
 
 # ${escapeHtml(contact.fullName || 'Name Not Provided')}
@@ -128,13 +129,15 @@ function renderExperienceFirstTemplate(contact: ResumeContact, content: ResumeCo
   return `
 <div class="cv-container cv-experience-first">
 <style>
-.cv-experience-first { font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 800px; margin: 0 auto; }
-.cv-experience-first .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px; margin: -20px -20px 20px -20px; }
-.cv-experience-first .header h1 { margin: 0; font-size: 32px; }
-.cv-experience-first .header .contact { opacity: 0.9; margin-top: 10px; }
-.cv-experience-first .content { padding: 20px; }
-.cv-experience-first h2 { color: #667eea; margin-top: 30px; }
-.cv-experience-first .experience-item { border-left: 3px solid #667eea; padding-left: 15px; margin-bottom: 20px; }
+.cv-experience-first { font-family: 'Space Grotesk', 'Segoe UI', sans-serif; max-width: 860px; margin: 24px auto; background: #ffffff; border-radius: 26px; overflow: hidden; box-shadow: 0 20px 50px rgba(15, 23, 42, 0.16); border: 1px solid #e2e8f0; }
+.cv-experience-first .header { background: linear-gradient(125deg, #4338ca 0%, #6366f1 45%, #0ea5e9 100%); color: white; padding: 48px 56px 42px; position: relative; }
+.cv-experience-first .header::after { content: ''; position: absolute; right: -60px; top: -80px; width: 240px; height: 240px; border-radius: 50%; background: rgba(255, 255, 255, 0.12); }
+.cv-experience-first .header h1 { margin: 0; font-size: 34px; letter-spacing: 0.4px; }
+.cv-experience-first .header .contact { opacity: 0.92; margin-top: 12px; font-size: 14px; display: flex; flex-wrap: wrap; gap: 10px; }
+.cv-experience-first .content { padding: 28px 48px 40px; }
+.cv-experience-first h2 { color: #4338ca; margin-top: 30px; font-size: 14px; text-transform: uppercase; letter-spacing: 1.2px; }
+.cv-experience-first .experience-item { border-left: 3px solid rgba(67, 56, 202, 0.45); padding-left: 18px; margin-bottom: 22px; position: relative; }
+.cv-experience-first .experience-item::before { content: ''; position: absolute; left: -7px; top: 6px; width: 12px; height: 12px; border-radius: 50%; background: #4338ca; box-shadow: 0 0 0 6px rgba(67, 56, 202, 0.15); }
 </style>
 
 <div class="header">
@@ -173,14 +176,14 @@ function renderSkillsFirstTemplate(contact: ResumeContact, content: ResumeConten
   return `
 <div class="cv-container cv-skills-first">
 <style>
-.cv-skills-first { font-family: 'Roboto', Arial, sans-serif; max-width: 900px; margin: 0 auto; display: grid; grid-template-columns: 280px 1fr; }
-.cv-skills-first .sidebar { background: #1f2937; color: white; padding: 30px; }
-.cv-skills-first .sidebar h1 { font-size: 24px; margin-bottom: 20px; }
-.cv-skills-first .sidebar h2 { font-size: 16px; color: #9ca3af; margin-top: 25px; border-bottom: 1px solid #374151; padding-bottom: 5px; }
-.cv-skills-first .skill-meter { background: #374151; border-radius: 10px; height: 8px; margin: 8px 0; }
-.cv-skills-first .skill-meter-fill { background: #60a5fa; height: 100%; border-radius: 10px; width: 80%; }
-.cv-skills-first .main { padding: 30px; }
-.cv-skills-first .main h2 { color: #1f2937; }
+.cv-skills-first { font-family: 'Sora', 'Segoe UI', sans-serif; max-width: 920px; margin: 24px auto; display: grid; grid-template-columns: 300px 1fr; border-radius: 26px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 24px 60px rgba(15, 23, 42, 0.14); background: #ffffff; }
+.cv-skills-first .sidebar { background: linear-gradient(180deg, #0f172a 0%, #111827 40%, #1f2937 100%); color: white; padding: 36px 30px; }
+.cv-skills-first .sidebar h1 { font-size: 26px; margin-bottom: 18px; letter-spacing: 0.3px; }
+.cv-skills-first .sidebar h2 { font-size: 12px; color: #cbd5f5; margin-top: 24px; border-bottom: 1px solid rgba(148, 163, 184, 0.4); padding-bottom: 6px; text-transform: uppercase; letter-spacing: 1.3px; }
+.cv-skills-first .skill-meter { background: rgba(148, 163, 184, 0.3); border-radius: 999px; height: 8px; margin: 8px 0 14px; }
+.cv-skills-first .skill-meter-fill { background: linear-gradient(90deg, #60a5fa, #22d3ee); height: 100%; border-radius: 999px; width: 78%; }
+.cv-skills-first .main { padding: 36px 40px 42px; }
+.cv-skills-first .main h2 { color: #0f172a; text-transform: uppercase; font-size: 13px; letter-spacing: 1.2px; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; }
 </style>
 
 <div class="sidebar">
@@ -218,12 +221,12 @@ function renderCompactTemplate(contact: ResumeContact, content: ResumeContent): 
   return `
 <div class="cv-container cv-compact">
 <style>
-.cv-compact { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; font-size: 12px; line-height: 1.4; }
-.cv-compact h1 { font-size: 20px; margin-bottom: 5px; }
-.cv-compact h2 { font-size: 14px; color: #333; background: #f3f4f6; padding: 5px 10px; margin: 15px 0 10px 0; }
-.cv-compact h3 { font-size: 12px; margin-bottom: 2px; }
-.cv-compact .contact-line { color: #666; margin-bottom: 15px; }
-.cv-compact .skills-compact { color: #666; }
+.cv-compact { font-family: 'Nunito Sans', 'Segoe UI', sans-serif; max-width: 820px; margin: 24px auto; padding: 28px 32px; font-size: 12.5px; line-height: 1.5; color: #0f172a; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 18px; box-shadow: 0 16px 36px rgba(15, 23, 42, 0.12); }
+.cv-compact h1 { font-size: 22px; margin-bottom: 6px; letter-spacing: 0.2px; }
+.cv-compact h2 { font-size: 12px; color: #1e3a8a; background: linear-gradient(90deg, rgba(59, 130, 246, 0.12), transparent); padding: 6px 12px; margin: 18px 0 10px 0; text-transform: uppercase; letter-spacing: 1.4px; }
+.cv-compact h3 { font-size: 12px; margin-bottom: 3px; color: #111827; }
+.cv-compact .contact-line { color: #475569; margin-bottom: 16px; }
+.cv-compact .skills-compact { color: #475569; }
 </style>
 
 # ${escapeHtml(contact.fullName || 'Name')}
@@ -246,10 +249,10 @@ function renderEducationFirstTemplate(contact: ResumeContact, content: ResumeCon
   return `
 <div class="cv-container cv-education-first">
 <style>
-.cv-education-first { font-family: 'Times New Roman', serif; max-width: 700px; margin: 0 auto; padding: 40px; color: #333; }
-.cv-education-first h1 { text-align: center; font-size: 24px; margin-bottom: 5px; }
-.cv-education-first .contact-center { text-align: center; color: #666; margin-bottom: 30px; }
-.cv-education-first h2 { font-size: 14px; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid #333; padding-bottom: 5px; margin-top: 25px; }
+.cv-education-first { font-family: 'Cormorant Garamond', 'Times New Roman', serif; max-width: 760px; margin: 24px auto; padding: 48px 52px; color: #1f2937; background: #fffdf8; border: 1px solid #efe7dd; border-radius: 22px; box-shadow: 0 20px 48px rgba(60, 47, 30, 0.12); }
+.cv-education-first h1 { text-align: center; font-size: 30px; margin-bottom: 8px; letter-spacing: 0.6px; }
+.cv-education-first .contact-center { text-align: center; color: #6b7280; margin-bottom: 28px; font-size: 14px; }
+.cv-education-first h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 2.4px; border-bottom: 1px solid rgba(51, 65, 85, 0.3); padding-bottom: 6px; margin-top: 28px; }
 </style>
 
 # ${escapeHtml(contact.fullName || 'Name')}
@@ -271,11 +274,11 @@ function renderProjectFocusTemplate(contact: ResumeContact, content: ResumeConte
   return `
 <div class="cv-container cv-project-focus">
 <style>
-.cv-project-focus { font-family: 'Consolas', monospace; max-width: 800px; margin: 0 auto; padding: 30px; }
-.cv-project-focus h1 { color: #059669; }
-.cv-project-focus h2 { color: #059669; border-left: 4px solid #059669; padding-left: 10px; }
-.cv-project-focus .project-card { background: #f0fdf4; border: 1px solid #bbf7d0; padding: 15px; margin: 10px 0; border-radius: 8px; }
-.cv-project-focus .project-card h3 { margin: 0 0 10px 0; color: #166534; }
+.cv-project-focus { font-family: 'IBM Plex Sans', 'Segoe UI', sans-serif; max-width: 860px; margin: 24px auto; padding: 40px 44px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 22px; box-shadow: 0 18px 42px rgba(15, 23, 42, 0.12); }
+.cv-project-focus h1 { color: #047857; font-size: 30px; letter-spacing: 0.3px; }
+.cv-project-focus h2 { color: #065f46; border-left: 4px solid #34d399; padding-left: 12px; text-transform: uppercase; letter-spacing: 1.2px; font-size: 13px; }
+.cv-project-focus .project-card { background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(52, 211, 153, 0.12)); border: 1px solid rgba(16, 185, 129, 0.2); padding: 18px; margin: 14px 0; border-radius: 14px; }
+.cv-project-focus .project-card h3 { margin: 0 0 10px 0; color: #064e3b; font-size: 16px; }
 </style>
 
 # ${escapeHtml(contact.fullName || 'Name')}
@@ -306,13 +309,13 @@ function renderSidebarPhotoTemplate(contact: ResumeContact, content: ResumeConte
   return `
 <div class="cv-container cv-sidebar-photo">
 <style>
-.cv-sidebar-photo { font-family: 'Segoe UI', sans-serif; max-width: 900px; margin: 0 auto; display: grid; grid-template-columns: 250px 1fr; }
-.cv-sidebar-photo .sidebar { background: #111827; color: white; padding: 30px; }
-.cv-sidebar-photo .photo-placeholder { width: 150px; height: 150px; border-radius: 50%; background: #374151; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; }
-.cv-sidebar-photo .sidebar h2 { font-size: 12px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; margin-top: 25px; }
-.cv-sidebar-photo .main { padding: 30px; }
-.cv-sidebar-photo .main h1 { color: #111827; }
-.cv-sidebar-photo .main h2 { color: #111827; border-bottom: 2px solid #111827; }
+.cv-sidebar-photo { font-family: 'Manrope', 'Segoe UI', sans-serif; max-width: 920px; margin: 24px auto; display: grid; grid-template-columns: 260px 1fr; border-radius: 26px; overflow: hidden; border: 1px solid #e5e7eb; box-shadow: 0 22px 55px rgba(15, 23, 42, 0.14); background: #ffffff; }
+.cv-sidebar-photo .sidebar { background: linear-gradient(180deg, #0f172a 0%, #111827 100%); color: white; padding: 34px 28px; }
+.cv-sidebar-photo .photo-placeholder { width: 150px; height: 150px; border-radius: 28px; background: linear-gradient(135deg, rgba(148, 163, 184, 0.2), rgba(59, 130, 246, 0.2)); margin: 0 auto 22px; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+.cv-sidebar-photo .sidebar h2 { font-size: 11px; color: #cbd5f5; text-transform: uppercase; letter-spacing: 1.6px; margin-top: 24px; }
+.cv-sidebar-photo .main { padding: 36px 40px 44px; }
+.cv-sidebar-photo .main h1 { color: #0f172a; font-size: 30px; letter-spacing: 0.4px; }
+.cv-sidebar-photo .main h2 { color: #0f172a; border-bottom: 1px solid #e2e8f0; text-transform: uppercase; font-size: 13px; letter-spacing: 1.2px; padding-bottom: 6px; }
 </style>
 
 <div class="sidebar">
@@ -350,11 +353,11 @@ function renderAccentPinkTemplate(contact: ResumeContact, content: ResumeContent
   return `
 <div class="cv-container cv-accent-pink">
 <style>
-.cv-accent-pink { font-family: 'Helvetica', sans-serif; max-width: 800px; margin: 0 auto; padding: 40px; }
-.cv-accent-pink h1 { color: #db2777; font-size: 32px; }
-.cv-accent-pink h2 { color: #db2777; }
-.cv-accent-pink .contact-card { float: right; background: #fdf2f8; border-left: 4px solid #db2777; padding: 20px; margin-left: 20px; width: 200px; }
-.cv-accent-pink .skill-tag { display: inline-block; background: #fce7f3; color: #9d174d; padding: 4px 12px; border-radius: 15px; margin: 3px; }
+.cv-accent-pink { font-family: 'DM Sans', 'Segoe UI', sans-serif; max-width: 840px; margin: 24px auto; padding: 44px 48px; background: #ffffff; border-radius: 24px; border: 1px solid #f1d4e3; box-shadow: 0 18px 46px rgba(190, 24, 93, 0.12); }
+.cv-accent-pink h1 { color: #be185d; font-size: 32px; letter-spacing: 0.3px; }
+.cv-accent-pink h2 { color: #be185d; text-transform: uppercase; letter-spacing: 1.2px; font-size: 13px; border-bottom: 1px solid rgba(190, 24, 93, 0.2); padding-bottom: 6px; }
+.cv-accent-pink .contact-card { float: right; background: linear-gradient(135deg, rgba(244, 114, 182, 0.18), rgba(253, 224, 71, 0.12)); border-left: 4px solid #be185d; padding: 18px 20px; margin-left: 20px; width: 220px; border-radius: 16px; box-shadow: 0 8px 18px rgba(190, 24, 93, 0.15); }
+.cv-accent-pink .skill-tag { display: inline-block; background: rgba(190, 24, 93, 0.1); color: #9d174d; padding: 6px 14px; border-radius: 999px; margin: 4px 6px 0 0; font-size: 13px; font-weight: 600; }
 </style>
 
 <div class="contact-card">
@@ -384,12 +387,12 @@ function renderTealCircleTemplate(contact: ResumeContact, content: ResumeContent
   return `
 <div class="cv-container cv-teal-circle">
 <style>
-.cv-teal-circle { font-family: 'Arial', sans-serif; max-width: 800px; margin: 0 auto; padding: 40px; }
+.cv-teal-circle { font-family: 'Outfit', 'Segoe UI', sans-serif; max-width: 840px; margin: 24px auto; padding: 44px 50px; background: #ffffff; border: 1px solid #d1f0ec; border-radius: 24px; box-shadow: 0 18px 44px rgba(13, 148, 136, 0.14); }
 .cv-teal-circle .header { text-align: center; margin-bottom: 30px; }
-.cv-teal-circle .photo-circle { width: 120px; height: 120px; border-radius: 50%; background: #0d9488; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; color: white; font-size: 36px; }
-.cv-teal-circle h1 { color: #0d9488; margin: 0; }
-.cv-teal-circle h2 { color: #0d9488; border-bottom: 2px solid #0d9488; padding-bottom: 5px; }
-.cv-teal-circle .divider { height: 3px; background: linear-gradient(90deg, #0d9488, transparent); margin: 20px 0; }
+.cv-teal-circle .photo-circle { width: 128px; height: 128px; border-radius: 32px; background: linear-gradient(135deg, #0d9488, #14b8a6); margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; color: white; font-size: 34px; letter-spacing: 1px; }
+.cv-teal-circle h1 { color: #0f172a; margin: 0; font-size: 32px; }
+.cv-teal-circle h2 { color: #0f766e; border-bottom: 2px solid rgba(15, 118, 110, 0.3); padding-bottom: 6px; text-transform: uppercase; font-size: 13px; letter-spacing: 1.2px; }
+.cv-teal-circle .divider { height: 3px; background: linear-gradient(90deg, rgba(13, 148, 136, 0.6), transparent); margin: 20px 0; }
 </style>
 
 <div class="header">
@@ -418,12 +421,12 @@ function renderNavyGoldTemplate(contact: ResumeContact, content: ResumeContent):
   return `
 <div class="cv-container cv-navy-gold">
 <style>
-.cv-navy-gold { font-family: 'Georgia', serif; max-width: 900px; margin: 0 auto; display: grid; grid-template-columns: 280px 1fr; }
-.cv-navy-gold .sidebar { background: #1e3a5f; color: white; padding: 30px; }
-.cv-navy-gold .sidebar h1 { color: #fbbf24; font-size: 24px; }
-.cv-navy-gold .sidebar h2 { color: #fbbf24; font-size: 14px; text-transform: uppercase; margin-top: 25px; border-bottom: 1px solid #fbbf24; padding-bottom: 5px; }
-.cv-navy-gold .main { padding: 30px; background: #fefce8; }
-.cv-navy-gold .main h2 { color: #1e3a5f; border-bottom: 2px solid #1e3a5f; }
+.cv-navy-gold { font-family: 'Cormorant Upright', 'Times New Roman', serif; max-width: 920px; margin: 24px auto; display: grid; grid-template-columns: 280px 1fr; border-radius: 26px; overflow: hidden; border: 1px solid #e4d7c1; box-shadow: 0 22px 52px rgba(30, 58, 95, 0.2); }
+.cv-navy-gold .sidebar { background: linear-gradient(180deg, #0b1f3a 0%, #1e3a5f 100%); color: white; padding: 34px 28px; }
+.cv-navy-gold .sidebar h1 { color: #fbbf24; font-size: 26px; letter-spacing: 0.5px; }
+.cv-navy-gold .sidebar h2 { color: #fbbf24; font-size: 12px; text-transform: uppercase; margin-top: 24px; border-bottom: 1px solid rgba(251, 191, 36, 0.4); padding-bottom: 6px; letter-spacing: 1.6px; }
+.cv-navy-gold .main { padding: 36px 40px 44px; background: #fffbeb; }
+.cv-navy-gold .main h2 { color: #1e3a5f; border-bottom: 2px solid rgba(30, 58, 95, 0.3); text-transform: uppercase; font-size: 13px; letter-spacing: 1.2px; }
 .cv-navy-gold .gold-accent { color: #b45309; }
 </style>
 
@@ -459,13 +462,14 @@ function renderSunsetTemplate(contact: ResumeContact, content: ResumeContent): s
   return `
 <div class="cv-container cv-sunset">
 <style>
-.cv-sunset { font-family: 'Verdana', sans-serif; max-width: 800px; margin: 0 auto; }
-.cv-sunset .header { background: linear-gradient(135deg, #f97316 0%, #dc2626 50%, #7c3aed 100%); color: white; padding: 50px 40px; text-align: center; }
-.cv-sunset .header h1 { font-size: 36px; margin: 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
-.cv-sunset .header p { opacity: 0.9; }
-.cv-sunset .content { padding: 30px 40px; }
-.cv-sunset h2 { color: #ea580c; }
-.cv-sunset .skill-tag { display: inline-block; background: linear-gradient(135deg, #fed7aa, #fecaca); color: #9a3412; padding: 5px 15px; border-radius: 20px; margin: 3px; }
+.cv-sunset { font-family: 'Montserrat', 'Segoe UI', sans-serif; max-width: 860px; margin: 24px auto; border-radius: 26px; overflow: hidden; border: 1px solid #f4d1c4; box-shadow: 0 22px 52px rgba(124, 58, 237, 0.18); background: #ffffff; }
+.cv-sunset .header { background: linear-gradient(135deg, #fb923c 0%, #f97316 40%, #ec4899 70%, #7c3aed 100%); color: white; padding: 52px 44px; text-align: center; position: relative; }
+.cv-sunset .header::after { content: ''; position: absolute; inset: auto 12% -40px 12%; height: 80px; background: rgba(255, 255, 255, 0.14); filter: blur(10px); border-radius: 999px; }
+.cv-sunset .header h1 { font-size: 36px; margin: 0; text-shadow: 0 12px 28px rgba(0,0,0,0.25); letter-spacing: 0.5px; }
+.cv-sunset .header p { opacity: 0.95; margin-top: 10px; }
+.cv-sunset .content { padding: 32px 46px 42px; }
+.cv-sunset h2 { color: #c2410c; text-transform: uppercase; font-size: 13px; letter-spacing: 1.3px; border-bottom: 1px solid rgba(194, 65, 12, 0.25); padding-bottom: 6px; }
+.cv-sunset .skill-tag { display: inline-block; background: linear-gradient(135deg, rgba(251, 146, 60, 0.18), rgba(236, 72, 153, 0.18)); color: #9a3412; padding: 6px 14px; border-radius: 999px; margin: 4px 6px 0 0; font-weight: 600; font-size: 13px; }
 </style>
 
 <div class="header">

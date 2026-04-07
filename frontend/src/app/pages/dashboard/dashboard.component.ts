@@ -1,8 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { AuthService } from '../../services/auth.service';
 import { I18nService } from '../../services/i18n.service';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { AnalyticsService, AnalyticsResponse } from '../../services/analytics.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -25,6 +26,73 @@ import { RouterLink } from '@angular/router';
         <div *ngIf="authService.currentUser$ | async as user" class="user-details">
           <p><strong>{{ i18n.t('dashboard.user') }} :</strong> {{ user.username }}</p>
           <p><strong>{{ i18n.t('dashboard.email') }} :</strong> {{ user.email }}</p>
+        </div>
+      </div>
+
+      <div class="analytics-section">
+        <div class="section-header">
+          <div>
+            <h3>{{ i18n.t('dashboard.analyticsTitle') }}</h3>
+            <p class="section-subtitle">{{ i18n.t('dashboard.analyticsSubtitle') }}</p>
+          </div>
+        </div>
+
+        <div class="alert" *ngIf="loadingAnalytics">{{ i18n.t('dashboard.analyticsLoading') }}</div>
+        <div class="alert error" *ngIf="analyticsError">{{ analyticsError }}</div>
+        <div class="alert" *ngIf="!loadingAnalytics && !analytics && !analyticsError">
+          {{ i18n.t('dashboard.analyticsEmpty') }}
+        </div>
+
+        <div *ngIf="analytics">
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-label">{{ i18n.t('dashboard.totalCandidates') }}</div>
+              <div class="stat-value">{{ analytics.totals.candidates }}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">{{ i18n.t('dashboard.totalJobs') }}</div>
+              <div class="stat-value">{{ analytics.totals.jobs }}</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">{{ i18n.t('dashboard.totalOpenJobs') }}</div>
+              <div class="stat-value">{{ analytics.totals.openJobs }}</div>
+            </div>
+          </div>
+
+          <div class="charts-grid">
+            <div class="chart-card">
+              <div class="chart-title">{{ i18n.t('dashboard.statusBreakdown') }}</div>
+              <div class="bar-row" *ngFor="let item of statusSeries">
+                <span class="bar-label">{{ statusLabel(item.status) }}</span>
+                <div class="bar-track">
+                  <span [style.width.%]="(item.count / statusMax) * 100"></span>
+                </div>
+                <span class="bar-value">{{ item.count }}</span>
+              </div>
+            </div>
+
+            <div class="chart-card">
+              <div class="chart-title">{{ i18n.t('dashboard.scoreDistribution') }}</div>
+              <div class="bar-row" *ngFor="let item of scoreSeries">
+                <span class="bar-label">{{ item.label }}</span>
+                <div class="bar-track">
+                  <span [style.width.%]="(item.count / scoreMax) * 100"></span>
+                </div>
+                <span class="bar-value">{{ item.count }}</span>
+              </div>
+            </div>
+
+            <div class="chart-card">
+              <div class="chart-title">{{ i18n.t('dashboard.applicationsOverTime') }}</div>
+              <div class="bar-row" *ngFor="let item of monthSeries">
+                <span class="bar-label">{{ item.month }}</span>
+                <div class="bar-track">
+                  <span [style.width.%]="(item.count / monthMax) * 100"></span>
+                </div>
+                <span class="bar-value">{{ item.count }}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -157,6 +225,124 @@ import { RouterLink } from '@angular/router';
         }
       }
 
+      .analytics-section {
+        margin-bottom: 2.5rem;
+
+        .section-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 1rem;
+
+          h3 {
+            margin: 0 0 4px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: $gray-800;
+          }
+        }
+
+        .section-subtitle {
+          margin: 0;
+          font-size: 12.5px;
+          color: $gray-400;
+        }
+      }
+
+      .alert {
+        background: $gray-50;
+        border: 1px solid $gray-200;
+        padding: 10px 12px;
+        border-radius: 10px;
+        font-size: 13px;
+        color: $gray-600;
+        margin-bottom: 12px;
+      }
+      .alert.error {
+        background: #fff5f5;
+        border-color: #fbd5d5;
+        color: #b91c1c;
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .stat-card {
+        background: rgba(255, 255, 255, 0.85);
+        border: 1px solid $gray-200;
+        border-radius: 16px;
+        padding: 1.2rem 1.4rem;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      }
+      .stat-label {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: $gray-400;
+        margin-bottom: 6px;
+      }
+      .stat-value {
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: $gray-800;
+      }
+
+      .charts-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1rem;
+      }
+
+      .chart-card {
+        background: #fff;
+        border: 1px solid $gray-200;
+        border-radius: 16px;
+        padding: 1.2rem 1.4rem;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+      }
+
+      .chart-title {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: $gray-400;
+        margin-bottom: 12px;
+        font-weight: 700;
+      }
+
+      .bar-row {
+        display: grid;
+        grid-template-columns: minmax(90px, 1fr) 2.5fr auto;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+      .bar-label {
+        font-size: 12px;
+        color: $gray-700;
+      }
+      .bar-value {
+        font-size: 12px;
+        color: $gray-600;
+        font-weight: 600;
+      }
+      .bar-track {
+        height: 8px;
+        background: $gray-100;
+        border-radius: 999px;
+        overflow: hidden;
+      }
+      .bar-track span {
+        display: block;
+        height: 100%;
+        background: linear-gradient(90deg, $logo-red-deep, $logo-red);
+        border-radius: 999px;
+      }
+
       .features-section {
         h3 {
           color: $gray-800;
@@ -268,6 +454,58 @@ import { RouterLink } from '@angular/router';
     `,
   ],
 })
-export class DashboardComponent {
-  constructor(public authService: AuthService, public i18n: I18nService) {}
+export class DashboardComponent implements OnInit {
+  analytics: AnalyticsResponse | null = null;
+  statusSeries: Array<{ status: string; count: number }> = [];
+  scoreSeries: Array<{ label: string; count: number }> = [];
+  monthSeries: Array<{ month: string; count: number }> = [];
+  statusMax = 0;
+  scoreMax = 0;
+  monthMax = 0;
+  loadingAnalytics = false;
+  analyticsError = '';
+
+  constructor(
+    public authService: AuthService,
+    public i18n: I18nService,
+    private analyticsService: AnalyticsService
+  ) {}
+
+  ngOnInit(): void {
+    this.loadAnalytics();
+  }
+
+  statusLabel(status: string): string {
+    const key = `track.status_${status}`;
+    const translated = this.i18n.t(key);
+    return translated === key ? status : translated;
+  }
+
+  private loadAnalytics(): void {
+    this.loadingAnalytics = true;
+    this.analyticsError = '';
+
+    this.analyticsService.getAnalytics().subscribe({
+      next: (res) => {
+        this.analytics = res;
+        this.statusSeries = Object.entries(res.statusCounts || {})
+          .map(([status, count]) => ({ status, count }))
+          .sort((a, b) => b.count - a.count);
+        this.scoreSeries = [...(res.scoreBuckets || [])]
+          .sort((a, b) => a.min - b.min)
+          .map((bucket) => ({ label: bucket.label, count: bucket.count }));
+        this.monthSeries = [...(res.monthlyApplications || [])]
+          .map((entry) => ({ month: entry.month, count: entry.count }));
+
+        this.statusMax = Math.max(1, ...this.statusSeries.map((s) => s.count));
+        this.scoreMax = Math.max(1, ...this.scoreSeries.map((s) => s.count));
+        this.monthMax = Math.max(1, ...this.monthSeries.map((s) => s.count));
+        this.loadingAnalytics = false;
+      },
+      error: () => {
+        this.analyticsError = this.i18n.t('dashboard.analyticsError');
+        this.loadingAnalytics = false;
+      },
+    });
+  }
 }

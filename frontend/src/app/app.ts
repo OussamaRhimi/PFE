@@ -3,10 +3,11 @@ import { RouterOutlet, Router, RouterLink, RouterLinkActive } from '@angular/rou
 import { AuthService } from './services/auth.service';
 import { I18nService } from './services/i18n.service';
 import { CommonModule } from '@angular/common';
+import { PublicChatWidgetComponent } from './components/public-chat-widget/public-chat-widget.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, CommonModule],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, CommonModule, PublicChatWidgetComponent],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
@@ -23,7 +24,7 @@ export class App {
   /** Show sidebar shell only for authenticated users on non-public routes */
   showShell(): boolean {
     const url = this.router.url;
-    const publicRoutes = ['/login', '/', '/jobs', '/track', '/withdraw'];
+    const publicRoutes = ['/login', '/', '/jobs', '/track', '/withdraw', '/recommendations'];
     if (publicRoutes.some(r => url === r || url.startsWith(r + '?') || url.startsWith(r + '/'))) {
       return false;
     }

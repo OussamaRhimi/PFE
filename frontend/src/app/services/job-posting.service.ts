@@ -13,10 +13,57 @@ export interface Requirements {
   departments: string[];
   minYearsExperience: number | null;
   notes: string;
+  evaluationConfig?: EvaluationConfig;
+}
+
+export interface CompletenessPointsConfig {
+  fullName?: number;
+  email?: number;
+  phone?: number;
+  location?: number;
+  links?: number;
+  linkedin?: number;
+  portfolio?: number;
+  summary?: number;
+  competencies?: number;
+  experience?: number;
+  experienceDates?: number;
+  education?: number;
+}
+
+export interface CustomCriterion {
+  name: string;
+  type: 'bonus' | 'penalty';
+  points: number;
+  keywords: string[];
+  requireAll: boolean;
+}
+
+export interface QualityThresholds {
+  excellent?: number;
+  good?: number;
+  fair?: number;
+}
+
+export interface EvaluationConfig {
+  fitWeight?: number;
+  completenessWeight?: number;
+  requiredSkillsWeight?: number;
+  niceToHaveSkillsWeight?: number;
+  experienceWeight?: number;
+  completenessPoints?: CompletenessPointsConfig;
+  customCriteria?: CustomCriterion[];
+  qualityThresholds?: QualityThresholds;
 }
 
 export function emptyRequirements(): Requirements {
-  return { skillsRequired: [], skillsNiceToHave: [], departments: [], minYearsExperience: null, notes: '' };
+  return {
+    skillsRequired: [],
+    skillsNiceToHave: [],
+    departments: [],
+    minYearsExperience: null,
+    notes: '',
+  };
 }
 
 export interface JobPosting {
@@ -99,6 +146,25 @@ export class JobPostingService {
       `http://localhost:1337/api/candidates/by-job/${documentId}?pagination[pageSize]=0`
     ).pipe(
       map(res => res?.meta?.pagination?.total ?? 0)
+    );
+  }
+
+  /**
+   * S4-US7: Get evaluation config for a job posting.
+   */
+  getEvalConfig(id: string | number): Observable<{ evaluationConfig: EvaluationConfig; defaults: EvaluationConfig }> {
+    return this.http.get<{ evaluationConfig: EvaluationConfig; defaults: EvaluationConfig }>(
+      `http://localhost:1337/api/hr/job-postings/${id}/eval-config`
+    );
+  }
+
+  /**
+   * S4-US7: Save evaluation config for a job posting.
+   */
+  setEvalConfig(id: string | number, evaluationConfig: EvaluationConfig): Observable<{ evaluationConfig: EvaluationConfig }> {
+    return this.http.put<{ evaluationConfig: EvaluationConfig }>(
+      `http://localhost:1337/api/hr/job-postings/${id}/eval-config`,
+      { evaluationConfig }
     );
   }
 

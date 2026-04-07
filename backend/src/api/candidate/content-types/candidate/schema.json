@@ -29,6 +29,14 @@
       "type": "string",
       "maxLength": 300
     },
+    "country": {
+      "type": "string",
+      "maxLength": 120
+    },
+    "city": {
+      "type": "string",
+      "maxLength": 120
+    },
     "resume": {
       "type": "media",
       "multiple": false,
