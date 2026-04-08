@@ -152,6 +152,11 @@ function clampNum(v: unknown, min: number, max: number, fallback: number): numbe
   return Math.max(min, Math.min(max, n));
 }
 
+function clampPercent(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.min(100, Math.round(value * 100) / 100));
+}
+
 type CandidateEntity = {
   id: number;
   fullName?: string | null;
