@@ -1,328 +1,558 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
-import { LucideAngularModule, Pencil, Trash2, Users, TriangleAlert } from 'lucide-angular';
+import { CandidateService, AnalyticsCandidate } from '../../services/candidate.service';
+import { LucideAngularModule, Pencil, Trash2, Users, TriangleAlert, Plus, Calendar } from 'lucide-angular';
 import { JobPostingService, JobPosting } from '../../services/job-posting.service';
 import { I18nService } from '../../services/i18n.service';
+
+type JobMeta = {
+  location: string;
+  employmentType: string;
+  departments: string[];
+};
+
+function toStringList(value: string): string[] {
+  return value
+    .split(/[,\n]+/g)
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
+function parseJobNotes(notes: string | null | undefined): JobMeta {
+  const meta: JobMeta = { location: '', employmentType: '', departments: [] };
+  if (!notes || typeof notes !== 'string') return meta;
+
+  const lines = notes
+    .split(/\r?\n/g)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  for (const line of lines) {
+    const deptMatch = /^departments?\s*:\s*(.+)$/i.exec(line);
+    if (deptMatch) {
+      meta.departments = toStringList(deptMatch[1]);
+      continue;
+    }
+    const locationMatch = /^location\s*:\s*(.+)$/i.exec(line);
+    if (locationMatch) {
+      meta.location = locationMatch[1].trim();
+      continue;
+    }
+    const typeMatch = /^(type|employment)\s*:\s*(.+)$/i.exec(line);
+    if (typeMatch) {
+      meta.employmentType = typeMatch[2].trim();
+    }
+  }
+
+  return meta;
+}
 
 @Component({
   selector: 'app-job-postings',
   standalone: true,
   imports: [CommonModule, RouterModule, LucideAngularModule],
   template: `
-    <div class="page">
-      <div class="header">
-        <h1>{{ i18n.t('jobs.title') }}</h1>
-        <a routerLink="/job-postings/new" class="btn-add">{{ i18n.t('jobs.new') }}</a>
-      </div>
-
-      <div class="alert error" *ngIf="error">{{ error }}<button (click)="error=''">&times;</button></div>
-      <div class="alert success" *ngIf="success">{{ success }}<button (click)="success=''">&times;</button></div>
-
-      <p class="center" *ngIf="loading">{{ i18n.t('jobs.loading') }}</p>
-      <p class="center" *ngIf="!loading && jobs.length === 0">{{ i18n.t('jobs.empty') }}</p>
-
-      <!-- Status toggle confirmation dialog -->
-      <div class="modal-overlay" *ngIf="statusConfirm" (click)="cancelStatusChange()">
-        <div class="modal" (click)="$event.stopPropagation()">
-          <h3>{{ i18n.t('jobs.confirmStatusTitle') }}</h3>
-          <p>{{ i18n.t('jobs.confirmStatusText') }} <strong>{{ statusConfirm.job.title }}</strong>
-             {{ i18n.t('jobs.from') }} <span class="badge" [ngClass]="'badge-' + statusConfirm.job.status">{{ statusConfirm.job.status }}</span>
-             {{ i18n.t('jobs.to') }} <span class="badge" [ngClass]="'badge-' + statusConfirm.newStatus">{{ statusConfirm.newStatus }}</span> ?
-          </p>
-          <div class="modal-actions">
-            <button class="btn-confirm" (click)="confirmStatusChange()">{{ i18n.t('jobs.confirm') }}</button>
-            <button class="btn-cancel" (click)="cancelStatusChange()">{{ i18n.t('jobs.cancel') }}</button>
-          </div>
+    <section class="container container--wide hr-jobs-page">
+      <div class="hr-jobs-head">
+        <div>
+          <h1>{{ i18n.t('jobs.title') }}</h1>
+          <p class="muted">{{ i18n.t('jobs.subtitle') }}</p>
+        </div>
+        <div class="actions">
+          <button class="btn btn--ghost" type="button" (click)="load()" [disabled]="loading">
+            {{ i18n.t('jobs.refresh') }}
+          </button>
+          <a routerLink="/job-postings/new" class="btn btn--primary hr-jobs-create-btn">
+            <lucide-angular [img]="icons.plus" [size]="18" aria-hidden="true"></lucide-angular>
+            <span>{{ i18n.t('jobs.new') }}</span>
+          </a>
         </div>
       </div>
 
-      <!-- Delete confirmation dialog with cascade warning -->
-      <div class="modal-overlay" *ngIf="deleteConfirm" (click)="cancelDelete()">
-        <div class="modal modal-danger" (click)="$event.stopPropagation()">
-          <h3>{{ i18n.t('jobs.deleteTitle') }}</h3>
-          <p>{{ i18n.t('jobs.deleteText') }} <strong>{{ deleteConfirm.job.title }}</strong> ?</p>
-          <div class="cascade-warning" *ngIf="deleteConfirm.candidateCount > 0">
-            <lucide-angular class="warning-icon" [img]="icons.warning" [size]="16" [strokeWidth]="2" aria-hidden="true"></lucide-angular>
-            {{ i18n.t('jobs.cascadeWarning') }}
-            <strong>{{ deleteConfirm.candidateCount }}</strong>
-            {{ i18n.t('jobs.candidates') }}
-          </div>
-          <p class="danger-text">{{ i18n.t('jobs.undoWarning') }}</p>
-          <div class="modal-actions">
-            <button class="btn-delete" (click)="confirmDelete()">{{ i18n.t('jobs.delete') }}</button>
-            <button class="btn-cancel" (click)="cancelDelete()">{{ i18n.t('jobs.cancel') }}</button>
-          </div>
-        </div>
-      </div>
+      <div class="alert alert--error" *ngIf="error">{{ error }}</div>
+      <div class="alert alert--success" *ngIf="success">{{ success }}</div>
 
-      <div class="table-wrap" *ngIf="!loading && jobs.length > 0">
-        <table>
-          <thead>
-            <tr>
-              <th>{{ i18n.t('jobs.colTitle') }}</th>
-              <th>{{ i18n.t('jobs.colStatus') }}</th>
-              <th>{{ i18n.t('jobs.colSkills') }}</th>
-              <th>{{ i18n.t('jobs.colDepts') }}</th>
-              <th>{{ i18n.t('jobs.colActions') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let job of jobs">
-              <td class="title-cell">{{ job.title }}</td>
-              <td>
-                <span class="badge" [ngClass]="'badge-' + job.status">{{ job.status }}</span>
-              </td>
-              <td>
-                <span class="pill" *ngFor="let s of job.requirements?.skillsRequired || []">{{ s }}</span>
-                <span *ngIf="!(job.requirements?.skillsRequired?.length)">—</span>
-              </td>
-              <td>
-                <span class="pill pill-dept" *ngFor="let d of job.requirements?.departments || []">{{ d }}</span>
-                <span *ngIf="!(job.requirements?.departments?.length)">—</span>
-              </td>
-              <td class="actions-cell">
-                <a [routerLink]="['/job-postings', job.documentId, 'edit']" class="btn-action btn-action-icon" [title]="i18n.t('jobs.editTooltip')">
-                  <lucide-angular class="btn-icon-symbol" [img]="icons.edit" [size]="16" [strokeWidth]="2" aria-hidden="true"></lucide-angular>
+      <div class="hr-jobs-list">
+        <ng-container *ngIf="loading; else jobsReady">
+          <div class="card skeleton" style="height: 180px"></div>
+          <div class="card skeleton" style="height: 180px"></div>
+        </ng-container>
+
+        <ng-template #jobsReady>
+          <div class="alert" *ngIf="jobs.length === 0">{{ i18n.t('jobs.empty') }}</div>
+
+          <article class="card hr-job-card" *ngFor="let job of jobs">
+            <div class="hr-job-card__top">
+              <div class="truncate">
+                <h2 class="hr-job-card__title">{{ job.title || i18n.t('jobs.untitled') }}</h2>
+                <div class="hr-job-meta">
+                  <span>{{ jobDepartments(job) }}</span>
+                  <span>&middot;</span>
+                  <span>{{ jobLocation(job) }}</span>
+                  <span>&middot;</span>
+                  <span>{{ jobEmploymentType(job) }}</span>
+                </div>
+              </div>
+              <span [class]="statusClass(job.status)">{{ statusLabel(job.status) }}</span>
+            </div>
+
+            <div class="hr-job-card__mid">
+              <div>
+                <h3>{{ i18n.t('jobs.requiredSkills') }}</h3>
+                <div class="hr-job-skills">
+                  <ng-container *ngIf="(job.requirements?.skillsRequired || []).length > 0; else noSkills">
+                    <span class="hr-job-skill" *ngFor="let skill of job.requirements?.skillsRequired || []">{{ skill }}</span>
+                  </ng-container>
+                  <ng-template #noSkills>
+                    <span class="muted small">{{ i18n.t('jobs.notSpecified') }}</span>
+                  </ng-template>
+                </div>
+              </div>
+              <div>
+                <h3>{{ i18n.t('jobs.experienceRequired') }}</h3>
+                <p class="hr-job-experience">{{ jobExperience(job) }}</p>
+              </div>
+            </div>
+
+            <div class="hr-job-card__bottom">
+              <div class="hr-job-stats">
+                <span>
+                  <lucide-angular [img]="icons.candidates" [size]="15" aria-hidden="true"></lucide-angular>
+                  {{ applicantCount(job) }} {{ i18n.t('jobs.applicants') }}
+                </span>
+                <span>
+                  <lucide-angular [img]="icons.calendar" [size]="15" aria-hidden="true"></lucide-angular>
+                  {{ i18n.t('jobs.posted') }} {{ postedDate(job) }}
+                </span>
+              </div>
+
+              <div class="hr-job-actions">
+                <select
+                  class="input input--sm"
+                  [value]="job.status || 'draft'"
+                  (change)="setStatus(job, $any($event.target).value)"
+                  [disabled]="loading"
+                >
+                  <option value="draft">{{ i18n.t('jobs.statusDraft') }}</option>
+                  <option value="open">{{ i18n.t('jobs.statusOpen') }}</option>
+                  <option value="closed">{{ i18n.t('jobs.statusClosed') }}</option>
+                </select>
+
+                <button class="btn btn--ghost hr-job-icon-btn" type="button" (click)="goToCandidates(job.documentId)">
+                  <lucide-angular [img]="icons.candidates" [size]="16" aria-hidden="true"></lucide-angular>
+                </button>
+                <a [routerLink]="['/job-postings', job.documentId, 'edit']" class="btn btn--ghost hr-job-icon-btn" [title]="i18n.t('jobs.editTooltip')">
+                  <lucide-angular [img]="icons.edit" [size]="16" aria-hidden="true"></lucide-angular>
                 </a>
-
-                <!-- Status transitions -->
-                <button *ngIf="job.status === 'draft'" class="btn-action btn-action-label btn-open" (click)="askStatusChange(job, 'open')">{{ i18n.t('jobs.open') }}</button>
-                <button *ngIf="job.status === 'open'" class="btn-action btn-action-label btn-close" (click)="askStatusChange(job, 'closed')">{{ i18n.t('jobs.close') }}</button>
-                <button *ngIf="job.status === 'closed'" class="btn-action btn-action-label btn-reopen" (click)="askStatusChange(job, 'open')">{{ i18n.t('jobs.reopen') }}</button>
-
-                <button class="btn-action btn-action-icon btn-del" (click)="askDelete(job)" [title]="i18n.t('jobs.deleteTooltip')">
-                  <lucide-angular class="btn-icon-symbol" [img]="icons.delete" [size]="16" [strokeWidth]="2" aria-hidden="true"></lucide-angular>
+                <button class="btn btn--ghost hr-job-icon-btn hr-job-icon-btn--danger" type="button" (click)="askDelete(job)" [title]="i18n.t('jobs.deleteTooltip')">
+                  <lucide-angular [img]="icons.delete" [size]="16" aria-hidden="true"></lucide-angular>
                 </button>
-                <button class="btn-action btn-action-label btn-candidates"
-                        (click)="goToCandidates(job.documentId)"
-                        [title]="i18n.t('jobs.viewCandidatesTooltip')">
-                  <lucide-angular class="btn-icon-symbol" [img]="icons.candidates" [size]="15" [strokeWidth]="2" aria-hidden="true"></lucide-angular>
-                  {{ i18n.t('form.list') }}
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              </div>
+            </div>
+          </article>
+        </ng-template>
+      </div>
+    </section>
+
+    <div class="modal-overlay" *ngIf="statusConfirm" (click)="cancelStatusChange()">
+      <div class="modal card" (click)="$event.stopPropagation()">
+        <h3>{{ i18n.t('jobs.confirmStatusTitle') }}</h3>
+        <p>{{ i18n.t('jobs.confirmStatusText') }} <strong>{{ statusConfirm.job.title }}</strong>
+           {{ i18n.t('jobs.from') }} <span class="badge" [ngClass]="'badge-' + statusConfirm.job.status">{{ statusConfirm.job.status }}</span>
+           {{ i18n.t('jobs.to') }} <span class="badge" [ngClass]="'badge-' + statusConfirm.newStatus">{{ statusConfirm.newStatus }}</span> ?
+        </p>
+        <div class="modal-actions">
+          <button class="btn btn--primary" (click)="confirmStatusChange()">{{ i18n.t('jobs.confirm') }}</button>
+          <button class="btn btn--ghost" (click)="cancelStatusChange()">{{ i18n.t('jobs.cancel') }}</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" *ngIf="deleteConfirm" (click)="cancelDelete()">
+      <div class="modal card modal-danger" (click)="$event.stopPropagation()">
+        <h3>{{ i18n.t('jobs.deleteTitle') }}</h3>
+        <p>{{ i18n.t('jobs.deleteText') }} <strong>{{ deleteConfirm.job.title }}</strong> ?</p>
+        <div class="cascade-warning" *ngIf="deleteConfirm.candidateCount > 0">
+          <lucide-angular class="warning-icon" [img]="icons.warning" [size]="16" aria-hidden="true"></lucide-angular>
+          {{ i18n.t('jobs.cascadeWarning') }}
+          <strong>{{ deleteConfirm.candidateCount }}</strong>
+          {{ i18n.t('jobs.candidates') }}
+        </div>
+        <p class="danger-text">{{ i18n.t('jobs.undoWarning') }}</p>
+        <div class="modal-actions">
+          <button class="btn btn--danger" (click)="confirmDelete()">{{ i18n.t('jobs.delete') }}</button>
+          <button class="btn btn--ghost" (click)="cancelDelete()">{{ i18n.t('jobs.cancel') }}</button>
+        </div>
       </div>
     </div>
   `,
   styles: [`
-    $logo-red: #8b1f1f;
-    $logo-red-mid: #a31a1a;
-    $logo-red-deep: #791212;
-    $logo-red-darker: #5f1010;
-    $gray-50: #f9fafb;
-    $gray-100: #f1f3f7;
-    $gray-200: #e5e8ef;
-    $gray-300: #cbd0dc;
-    $gray-400: #9aa0b4;
-    $gray-600: #5a6278;
-    $gray-700: #3d4358;
-    $gray-800: #252b3b;
-    $error: #dc2626;
-    $success: #16a34a;
-
-    .page {
-      max-width: 1100px;
-      margin: 32px auto;
-      padding: 0 24px;
+    :host {
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --panel-2: #f3f4f6;
+      --border: #e5e7eb;
+      --border-2: #d1d5db;
+      --text: #111827;
+      --muted: #6b7280;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --accent: #dc2626;
+      --accent-2: #b91c1c;
+      --danger: #dc2626;
+      --ok: #16a34a;
+      --hover: #f3f4f6;
+      --input-bg: #ffffff;
+      --input-border: #d1d5db;
+      --accent-soft-bg: rgba(220, 38, 38, 0.1);
+      --accent-soft-border: rgba(220, 38, 38, 0.35);
+      --danger-soft-bg: rgba(220, 38, 38, 0.1);
+      --danger-soft-border: rgba(220, 38, 38, 0.45);
+      --ok-soft-bg: rgba(22, 163, 74, 0.1);
+      --ok-soft-border: rgba(22, 163, 74, 0.35);
+      --focus-ring: rgba(220, 38, 38, 0.18);
+      display: block;
+      color: var(--text);
     }
 
-    .header {
+    .container {
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+      padding-inline: 16px;
+      box-sizing: border-box;
+    }
+
+    .container--wide {
+      max-width: 1200px;
+    }
+
+    .hr-jobs-page {
+      display: grid;
+      gap: 14px;
+      padding: 24px 0 50px;
+    }
+
+    .hr-jobs-head {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      margin-bottom: 28px;
+      align-items: flex-start;
+      gap: 12px;
+      flex-wrap: wrap;
     }
-    .header h1 {
-      margin: 0;
-      font-size: 1.5rem;
+
+    h1 {
+      margin: 0 0 6px;
+      font-size: 1.6rem;
       font-weight: 800;
-      color: $gray-800;
+      color: var(--text);
     }
 
-    .btn-add {
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 10px 22px;
-      background: linear-gradient(135deg, $logo-red-deep, $logo-red);
-      color: #fff;
-      border-radius: 12px;
-      font-size: 14px;
-      font-weight: 600;
-      transition: all 0.25s;
-      box-shadow: 0 4px 14px rgba($logo-red, 0.2);
-    }
-    .btn-add:hover {
-      background: linear-gradient(135deg, $logo-red-mid, $logo-red-deep);
-      transform: translateY(-1px);
-      box-shadow: 0 6px 20px rgba($logo-red, 0.3);
+    .muted {
+      color: var(--muted);
     }
 
-    .alert {
+    .small {
+      font-size: 12px;
+    }
+
+    .actions {
       display: flex;
-      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
       align-items: center;
-      padding: 12px 16px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .btn {
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--text);
       border-radius: 12px;
-      margin-bottom: 16px;
-      font-size: 13.5px;
-      font-weight: 500;
-      animation: slideIn 0.3s ease;
-    }
-    .alert button { background: none; border: none; font-size: 18px; cursor: pointer; }
-    .alert.error { background: #fff5f5; color: $error; border: 1px solid rgba($error, 0.2); }
-    .alert.success { background: #f0fdf4; color: $success; border: 1px solid rgba($success, 0.2); }
-
-    @keyframes slideIn {
-      from { opacity: 0; transform: translateY(-8px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    .center { text-align: center; color: $gray-400; padding: 30px 0; font-size: 14px; }
-
-    /* Table */
-    .table-wrap {
-      overflow-x: auto;
-      background: white;
-      border-radius: 16px;
-      border: 1px solid $gray-200;
-      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
-    }
-    table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    th {
-      text-align: left;
-      padding: 14px 16px;
-      background: $gray-50;
-      border-bottom: 2px solid $gray-200;
-      color: $gray-400;
-      font-size: 11.5px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-    }
-    td {
-      padding: 14px 16px;
-      border-bottom: 1px solid $gray-100;
-      color: $gray-800;
-    }
-    tr:hover td { background: rgba($logo-red, 0.015); }
-    tr:last-child td { border-bottom: none; }
-    .title-cell { font-weight: 600; }
-
-    .actions-cell { white-space: nowrap; display: flex; align-items: center; gap: 6px; }
-    .btn-action {
-      background: none;
-      border: none;
-      width: 34px;
-      height: 34px;
-      border-radius: 9px;
+      padding: 9px 12px;
       cursor: pointer;
       text-decoration: none;
       display: inline-flex;
       align-items: center;
-      justify-content: center;
-      color: $gray-600;
-      transition: transform 0.15s, background-color 0.2s, color 0.2s;
-      box-sizing: border-box;
+      gap: 8px;
+      font-size: 14px;
     }
-    .btn-action:hover {
-      background: $gray-100;
-      color: $gray-800;
+
+    .btn:hover {
+      border-color: var(--border-2);
     }
-    .btn-action-icon { padding: 0; }
-    .btn-action-label {
-      width: auto;
-      min-width: 34px;
-      padding: 0 12px;
-      gap: 6px;
+
+    .btn:not(.btn--primary):not(.btn--danger):hover {
+      background: var(--hover);
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .btn--primary {
+      border-color: var(--accent);
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #ffffff;
+    }
+
+    .btn--ghost {
+      background: transparent;
+    }
+
+    .btn--danger {
+      border-color: var(--danger-soft-border);
+      background: var(--danger-soft-bg);
+    }
+
+    .btn--danger:hover {
+      filter: brightness(1.03);
+    }
+
+    .input {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid var(--input-border);
+      background: var(--input-bg);
+      color: var(--text);
+      padding: 10px 12px;
+      outline: none;
+    }
+
+    .input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--focus-ring);
+    }
+
+    .input--sm {
+      padding: 7px 10px;
+      border-radius: 10px;
       font-size: 12px;
-      font-weight: 600;
-      line-height: 1;
     }
-    .btn-icon-symbol {
-      width: 16px;
-      height: 16px;
-      line-height: 1;
-    }
-    .btn-del:hover { transform: scale(1.15); }
-    .btn-del { color: $error; }
-    .btn-del:hover { background: rgba($error, 0.08); }
 
-    .btn-open   { background: rgba($success, 0.08); color: $success; }
-    .btn-open:hover { background: rgba($success, 0.15); }
-    .btn-close  { background: rgba($error, 0.08); color: $error; }
-    .btn-close:hover { background: rgba($error, 0.15); }
-    .btn-reopen { background: rgba($logo-red, 0.08); color: $logo-red; }
-    .btn-reopen:hover { background: rgba($logo-red, 0.15); }
-    .btn-candidates {
-      display: inline-flex;
+    .alert {
+      border: 1px solid var(--border);
+      background: var(--panel);
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-top: 12px;
+    }
+
+    .alert--error {
+      border-color: var(--danger-soft-border);
+      background: var(--danger-soft-bg);
+    }
+
+    .alert--success {
+      border-color: var(--ok-soft-border);
+      background: var(--ok-soft-bg);
+    }
+
+    .skeleton {
+      border-radius: 10px;
+      background: linear-gradient(90deg, var(--panel-2), var(--hover), var(--panel-2));
+      background-size: 200% 100%;
+      animation: shimmer 1.2s infinite;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    .truncate {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .hr-jobs-list {
+      display: grid;
+      gap: 14px;
+    }
+
+    .hr-job-card {
+      padding: 22px;
+      border-radius: 14px;
+    }
+
+    .hr-job-card__top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 12px;
+    }
+
+    .hr-job-card__title {
+      font-size: 1.25rem;
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+    }
+
+    .hr-job-meta {
+      display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 10px;
+      margin-top: 8px;
+      color: var(--muted);
+      flex-wrap: wrap;
     }
 
-    /* Badges */
-    .badge {
-      display: inline-block;
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 11px;
+    .hr-job-status {
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 13px;
+      border: 1px solid var(--border);
       font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
     }
-    .badge-draft  { background: $gray-100; color: $gray-400; }
-    .badge-open   { background: rgba($success, 0.1); color: $success; }
-    .badge-closed { background: rgba($error, 0.1); color: $error; }
 
-    /* Pill tags for skills / departments */
-    .pill {
-      display: inline-block;
-      padding: 3px 10px;
-      margin: 2px 3px;
-      border-radius: 16px;
-      font-size: 11px;
-      font-weight: 600;
-      background: rgba($logo-red, 0.07);
-      color: $logo-red-deep;
-    }
-    .pill-dept {
-      background: rgba(#166534, 0.07);
+    .hr-job-status--open {
+      background: #dcfce7;
+      border-color: #86efac;
       color: #166534;
     }
 
-    /* Modals */
+    .hr-job-status--closed {
+      background: #fee2e2;
+      border-color: #fca5a5;
+      color: #991b1b;
+    }
+
+    .hr-job-status--draft {
+      background: var(--panel-2);
+      border-color: var(--border);
+      color: var(--muted);
+    }
+
+    .hr-job-card__mid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: 1fr;
+      margin-bottom: 14px;
+    }
+
+    .hr-job-card__mid h3 {
+      font-size: 22px;
+      margin-bottom: 10px;
+      letter-spacing: -0.01em;
+    }
+
+    .hr-job-skills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .hr-job-skill {
+      display: inline-flex;
+      align-items: center;
+      padding: 5px 12px;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      background: #fef2f2;
+      color: #b91c1c;
+      border: 1px solid #fecaca;
+    }
+
+    .hr-job-experience {
+      margin-top: 4px;
+      font-size: 0.95rem;
+      color: var(--text);
+    }
+
+    .hr-job-card__bottom {
+      border-top: 1px solid var(--border);
+      padding-top: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .hr-job-stats {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      color: var(--muted);
+      flex-wrap: wrap;
+    }
+
+    .hr-job-stats span {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .hr-job-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .hr-job-icon-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      justify-content: center;
+      padding: 0;
+    }
+
+    .hr-job-icon-btn--danger {
+      color: var(--danger);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      font-size: 12px;
+    }
+
     .modal-overlay {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.35);
-      backdrop-filter: blur(4px);
-      z-index: 1000;
-      display: flex; align-items: center; justify-content: center;
-      animation: fadeIn 0.2s ease;
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 14, 25, 0.58);
+      display: grid;
+      place-items: center;
+      z-index: 50;
+      padding: 20px;
     }
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to   { opacity: 1; }
-    }
+
     .modal {
-      background: #fff;
-      border-radius: 20px;
-      padding: 32px;
-      width: 90%;
-      max-width: 440px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.15);
-      animation: modalIn 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+      width: min(440px, 100%);
+      padding: 24px;
     }
-    @keyframes modalIn {
-      from { opacity: 0; transform: translateY(20px) scale(0.95); }
-      to   { opacity: 1; transform: translateY(0) scale(1); }
+
+    .modal h3 {
+      margin: 0 0 14px;
+      font-size: 18px;
+      color: var(--text);
+      font-weight: 700;
     }
-    .modal h3 { margin: 0 0 14px; font-size: 18px; color: $gray-800; font-weight: 700; }
-    .modal p { margin: 0 0 12px; font-size: 14px; color: $gray-600; }
-    .modal-danger h3 { color: $error; }
+
+    .modal p {
+      margin: 0 0 12px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .modal-danger h3 {
+      color: var(--danger);
+    }
 
     .cascade-warning {
       background: #fffbeb;
@@ -336,45 +566,57 @@ import { I18nService } from '../../services/i18n.service';
       align-items: center;
       gap: 8px;
     }
+
     .warning-icon {
       flex: 0 0 auto;
       width: 16px;
       height: 16px;
     }
-    .danger-text { color: $error; font-weight: 600; font-size: 13px; }
 
-    .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
-    .modal-actions button {
-      flex: 1;
-      padding: 11px;
-      border: none;
-      border-radius: 10px;
-      font-size: 14px;
-      cursor: pointer;
+    .danger-text {
+      color: var(--danger);
       font-weight: 600;
-      transition: all 0.2s;
+      font-size: 13px;
     }
-    .btn-confirm {
-      background: linear-gradient(135deg, $logo-red-deep, $logo-red);
-      color: #fff;
-      box-shadow: 0 4px 12px rgba($logo-red, 0.2);
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
     }
-    .btn-confirm:hover {
-      box-shadow: 0 6px 18px rgba($logo-red, 0.3);
-      transform: translateY(-1px);
+
+    @media (min-width: 960px) {
+      .hr-job-card__mid {
+        grid-template-columns: 1fr 1fr;
+      }
     }
-    .btn-delete {
-      background: linear-gradient(135deg, #b91c1c, $error);
-      color: #fff;
-      box-shadow: 0 4px 12px rgba($error, 0.2);
+
+    @media (max-width: 760px) {
+      .hr-job-card {
+        padding: 16px;
+      }
+
+      .hr-job-card__title {
+        font-size: 28px;
+      }
+
+      .hr-job-card__mid h3 {
+        font-size: 18px;
+      }
+
+      .hr-job-skill {
+        font-size: 14px;
+      }
+
+      .hr-job-experience {
+        font-size: 22px;
+      }
     }
-    .btn-delete:hover { box-shadow: 0 6px 18px rgba($error, 0.3); }
-    .btn-cancel { background: $gray-100; color: $gray-600; }
-    .btn-cancel:hover { background: $gray-200; }
   `]
 })
 export class JobPostingsComponent implements OnInit {
   jobs: JobPosting[] = [];
+  candidateCounts: Record<string, number> = {};
   loading = false;
   error = '';
   success = '';
@@ -382,25 +624,52 @@ export class JobPostingsComponent implements OnInit {
     edit: Pencil,
     delete: Trash2,
     candidates: Users,
-    warning: TriangleAlert
+    warning: TriangleAlert,
+    plus: Plus,
+    calendar: Calendar
   } as const;
 
   statusConfirm: { job: JobPosting; newStatus: string } | null = null;
   deleteConfirm: { job: JobPosting; candidateCount: number } | null = null;
 
-  constructor(private jobService: JobPostingService, public i18n: I18nService,private router: Router) {}
+  constructor(
+    private jobService: JobPostingService,
+    private candidateService: CandidateService,
+    public i18n: I18nService,
+    private router: Router
+  ) {}
 
   ngOnInit(): void { this.load(); }
 
   load(): void {
     this.loading = true;
     this.jobService.getAll().subscribe({
-      next: (jobs) => { this.jobs = jobs; this.loading = false; },
+      next: (jobs) => {
+        this.jobs = jobs;
+        this.loading = false;
+        this.loadCandidateCounts();
+      },
       error: () => { this.error = this.i18n.t('jobs.loadError'); this.loading = false; }
     });
   }
 
-  /* ── Status change ── */
+  private loadCandidateCounts(): void {
+    this.candidateService.listForAnalytics().subscribe({
+      next: (candidates: AnalyticsCandidate[]) => {
+        const map: Record<string, number> = {};
+        for (const candidate of candidates) {
+          const key = candidate.jobKey;
+          if (!key) continue;
+          map[key] = (map[key] ?? 0) + 1;
+        }
+        this.candidateCounts = map;
+      },
+      error: () => {
+        this.candidateCounts = {};
+      }
+    });
+  }
+
   askStatusChange(job: JobPosting, newStatus: string): void {
     this.statusConfirm = { job, newStatus };
   }
@@ -426,10 +695,8 @@ export class JobPostingsComponent implements OnInit {
     });
   }
 
-  /* ── Delete with cascade warning ── */
   askDelete(job: JobPosting): void {
     this.clearMessages();
-    // Try to get candidate count for cascade warning
     this.jobService.getCandidateCount(job.documentId).subscribe({
       next: (count) => { this.deleteConfirm = { job, candidateCount: count }; },
       error: () => { this.deleteConfirm = { job, candidateCount: 0 }; }
@@ -462,5 +729,57 @@ export class JobPostingsComponent implements OnInit {
       this.router.navigate(['/candidates'], { queryParams: { jobPostingId: documentId } });
     }
   }
-  
+
+  setStatus(job: JobPosting, newStatus: string): void {
+    if (!job || !newStatus || newStatus === job.status) return;
+    this.askStatusChange(job, newStatus);
+  }
+
+  statusClass(status: string | null | undefined): string {
+    const value = status || 'draft';
+    return `hr-job-status hr-job-status--${value}`;
+  }
+
+  statusLabel(status: string | null | undefined): string {
+    const value = status || 'draft';
+    if (value === 'open') return this.i18n.t('jobs.statusOpen');
+    if (value === 'closed') return this.i18n.t('jobs.statusClosed');
+    return this.i18n.t('jobs.statusDraft');
+  }
+
+  jobDepartments(job: JobPosting): string {
+    const departments = job.requirements?.departments || [];
+    if (departments.length > 0) return departments.join(', ');
+    const meta = parseJobNotes(job.requirements?.notes);
+    return meta.departments.length > 0 ? meta.departments.join(', ') : this.i18n.t('jobs.notSpecified');
+  }
+
+  jobLocation(job: JobPosting): string {
+    const meta = parseJobNotes(job.requirements?.notes);
+    return meta.location ? meta.location : this.i18n.t('jobs.notSpecified');
+  }
+
+  jobEmploymentType(job: JobPosting): string {
+    const meta = parseJobNotes(job.requirements?.notes);
+    return meta.employmentType ? meta.employmentType : this.i18n.t('jobs.notSpecified');
+  }
+
+  jobExperience(job: JobPosting): string {
+    const years = job.requirements?.minYearsExperience;
+    if (typeof years === 'number' && years > 0) {
+      return `${years}+ ${this.i18n.t('jobs.years')}`;
+    }
+    return this.i18n.t('jobs.notSpecified');
+  }
+
+  postedDate(job: JobPosting): string {
+    const raw = job.createdAt ? new Date(job.createdAt) : null;
+    if (!raw || Number.isNaN(raw.getTime())) return this.i18n.t('jobs.notSpecified');
+    return raw.toISOString().slice(0, 10);
+  }
+
+  applicantCount(job: JobPosting): number {
+    if (!job.documentId) return 0;
+    return this.candidateCounts[job.documentId] ?? 0;
+  }
 }

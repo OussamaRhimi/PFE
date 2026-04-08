@@ -7,338 +7,518 @@ import { SkillService, Skill } from '../../services/skill.service';
 import { DepartmentService, Department } from '../../services/department.service';
 import { I18nService } from '../../services/i18n.service';
 
+type JobMeta = {
+  location: string;
+  employmentType: string;
+  customNotes: string;
+  departments: string[];
+};
+
+function toStringList(value: string): string[] {
+  return value
+    .split(/[,\n]+/g)
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
+function parseJobNotes(notes: string | null | undefined): JobMeta {
+  const meta: JobMeta = { location: '', employmentType: '', customNotes: '', departments: [] };
+  if (!notes || typeof notes !== 'string') return meta;
+
+  const extra: string[] = [];
+  const lines = notes
+    .split(/\r?\n/g)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  for (const line of lines) {
+    const deptMatch = /^departments?\s*:\s*(.+)$/i.exec(line);
+    if (deptMatch) {
+      meta.departments = toStringList(deptMatch[1]);
+      continue;
+    }
+    const locationMatch = /^location\s*:\s*(.+)$/i.exec(line);
+    if (locationMatch) {
+      meta.location = locationMatch[1].trim();
+      continue;
+    }
+    const typeMatch = /^(type|employment)\s*:\s*(.+)$/i.exec(line);
+    if (typeMatch) {
+      meta.employmentType = typeMatch[2].trim();
+      continue;
+    }
+    extra.push(line);
+  }
+
+  meta.customNotes = extra.join('\n');
+  return meta;
+}
+
+function composeJobNotes(meta: { location: string; employmentType: string; customNotes: string }): string {
+  const lines: string[] = [];
+  if (meta.location.trim()) lines.push(`Location: ${meta.location.trim()}`);
+  if (meta.employmentType.trim()) lines.push(`Type: ${meta.employmentType.trim()}`);
+  if (meta.customNotes.trim()) lines.push(meta.customNotes.trim());
+  return lines.join('\n');
+}
+
 @Component({
   selector: 'app-job-posting-form',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
   template: `
-    <div class="page">
-      <div class="header">
-        <h1>{{ isEdit ? i18n.t('form.editTitle') : i18n.t('form.newTitle') }}</h1>
-        <a routerLink="/job-postings" class="back-link">{{ i18n.t('form.backToList') }}</a>
+    <section class="container hr-job-form-page">
+      <div class="hr-jobs-head">
+        <div>
+          <h1>{{ isEdit ? i18n.t('form.editTitle') : i18n.t('form.newTitle') }}</h1>
+          <p class="muted">{{ i18n.t('form.subtitle') }}</p>
+        </div>
+        <a routerLink="/job-postings" class="btn btn--ghost">{{ i18n.t('form.backToList') }}</a>
       </div>
 
-      <div class="alert error" *ngIf="error">{{ error }}<button (click)="error=''">&times;</button></div>
-      <div class="alert success" *ngIf="success">{{ success }}<button (click)="success=''">&times;</button></div>
+      <div class="alert alert--error" *ngIf="error">{{ error }}</div>
+      <div class="alert alert--success" *ngIf="success">{{ success }}</div>
 
-      <form (ngSubmit)="save()" class="form-card">
-        <div class="field">
-          <label>{{ i18n.t('form.titleLabel') }}</label>
-          <input type="text" [(ngModel)]="form.title" name="title" required [placeholder]="i18n.t('form.titlePlaceholder')" />
-        </div>
+      <form (ngSubmit)="save()" class="card hr-job-form">
+        <label class="field">
+          <span class="field__label">{{ i18n.t('form.titleLabel') }}</span>
+          <input class="input" type="text" [(ngModel)]="form.title" name="title" required [placeholder]="i18n.t('form.titlePlaceholder')" />
+        </label>
 
-        <div class="field">
-          <label>{{ i18n.t('form.descLabel') }}</label>
-          <textarea [(ngModel)]="form.description" name="description" rows="4" [placeholder]="i18n.t('form.descPlaceholder')"></textarea>
-        </div>
+        <label class="field">
+          <span class="field__label">{{ i18n.t('form.descLabel') }}</span>
+          <textarea class="input" [(ngModel)]="form.description" name="description" rows="4" [placeholder]="i18n.t('form.descPlaceholder')"></textarea>
+        </label>
 
-        <!-- Requirements value-object -->
-        <fieldset class="requirements-fieldset">
+        <fieldset class="job-requirements">
           <legend>{{ i18n.t('form.requirements') }}</legend>
 
-          <!-- Skills Required -->
           <div class="chip-field">
-            <label>{{ i18n.t('form.skillsRequired') }}</label>
-            <div class="chip-list" *ngIf="reqs.skillsRequired.length">
-              <span class="chip" *ngFor="let s of reqs.skillsRequired; let i = index">
-                {{ s }}
-                <button type="button" class="chip-x" (click)="removeTag('skillsRequired', i)">&times;</button>
+            <span class="field__label">{{ i18n.t('form.departments') }}</span>
+            <input
+              class="input"
+              type="search"
+              [value]="departmentQuery"
+              (input)="departmentQuery = $any($event.target).value"
+              (keydown.enter)="addFirstDepartmentMatch(); $event.preventDefault()"
+              [placeholder]="i18n.t('form.searchDepartments')"
+            />
+            <div class="hr-job-suggest-list">
+              <button
+                class="hr-job-suggest hr-job-suggest--department"
+                type="button"
+                *ngFor="let name of filteredDepartmentOptions()"
+                (click)="addDepartment(name)"
+              >
+                {{ name }}
+              </button>
+              <span class="muted small" *ngIf="filteredDepartmentOptions().length === 0">
+                {{ i18n.t('form.noDepartmentMatch') }}
               </span>
             </div>
-            <select
-              class="chip-select"
-              [ngModel]="selectedSkillRequired"
-              (ngModelChange)="onSelectValue('skillsRequired', $event)"
-            >
-              <option [ngValue]="null" disabled>{{ i18n.t('form.addSkillRequired') }}</option>
-              <option *ngFor="let s of availableSkills('skillsRequired')" [value]="s.name">{{ s.name }}</option>
-            </select>
-          </div>
-
-          <!-- Skills Nice-to-Have -->
-          <div class="chip-field">
-            <label>{{ i18n.t('form.skillsNice') }}</label>
-            <div class="chip-list" *ngIf="reqs.skillsNiceToHave.length">
-              <span class="chip chip-nice" *ngFor="let s of reqs.skillsNiceToHave; let i = index">
-                {{ s }}
-                <button type="button" class="chip-x" (click)="removeTag('skillsNiceToHave', i)">&times;</button>
+            <div class="hr-job-picked-list">
+              <button
+                class="hr-job-picked hr-job-picked--department"
+                type="button"
+                *ngFor="let name of reqs.departments; let i = index"
+                (click)="removeTag('departments', i)"
+              >
+                <span>{{ name }}</span>
+                <span aria-hidden="true">x</span>
+              </button>
+              <span class="muted small" *ngIf="reqs.departments.length === 0">
+                {{ i18n.t('form.noDepartmentSelected') }}
               </span>
             </div>
-            <select
-              class="chip-select"
-              [ngModel]="selectedSkillNice"
-              (ngModelChange)="onSelectValue('skillsNiceToHave', $event)"
-            >
-              <option [ngValue]="null" disabled>{{ i18n.t('form.addSkillNice') }}</option>
-              <option *ngFor="let s of availableSkills('skillsNiceToHave')" [value]="s.name">{{ s.name }}</option>
-            </select>
           </div>
 
-          <!-- Departments -->
+          <div class="grid2">
+            <label class="field">
+              <span class="field__label">{{ i18n.t('form.locationLabel') }}</span>
+              <input class="input" type="text" [(ngModel)]="location" name="location" [placeholder]="i18n.t('form.locationPlaceholder')" />
+            </label>
+            <label class="field">
+              <span class="field__label">{{ i18n.t('form.typeLabel') }}</span>
+              <input class="input" type="text" [(ngModel)]="employmentType" name="employmentType" [placeholder]="i18n.t('form.typePlaceholder')" />
+            </label>
+          </div>
+
           <div class="chip-field">
-            <label>{{ i18n.t('form.departments') }}</label>
-            <div class="chip-list" *ngIf="reqs.departments.length">
-              <span class="chip chip-dept" *ngFor="let d of reqs.departments; let i = index">
-                {{ d }}
-                <button type="button" class="chip-x" (click)="removeTag('departments', i)">&times;</button>
+            <span class="field__label">{{ i18n.t('form.skillsRequired') }}</span>
+            <input
+              class="input"
+              type="search"
+              [value]="requiredSkillQuery"
+              (input)="requiredSkillQuery = $any($event.target).value"
+              (keydown.enter)="addFirstSkillMatch('skillsRequired'); $event.preventDefault()"
+              [placeholder]="i18n.t('form.searchRequiredSkills')"
+            />
+            <div class="hr-job-suggest-list">
+              <button
+                class="hr-job-suggest hr-job-suggest--required"
+                type="button"
+                *ngFor="let name of filteredSkillOptions('skillsRequired')"
+                (click)="addSkill('skillsRequired', name)"
+              >
+                {{ name }}
+              </button>
+              <span class="muted small" *ngIf="filteredSkillOptions('skillsRequired').length === 0">
+                {{ i18n.t('form.noSkillMatch') }}
               </span>
             </div>
-            <select
-              class="chip-select"
-              [ngModel]="selectedDepartment"
-              (ngModelChange)="onSelectValue('departments', $event)"
-            >
-              <option [ngValue]="null" disabled>{{ i18n.t('form.addDepartment') }}</option>
-              <option *ngFor="let d of availableDepartments()" [value]="d.name">{{ d.name }}</option>
-            </select>
+            <div class="hr-job-picked-list">
+              <button
+                class="hr-job-picked hr-job-picked--required"
+                type="button"
+                *ngFor="let name of reqs.skillsRequired; let i = index"
+                (click)="removeTag('skillsRequired', i)"
+              >
+                <span>{{ name }}</span>
+                <span aria-hidden="true">x</span>
+              </button>
+              <span class="muted small" *ngIf="reqs.skillsRequired.length === 0">
+                {{ i18n.t('form.noRequiredSkillSelected') }}
+              </span>
+            </div>
           </div>
 
-          <!-- Min Years Experience -->
-          <div class="field">
-            <label>{{ i18n.t('form.minYears') }}</label>
-            <input type="number" [(ngModel)]="reqs.minYearsExperience" name="minYears" min="0" [placeholder]="i18n.t('form.minYearsPlaceholder')" />
+          <div class="chip-field">
+            <span class="field__label">{{ i18n.t('form.skillsNice') }}</span>
+            <input
+              class="input"
+              type="search"
+              [value]="niceSkillQuery"
+              (input)="niceSkillQuery = $any($event.target).value"
+              (keydown.enter)="addFirstSkillMatch('skillsNiceToHave'); $event.preventDefault()"
+              [placeholder]="i18n.t('form.searchNiceSkills')"
+            />
+            <div class="hr-job-suggest-list">
+              <button
+                class="hr-job-suggest hr-job-suggest--nice"
+                type="button"
+                *ngFor="let name of filteredSkillOptions('skillsNiceToHave')"
+                (click)="addSkill('skillsNiceToHave', name)"
+              >
+                {{ name }}
+              </button>
+              <span class="muted small" *ngIf="filteredSkillOptions('skillsNiceToHave').length === 0">
+                {{ i18n.t('form.noSkillMatch') }}
+              </span>
+            </div>
+            <div class="hr-job-picked-list">
+              <button
+                class="hr-job-picked hr-job-picked--nice"
+                type="button"
+                *ngFor="let name of reqs.skillsNiceToHave; let i = index"
+                (click)="removeTag('skillsNiceToHave', i)"
+              >
+                <span>{{ name }}</span>
+                <span aria-hidden="true">x</span>
+              </button>
+              <span class="muted small" *ngIf="reqs.skillsNiceToHave.length === 0">
+                {{ i18n.t('form.noNiceSkillSelected') }}
+              </span>
+            </div>
           </div>
 
-          <!-- Notes -->
-          <div class="field">
-            <label>{{ i18n.t('form.notes') }}</label>
-            <textarea [(ngModel)]="reqs.notes" name="reqNotes" rows="3" [placeholder]="i18n.t('form.notesPlaceholder')"></textarea>
+          <div class="grid2">
+            <label class="field">
+              <span class="field__label">{{ i18n.t('form.minYears') }}</span>
+              <input class="input" type="number" [(ngModel)]="reqs.minYearsExperience" name="minYears" min="0" [placeholder]="i18n.t('form.minYearsPlaceholder')" />
+            </label>
+
+            <label class="field">
+              <span class="field__label">{{ i18n.t('form.notes') }}</span>
+              <textarea class="input" [(ngModel)]="customNotes" name="reqNotes" rows="3" [placeholder]="i18n.t('form.notesPlaceholder')"></textarea>
+            </label>
           </div>
         </fieldset>
 
         <div class="form-actions">
-          <button type="submit" class="btn-primary" [disabled]="!form.title.trim() || saving">
+          <button type="submit" class="btn btn--primary" [disabled]="!form.title.trim() || saving">
             {{ saving ? i18n.t('form.saving') : (isEdit ? i18n.t('form.update') : i18n.t('form.create')) }}
           </button>
-          <a routerLink="/job-postings" class="btn-secondary">{{ i18n.t('form.cancel') }}</a>
+          <a routerLink="/job-postings" class="btn btn--ghost">{{ i18n.t('form.cancel') }}</a>
         </div>
       </form>
-    </div>
+    </section>
   `,
   styles: [`
-    $logo-red: #8b1f1f;
-    $logo-red-mid: #a31a1a;
-    $logo-red-deep: #791212;
-    $logo-red-darker: #5f1010;
-    $gray-50: #f9fafb;
-    $gray-100: #f1f3f7;
-    $gray-200: #e5e8ef;
-    $gray-300: #cbd0dc;
-    $gray-400: #9aa0b4;
-    $gray-600: #5a6278;
-    $gray-700: #3d4358;
-    $gray-800: #252b3b;
-    $error: #dc2626;
-    $success: #16a34a;
-
-    .page {
-      max-width: 720px;
-      margin: 32px auto;
-      padding: 0 24px;
+    :host {
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --panel-2: #f3f4f6;
+      --border: #e5e7eb;
+      --border-2: #d1d5db;
+      --text: #111827;
+      --muted: #6b7280;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --accent: #dc2626;
+      --accent-2: #b91c1c;
+      --danger: #dc2626;
+      --ok: #16a34a;
+      --hover: #f3f4f6;
+      --input-bg: #ffffff;
+      --input-border: #d1d5db;
+      --accent-soft-bg: rgba(220, 38, 38, 0.1);
+      --accent-soft-border: rgba(220, 38, 38, 0.35);
+      --danger-soft-bg: rgba(220, 38, 38, 0.1);
+      --danger-soft-border: rgba(220, 38, 38, 0.45);
+      --ok-soft-bg: rgba(22, 163, 74, 0.1);
+      --ok-soft-border: rgba(22, 163, 74, 0.35);
+      --focus-ring: rgba(220, 38, 38, 0.18);
+      display: block;
+      color: var(--text);
     }
 
-    .header {
+    .container {
+      max-width: 980px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 24px 16px 50px;
+      box-sizing: border-box;
+    }
+
+    .hr-jobs-head {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      margin-bottom: 28px;
+      align-items: flex-start;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
     }
-    .header h1 {
-      margin: 0;
-      font-size: 1.5rem;
+
+    h1 {
+      margin: 0 0 6px;
+      font-size: 1.6rem;
       font-weight: 800;
-      color: $gray-800;
+      color: var(--text);
     }
-    .back-link {
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px;
+      box-shadow: var(--shadow);
+    }
+
+    .btn {
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 9px 12px;
+      cursor: pointer;
       text-decoration: none;
-      color: $logo-red;
-      font-size: 13.5px;
-      font-weight: 600;
-      transition: color 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
     }
-    .back-link:hover { color: $logo-red-deep; }
+
+    .btn:hover {
+      border-color: var(--border-2);
+    }
+
+    .btn:not(.btn--primary):not(.btn--danger):hover {
+      background: var(--hover);
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .btn--primary {
+      border-color: var(--accent);
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #ffffff;
+    }
+
+    .btn--ghost {
+      background: transparent;
+    }
 
     .alert {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 16px;
-      border-radius: 12px;
-      margin-bottom: 16px;
-      font-size: 13.5px;
-      font-weight: 500;
-      animation: slideIn 0.3s ease;
-    }
-    .alert button { background: none; border: none; font-size: 18px; cursor: pointer; }
-    .alert.error { background: #fff5f5; color: $error; border: 1px solid rgba($error, 0.2); }
-    .alert.success { background: #f0fdf4; color: $success; border: 1px solid rgba($success, 0.2); }
-
-    @keyframes slideIn {
-      from { opacity: 0; transform: translateY(-8px); }
-      to   { opacity: 1; transform: translateY(0); }
+      border: 1px solid var(--border);
+      background: var(--panel);
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin: 12px 0;
     }
 
-    .form-card {
-      background: rgba(255, 255, 255, 0.85);
-      backdrop-filter: blur(20px);
-      padding: 32px;
-      border-radius: 20px;
-      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
-      border: 1px solid $gray-200;
-      position: relative;
+    .alert--error {
+      border-color: var(--danger-soft-border);
+      background: var(--danger-soft-bg);
+    }
 
-      &::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 32px;
-        right: 32px;
-        height: 3px;
-        background: linear-gradient(90deg, transparent, $logo-red-deep, $logo-red-mid, transparent);
-        border-radius: 0 0 4px 4px;
+    .alert--success {
+      border-color: var(--ok-soft-border);
+      background: var(--ok-soft-bg);
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+
+    .field__label {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .input {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid var(--input-border);
+      background: var(--input-bg);
+      color: var(--text);
+      padding: 10px 12px;
+      outline: none;
+    }
+
+    .input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--focus-ring);
+    }
+
+    textarea.input {
+      resize: vertical;
+      min-height: 90px;
+    }
+
+    .hr-job-form {
+      display: grid;
+      gap: 14px;
+    }
+
+    .job-requirements {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+      background: var(--panel-2);
+    }
+
+    .job-requirements legend {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      padding: 0 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .grid2 {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    @media (min-width: 760px) {
+      .grid2 {
+        grid-template-columns: 1fr 1fr;
       }
     }
 
-    .field { margin-bottom: 22px; }
-    .field label {
-      display: block;
-      font-size: 12.5px;
-      font-weight: 700;
-      color: $gray-700;
-      text-transform: uppercase;
-      letter-spacing: 0.7px;
-      margin-bottom: 8px;
-    }
-    .field input, .field select, .field textarea {
-      width: 100%;
-      padding: 12px 16px;
-      border: 1.5px solid $gray-200;
-      border-radius: 12px;
-      font-size: 14px;
-      font-family: inherit;
-      outline: none;
-      box-sizing: border-box;
-      background: white;
-      color: $gray-800;
-      transition: all 0.25s;
-    }
-    .field input:focus, .field select:focus, .field textarea:focus {
-      border-color: $logo-red-deep;
-      box-shadow: 0 0 0 3px rgba($logo-red-deep, 0.08);
-    }
-    .field textarea { resize: vertical; min-height: 100px; }
-
-    /* Requirements fieldset */
-    .requirements-fieldset {
-      border: 1.5px solid $gray-200;
-      border-radius: 16px;
-      padding: 24px;
-      margin-bottom: 22px;
-      background: $gray-50;
-    }
-    .requirements-fieldset legend {
-      font-size: 12.5px;
-      font-weight: 700;
-      color: $logo-red;
-      padding: 0 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
+    .chip-field {
+      display: grid;
+      gap: 8px;
     }
 
-    /* Chip-picker */
-    .chip-field { margin-bottom: 20px; }
-    .chip-field > label {
-      display: block;
-      font-size: 12.5px;
-      font-weight: 700;
-      color: $gray-700;
-      text-transform: uppercase;
-      letter-spacing: 0.7px;
-      margin-bottom: 8px;
-    }
-    .chip-select {
-      width: 100%;
+    .hr-job-suggest-list {
+      margin-top: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      max-height: 116px;
+      overflow: auto;
     }
 
-    .chip-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
-    .chip {
+    .hr-job-picked-list {
+      margin-top: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .hr-job-suggest {
       display: inline-flex;
       align-items: center;
-      gap: 5px;
-      padding: 6px 12px;
-      background: rgba($logo-red, 0.08);
-      color: $logo-red-deep;
-      border-radius: 20px;
-      font-size: 13px;
-      font-weight: 600;
-      animation: chipIn 0.15s ease;
-    }
-    .chip-nice {
-      background: rgba(#b45309, 0.08);
-      color: #92400e;
-    }
-    .chip-nice .chip-x { color: #b45309; }
-    .chip-nice .chip-x:hover { color: $error; }
-    .chip-dept {
-      background: rgba(#166534, 0.08);
-      color: #166534;
-    }
-    .chip-dept .chip-x { color: #16a34a; }
-    .chip-dept .chip-x:hover { color: $error; }
-
-    .chip-x {
-      background: none;
-      border: none;
-      font-size: 16px;
-      line-height: 1;
-      cursor: pointer;
-      color: $logo-red;
-      padding: 0 2px;
-      transition: color 0.15s;
-    }
-    .chip-x:hover { color: $error; }
-
-    @keyframes chipIn {
-      from { opacity: 0; transform: scale(0.85); }
-      to   { opacity: 1; transform: scale(1); }
-    }
-
-    /* Actions */
-    .form-actions { display: flex; gap: 12px; margin-top: 28px; }
-    .btn-primary {
-      flex: 1;
-      padding: 13px;
-      background: linear-gradient(135deg, $logo-red-deep, $logo-red);
-      color: #fff;
-      border: none;
-      border-radius: 12px;
-      font-size: 14px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      padding: 5px 11px;
+      font-size: 12px;
       font-weight: 700;
       cursor: pointer;
-      transition: all 0.25s;
-      box-shadow: 0 4px 14px rgba($logo-red, 0.2);
     }
-    .btn-primary:hover:not(:disabled) {
-      background: linear-gradient(135deg, $logo-red-mid, $logo-red-deep);
-      transform: translateY(-1px);
-      box-shadow: 0 6px 20px rgba($logo-red, 0.3);
+
+    .hr-job-suggest--department {
+      background: #e0f2fe;
+      border-color: #7dd3fc;
+      color: #0c4a6e;
     }
-    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-    .btn-secondary {
-      flex: 1;
-      padding: 13px;
-      background: $gray-100;
-      color: $gray-600;
-      border: none;
-      border-radius: 12px;
-      font-size: 14px;
-      font-weight: 600;
-      text-align: center;
-      text-decoration: none;
+
+    .hr-job-suggest--required {
+      background: #fee2e2;
+      border-color: #fca5a5;
+      color: #991b1b;
+    }
+
+    .hr-job-suggest--nice {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+      color: #334155;
+    }
+
+    .hr-job-picked {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      padding: 5px 11px;
+      font-size: 13px;
+      font-weight: 700;
       cursor: pointer;
-      transition: all 0.2s;
     }
-    .btn-secondary:hover { background: $gray-200; }
+
+    .hr-job-picked--department {
+      background: #eff6ff;
+      border-color: #93c5fd;
+      color: #1e40af;
+    }
+
+    .hr-job-picked--required {
+      background: #fef2f2;
+      border-color: #fecaca;
+      color: #b91c1c;
+    }
+
+    .hr-job-picked--nice {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+      color: #334155;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    @media (max-width: 820px) {
+      .hr-jobs-head {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
   `]
 })
 export class JobPostingFormComponent implements OnInit {
@@ -350,11 +530,14 @@ export class JobPostingFormComponent implements OnInit {
 
   form: JobPostingPayload = { title: '', description: '' };
   reqs: Requirements = emptyRequirements();
-  selectedSkillRequired: string | null = null;
-  selectedSkillNice: string | null = null;
-  selectedDepartment: string | null = null;
   skills: Skill[] = [];
   departments: Department[] = [];
+  departmentQuery = '';
+  requiredSkillQuery = '';
+  niceSkillQuery = '';
+  location = '';
+  employmentType = '';
+  customNotes = '';
 
   constructor(
     private jobService: JobPostingService,
@@ -366,11 +549,9 @@ export class JobPostingFormComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    // Load skills and departments for dropdowns
     this.skillService.getAll().subscribe({ next: (s) => this.skills = s });
     this.departmentService.getAll().subscribe({ next: (d) => this.departments = d });
 
-    // Check if editing
     this.documentId = this.route.snapshot.paramMap.get('id') || '';
     if (this.documentId) {
       this.isEdit = true;
@@ -383,6 +564,14 @@ export class JobPostingFormComponent implements OnInit {
           this.reqs = job.requirements
             ? { ...emptyRequirements(), ...job.requirements }
             : emptyRequirements();
+
+          const meta = parseJobNotes(this.reqs.notes);
+          if (this.reqs.departments.length === 0 && meta.departments.length > 0) {
+            this.reqs.departments = meta.departments;
+          }
+          this.location = meta.location;
+          this.employmentType = meta.employmentType;
+          this.customNotes = meta.customNotes;
         },
         error: () => { this.error = this.i18n.t('form.loadError'); }
       });
@@ -398,29 +587,57 @@ export class JobPostingFormComponent implements OnInit {
     this.reqs[field].splice(index, 1);
   }
 
-  /** Called when user picks from a dropdown — adds the chip and resets the select */
-  onSelectValue(field: 'skillsRequired' | 'skillsNiceToHave' | 'departments', value: string | null): void {
-    if (!value) return;
-    this.addTag(field, value);
-    if (field === 'skillsRequired') this.selectedSkillRequired = null;
-    if (field === 'skillsNiceToHave') this.selectedSkillNice = null;
-    if (field === 'departments') this.selectedDepartment = null;
+  private filterOptions(options: string[], query: string, selected: string[]): string[] {
+    const needle = query.trim().toLowerCase();
+    const selectedKeys = new Set(selected.map((value) => value.toLowerCase()));
+    return options
+      .filter((option) => !selectedKeys.has(option.toLowerCase()))
+      .filter((option) => (needle ? option.toLowerCase().includes(needle) : true))
+      .slice(0, 12);
   }
 
-  /** Skills not yet chosen for the given field */
-  availableSkills(field: 'skillsRequired' | 'skillsNiceToHave'): Skill[] {
-    return this.skills.filter(s => !this.reqs[field].includes(s.name));
+  filteredDepartmentOptions(): string[] {
+    const options = this.departments.map((dept) => dept.name);
+    return this.filterOptions(options, this.departmentQuery, this.reqs.departments);
   }
 
-  /** Departments not yet chosen */
-  availableDepartments(): Department[] {
-    return this.departments.filter(d => !this.reqs.departments.includes(d.name));
+  filteredSkillOptions(field: 'skillsRequired' | 'skillsNiceToHave'): string[] {
+    const options = this.skills.map((skill) => skill.name);
+    const query = field === 'skillsRequired' ? this.requiredSkillQuery : this.niceSkillQuery;
+    return this.filterOptions(options, query, this.reqs[field]);
+  }
+
+  addDepartment(name: string): void {
+    this.addTag('departments', name);
+    this.departmentQuery = '';
+  }
+
+  addSkill(field: 'skillsRequired' | 'skillsNiceToHave', name: string): void {
+    this.addTag(field, name);
+    if (field === 'skillsRequired') this.requiredSkillQuery = '';
+    if (field === 'skillsNiceToHave') this.niceSkillQuery = '';
+  }
+
+  addFirstDepartmentMatch(): void {
+    const first = this.filteredDepartmentOptions()[0];
+    if (first) this.addDepartment(first);
+  }
+
+  addFirstSkillMatch(field: 'skillsRequired' | 'skillsNiceToHave'): void {
+    const first = this.filteredSkillOptions(field)[0];
+    if (first) this.addSkill(field, first);
   }
 
   save(): void {
     if (!this.form.title?.trim()) return;
     this.saving = true;
     this.error = '';
+
+    this.reqs.notes = composeJobNotes({
+      location: this.location,
+      employmentType: this.employmentType,
+      customNotes: this.customNotes,
+    });
 
     const payload: JobPostingPayload = {
       ...this.form,
