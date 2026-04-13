@@ -1193,7 +1193,7 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
   // ─────────────────────────────────────────────────────────────
   async downloadCvPdf(ctx) {
     const { id } = ctx.params;
-    const { token } = ctx.query;
+    const { token, templateKey: templateKeyParam } = ctx.query;
 
     if (!id) {
       return ctx.badRequest('Candidate ID is required.');
@@ -1213,13 +1213,56 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
     }
 
     const cvMarkdown = (candidate as any).standardizedCvMarkdown;
-    if (!cvMarkdown) {
+    const extractedData = (candidate as any).extractedData;
+
+    const { markdownToHtml, convertHtmlToPdf, renderCvMarkdownFromTemplate, isCvTemplateKey } = await import('../services/candidate.js');
+    const store = strapi.store({ type: 'core', name: 'cv-templates' });
+    const storedDefault = await store.get({ key: 'defaultCvTemplateKey' });
+    const fallbackTemplateKey = isCvTemplateKey(storedDefault) ? storedDefault : 'standard';
+    const candidateTemplateKey = isCvTemplateKey((candidate as any).cvTemplateKey)
+      ? (candidate as any).cvTemplateKey
+      : fallbackTemplateKey;
+    const requestedTemplateKey = isCvTemplateKey(templateKeyParam)
+      ? templateKeyParam
+      : candidateTemplateKey;
+
+    const generatedResumeContent = extractedData?.generatedResumeContent;
+    const hasGeneratedContent = generatedResumeContent && typeof generatedResumeContent === 'object';
+
+    if (!cvMarkdown && !hasGeneratedContent) {
       return ctx.badRequest('CV not yet generated. Please wait for processing to complete.');
     }
 
-    const { markdownToHtml, convertHtmlToPdf } = await import('../services/candidate.js');
+    const pickText = (...values: unknown[]): string | undefined => {
+      for (const value of values) {
+        if (typeof value === 'string' && value.trim()) return value.trim();
+      }
+      return undefined;
+    };
 
-    const html = markdownToHtml(cvMarkdown);
+    const contactRaw = extractedData?.contact && typeof extractedData.contact === 'object'
+      ? extractedData.contact
+      : {};
+    const linksRaw = Array.isArray((contactRaw as any).links) ? (contactRaw as any).links : [];
+    const links = linksRaw
+      .map((link: unknown) => (typeof link === 'string' ? link.trim() : ''))
+      .filter(Boolean);
+
+    const contact = {
+      fullName: pickText((contactRaw as any).fullName, candidate.fullName),
+      email: pickText((contactRaw as any).email, candidate.email),
+      phone: pickText((contactRaw as any).phone),
+      location: pickText((contactRaw as any).location),
+      linkedin: pickText((contactRaw as any).linkedin, candidate.linkedin),
+      portfolio: pickText((contactRaw as any).portfolio, candidate.portfolio),
+      links,
+    };
+
+    const markdownToRender = hasGeneratedContent
+      ? renderCvMarkdownFromTemplate(requestedTemplateKey, contact as any, generatedResumeContent as any)
+      : cvMarkdown;
+
+    const html = markdownToHtml(markdownToRender);
     const pdfBuffer = await convertHtmlToPdf(html);
 
     const filename = `${(candidate as any).fullName || 'candidate'}-CV.pdf`.replace(/[^a-zA-Z0-9.-]/g, '_');

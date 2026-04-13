@@ -521,9 +521,13 @@ export class CandidateService {
    * @param id Candidate documentId
    * @param token Optional public token for candidate self-service access
    */
-  getCvPdfDownloadUrl(id: string, token?: string): string {
+  getCvPdfDownloadUrl(id: string, token?: string, templateKey?: CvTemplateKey): string {
     const base = `${this.apiUrl}/${id}/cv-pdf`;
-    return token ? `${base}?token=${encodeURIComponent(token)}` : base;
+    const params = new URLSearchParams();
+    if (token) params.set('token', token);
+    if (templateKey) params.set('templateKey', templateKey);
+    const query = params.toString();
+    return query ? `${base}?${query}` : base;
   }
 
   /**
