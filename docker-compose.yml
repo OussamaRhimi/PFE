@@ -1,7 +1,8 @@
+name: pfe
+
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: pfe_postgres
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-strapi}
@@ -21,7 +22,6 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: pfe_backend
     restart: unless-stopped
     depends_on:
       postgres:
@@ -53,7 +53,6 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: pfe_frontend
     restart: unless-stopped
     depends_on:
       - backend

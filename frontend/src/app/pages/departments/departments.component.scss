@@ -1,254 +1,582 @@
-// === Couleurs (identiques au login) ===
-$logo-red: #8b1f1f;
-$logo-red-mid: #a31a1a;
-$logo-red-deep: #791212;
-$logo-red-darker: #5f1010;
-
-$white: #ffffff;
-$bg-page: #f5f6fa;
-$gray-50: #f9fafb;
-$gray-100: #f1f3f7;
-$gray-200: #e5e8ef;
-$gray-300: #cbd0dc;
-$gray-400: #9aa0b4;
-$gray-600: #5a6278;
-$gray-700: #3d4358;
-$gray-800: #252b3b;
-$gray-900: #111827;
-
-$error: #dc2626;
-$success: #16a34a;
-
-// === Layout ===
+/* Departments Page Styles - Modern Red & White Design with Cards */
 .departments-page {
-    max-width: 660px;
-    margin: 32px auto;
-    padding: 0 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f5f5f5 0%, #ffffff 100%);
 }
 
+/* Page Header */
 .page-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 28px;
-
-    h1 {
-        margin: 0;
-        font-size: 1.5rem;
-        font-weight: 800;
-        color: $gray-800;
-    }
-
-    .back-link {
-        text-decoration: none;
-        color: $logo-red;
-        font-size: 13.5px;
-        font-weight: 600;
-        transition: color 0.2s;
-
-        &:hover {
-            color: $logo-red-deep;
-        }
-    }
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    
 }
 
-// === Alertes ===
+
+.page-header h1 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: #000000;
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    letter-spacing: -0.5px;
+}
+.page-header .muted {
+    margin-top: 0.5rem;  /* 8px d'espace */
+}
+
+.back-link {
+    color: #0b0101;
+    text-decoration: none;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    background: white;
+    border: 1px solid #150303;
+}
+
+.back-link:hover {
+    background: #120303;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(139, 0, 0, 0.2);
+}
+
+/* Alert Messages */
 .alert {
+    padding: 1rem;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    position: relative;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 16px;
-    border-radius: 12px;
-    margin-bottom: 16px;
-    font-size: 13.5px;
-    font-weight: 500;
     animation: slideIn 0.3s ease;
-
-    button {
-        background: none;
-        border: none;
-        font-size: 18px;
-        cursor: pointer;
-        padding: 0 4px;
-    }
-
-    &.error {
-        background: #fff5f5;
-        color: $error;
-        border: 1px solid rgba($error, 0.2);
-    }
-
-    &.success {
-        background: #f0fdf4;
-        color: $success;
-        border: 1px solid rgba($success, 0.2);
-    }
 }
 
 @keyframes slideIn {
-    from { opacity: 0; transform: translateY(-8px); }
-    to   { opacity: 1; transform: translateY(0); }
-}
-
-// === Barre de recherche ===
-.search-row {
-    display: flex;
-    align-items: center;
-    margin-bottom: 12px;
-    position: relative;
-}
-
-// === Ajout ===
-.add-row {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 18px;
-
-    input {
-        flex: 1;
-        height: 46px;
-        padding: 0 16px;
-        border: 1.5px solid $gray-200;
-        border-radius: 12px;
-        font-size: 14px;
-        outline: none;
-        background: $white;
-        transition: all 0.25s;
-
-        &:focus {
-            border-color: $logo-red-deep;
-            box-shadow: 0 0 0 3px rgba($logo-red-deep, 0.08);
-        }
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
     }
-
-    .btn-add {
-        padding: 0 22px;
-        height: 46px;
-        background: linear-gradient(135deg, $logo-red-deep, $logo-red);
-        color: $white;
-        border: none;
-        border-radius: 12px;
-        font-size: 14px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.25s;
-        box-shadow: 0 4px 12px rgba($logo-red, 0.2);
-
-        &:hover:not(:disabled) {
-            background: linear-gradient(135deg, $logo-red-mid, $logo-red-deep);
-            transform: translateY(-1px);
-            box-shadow: 0 6px 18px rgba($logo-red, 0.3);
-        }
-
-        &:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 
-// === Liste ===
-.center {
-    text-align: center;
-    color: $gray-400;
-    font-size: 14px;
-    padding: 24px 0;
+.alert.error {
+    background: #ffe4e4;
+    color: #cb1010;
+    border-left: 4px solid #8B0000;
+    border-radius: 8px;
 }
 
-.list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+.alert.success {
+    background: #e8f5e9;
+    color: #2e7d32;
+    border-left: 4px solid #2e7d32;
+    border-radius: 8px;
+    animation: slideIn 0.3s ease, glow 1s ease-in-out;
 }
 
-.row {
+@keyframes glow {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(46, 125, 50, 0);
+    }
+    50% {
+        box-shadow: 0 0 20px 5px rgba(46, 125, 50, 0.3);
+    }
+}
+
+.alert button {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: inherit;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.alert button:hover {
+    opacity: 1;
+}
+
+/* Search and Add Row Container */
+.search-add-container {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 14px 18px;
-    background: $white;
-    border: 1px solid $gray-200;
-    border-radius: 12px;
-    transition: all 0.2s;
-
-    &:hover {
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-        border-color: rgba($logo-red, 0.1);
-    }
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
 }
 
-.name {
-    font-size: 15px;
-    font-weight: 500;
-    color: $gray-800;
+/* Add Row - Left side */
+.add-row {
+    display: flex;
+    gap: 1rem;
+    background: white;
+    padding: 1.5rem;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border: 1px solid #f0f0f0;
+    flex: 2;
+    min-width: 250px;
+    margin: 0;
+    box-sizing: border-box;
 }
 
-.edit-input {
+.add-row input {
     flex: 1;
-    padding: 8px 12px;
-    border: 1.5px solid $gray-200;
+    padding: 0.75rem 1rem;
+    border: 2px solid #e0e0e0;
     border-radius: 8px;
-    font-size: 14px;
-    outline: none;
-    margin-right: 10px;
-
-    &:focus {
-        border-color: $logo-red-deep;
-    }
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    font-family: inherit;
+    height: auto;
+    box-sizing: border-box;
+    background: white;
 }
 
+.add-row input:focus {
+    outline: none;
+    border-color: #8B0000;
+    box-shadow: 0 0 0 3px rgba(139, 0, 0, 0.1);
+}
+
+/* Search Row - Right side - Même design que add-row */
+.search-row {
+    flex: 1;
+    max-width: 400px;
+    background: white;
+    padding: 1.5rem;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border: 1px solid #f0f0f0;
+    margin: 0;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Style pour que l'autocomplete prenne toute la largeur */
+::ng-deep .search-row app-department-autocomplete {
+    display: block;
+    width: 100%;
+}
+
+::ng-deep .search-row input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    font-family: inherit;
+    background: white;
+    height: auto;
+    box-sizing: border-box;
+}
+
+::ng-deep .search-row input:focus {
+    outline: none;
+    border-color: #8B0000;
+    box-shadow: 0 0 0 3px rgba(139, 0, 0, 0.1);
+}
+
+/* Style pour les résultats de l'autocomplete */
+::ng-deep .autocomplete-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+::ng-deep .autocomplete-results div {
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #333;
+}
+
+::ng-deep .autocomplete-results div:hover {
+    background: #f5f5f5;
+    color: #8B0000;
+}
+
+.btn-add {
+    padding: 0.75rem 1.5rem;
+    background: #8B0000;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    height: fit-content;
+}
+
+.btn-add:hover:not(:disabled) {
+    background: #6d0000;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(139, 0, 0, 0.3);
+}
+
+.btn-add:disabled {
+    background: #cccccc;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* Center Text */
+.center {
+    text-align: center;
+    padding: 3rem;
+    color: #666;
+    font-size: 1rem;
+    background: white;
+    border-radius: 12px;
+    margin: 1rem 0;
+}
+
+/* Cards Grid Container */
+.list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+    padding: 0.5rem 0;
+}
+
+/* Card Styles */
+.row {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    border: 1px solid #f0f0f0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Card Hover Effect */
+.row:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(139, 0, 0, 0.1);
+    border-color: rgba(139, 0, 0, 0.2);
+}
+
+/* Card Decorative Border */
+.row::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #8B0000, #d42020, #8B0000);
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.row:hover::before {
+    transform: scaleX(1);
+}
+
+/* Department Name in Card */
+.name {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #2c2c2c;
+    padding: 0.5rem 0;
+    border-bottom: 2px solid #f0f0f0;
+    word-break: break-word;
+    text-align: center;
+}
+
+/* Actions Container in Card - Below the name */
 .actions {
     display: flex;
-    gap: 6px;
+    gap: 0.75rem;
+    justify-content: center;
+    margin-top: 0.5rem;
+}
 
-    button {
-        padding: 7px 14px;
-        border: none;
-        border-radius: 8px;
-        font-size: 12.5px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s;
+/* Buttons Styles */
+.btn-edit, .btn-delete, .btn-save, .btn-cancel {
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    flex: 1;
+    text-align: center;
+}
 
-        &.btn-edit {
-            background: rgba($logo-red, 0.08);
-            color: $logo-red;
+.btn-edit {
+    background: #f0f0f0;
+    color: #555;
+}
 
-            &:hover {
-                background: rgba($logo-red, 0.15);
-            }
-        }
+.btn-edit:hover {
+    background: #e0e0e0;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
 
-        &.btn-delete {
-            background: rgba($error, 0.08);
-            color: $error;
+.btn-delete {
+    background: #7d0404;
+    color: #ffffff;
+}
 
-            &:hover {
-                background: rgba($error, 0.15);
-            }
-        }
+.btn-delete:hover {
+    background: #ffcccc;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(139, 0, 0, 0.2);
+}
 
-        &.btn-save {
-            background: rgba($success, 0.08);
-            color: $success;
+.btn-save {
+    background: #8B0000;
+    color: white;
+}
 
-            &:disabled {
-                opacity: 0.5;
-                cursor: not-allowed;
-            }
+.btn-save:hover:not(:disabled) {
+    background: #6d0000;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(139, 0, 0, 0.3);
+}
 
-            &:hover:not(:disabled) {
-                background: rgba($success, 0.15);
-            }
-        }
+.btn-save:disabled {
+    background: #cccccc;
+    cursor: not-allowed;
+}
 
-        &.btn-cancel {
-            background: $gray-100;
-            color: $gray-600;
+.btn-cancel {
+    background: #f0f0f0;
+    color: #666;
+}
 
-            &:hover {
-                background: $gray-200;
-            }
-        }
+.btn-cancel:hover {
+    background: #e0e0e0;
+    transform: translateY(-2px);
+}
+
+/* Edit Input in Card */
+.edit-input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    margin-bottom: 0.5rem;
+    text-align: center;
+}
+
+.edit-input:focus {
+    outline: none;
+    border-color: #8B0000;
+    box-shadow: 0 0 0 3px rgba(139, 0, 0, 0.1);
+}
+
+/* Loading State */
+.loading {
+    text-align: center;
+    padding: 3rem;
+    color: #8B0000;
+    font-size: 1.1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .departments-page {
+        padding: 1rem;
+    }
+    
+    .page-header {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+    
+    .page-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .search-add-container {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .search-row {
+        max-width: 100%;
+        order: 1;
+    }
+    
+    .add-row {
+        order: 2;
+        flex-direction: column;
+        padding: 1rem;
+    }
+    
+    .list {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .row {
+        padding: 1.2rem;
+    }
+    
+    .actions {
+        flex-direction: column;
+    }
+    
+    .btn-edit, .btn-delete, .btn-save, .btn-cancel {
+        width: 100%;
+    }
+    
+    .name {
+        font-size: 1.1rem;
+    }
+}
+
+/* Tablet Responsive */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .list {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    }
+    
+    .search-add-container {
+        gap: 1rem;
+    }
+    
+    .add-row {
+        flex: 1.5;
+    }
+    
+    .search-row {
+        flex: 1;
+        max-width: 350px;
+    }
+}
+
+/* Desktop Large */
+@media (min-width: 1200px) {
+    .departments-page {
+        max-width: 1400px;
+    }
+    
+    .search-row {
+        max-width: 450px;
+    }
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #8B0000;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #6d0000;
+}
+
+/* Smooth Transitions */
+* {
+    transition: all 0.2s ease-in-out;
+}
+
+/* Focus Visible for Accessibility */
+:focus-visible {
+    outline: 2px solid #8B0000;
+    outline-offset: 2px;
+}
+
+/* Card Animation */
+@keyframes cardAppear {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.row {
+    animation: cardAppear 0.3s ease backwards;
+}
+
+/* Staggered Animation for Cards */
+.row:nth-child(1) { animation-delay: 0.05s; }
+.row:nth-child(2) { animation-delay: 0.1s; }
+.row:nth-child(3) { animation-delay: 0.15s; }
+.row:nth-child(4) { animation-delay: 0.2s; }
+.row:nth-child(5) { animation-delay: 0.25s; }
+.row:nth-child(6) { animation-delay: 0.3s; }
+
+/* Print Styles */
+@media print {
+    .departments-page {
+        background: white;
+        padding: 0;
+    }
+    
+    .btn-add, .btn-edit, .btn-delete, .btn-save, .btn-cancel, .back-link {
+        display: none;
+    }
+    
+    .list {
+        display: block;
+    }
+    
+    .row {
+        break-inside: avoid;
+        page-break-inside: avoid;
+        margin-bottom: 1rem;
+        box-shadow: none;
+        border: 1px solid #ddd;
+    }
+    
+    .row::before {
+        display: none;
     }
 }

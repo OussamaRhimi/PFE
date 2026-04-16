@@ -17,11 +17,31 @@ $gray-800: #252b3b;
 $gray-900: #111827;
 
 :host {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
+  display: block;
+  height: 100vh;
+  overflow: hidden;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell,
     'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+}
+
+/* ── Styles pour les pages publiques (sans shell) ── */
+/* Le conteneur principal des pages publiques */
+:host > ng-container:first-child {
+  display: block;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Le router-outlet dans les pages publiques */
+:host > ng-container:first-child > router-outlet {
+  display: none;
+}
+
+/* Tous les composants enfants des pages publiques */
+:host > ng-container:first-child > *:not(router-outlet) {
+  display: block;
+  min-height: 100%;
 }
 
 /* ── Top bar ────────────────────────────────────── */
@@ -33,21 +53,10 @@ $gray-900: #111827;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow:
-    0 2px 12px rgba($logo-red-darker, 0.25),
-    0 1px 3px rgba(0, 0, 0, 0.1);
   z-index: 10;
-  position: relative;
-
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba($white, 0.15), transparent);
-  }
+  position: sticky;
+  top: 0;
+  flex-shrink: 0;
 
   .topbar-brand {
     display: flex;
@@ -124,23 +133,37 @@ $gray-900: #111827;
   display: flex;
   flex: 1;
   overflow: hidden;
+  height: 100%;
 }
 
 /* ── Sidebar ────────────────────────────────────── */
 .sidebar {
-  width: 230px;
-  min-width: 230px;
-  background: $white;
-  border-right: 1px solid $gray-200;
+  width: 260px;
+  min-width: 260px;
+  background: #FFFFFF;
+  border-right: 1px solid #E2E8F0;
   display: flex;
   flex-direction: column;
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   box-shadow: 1px 0 8px rgba(0, 0, 0, 0.04);
+  height: 100%;
+  position: sticky;
+  top: 0;
+  flex-shrink: 0;
+
+  // Cache la scrollbar de la sidebar
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    width: 0px;
+    height: 0px;
+    background: transparent;
+  }
 
   &.collapsed {
-    width: 64px;
-    min-width: 64px;
+    width: 72px;
+    min-width: 72px;
 
     .nav-label {
       opacity: 0;
@@ -150,45 +173,126 @@ $gray-900: #111827;
 
     .sidebar-nav a {
       justify-content: center;
-      padding: 14px 0;
+      padding: 12px 0;
     }
+
+    .topbar-end {
+      .user-info {
+        justify-content: center;
+        padding: 0.625rem 0;
+        
+        .username {
+          display: none;
+        }
+        
+        .nav-icon {
+          margin: 0;
+        }
+      }
+      
+      .logout-btn {
+        justify-content: center;
+        padding: 0.625rem 0;
+        
+        .btn-text {
+          display: none;
+        }
+        
+        .nav-icon {
+          margin: 0;
+        }
+      }
+    }
+  }
+}
+
+/* Topbar brand inside sidebar */
+.sidebar .topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 0.75rem 0.75rem 1rem;
+  border-bottom: 1px solid #E2E8F0;
+  margin-bottom: 0.5rem;
+
+  .sidebar-toggle {
+    background: none;
+    border: none;
+    color: #475569;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+
+    &:hover {
+      background: rgba(139, 31, 31, 0.08);
+      color: $logo-red;
+    }
+  }
+
+  .topbar-logo {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+  }
+
+  .topbar-title {
+    font-size: 18px;
+    font-weight: 700;
+    background: linear-gradient(135deg, $logo-red 0%, $logo-red-deep 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    letter-spacing: -0.3px;
+  }
+}
+
+.sidebar.collapsed .topbar-brand {
+  padding: 0.75rem 0.5rem;
+  justify-content: center;
+
+  .topbar-title,
+  .topbar-logo {
+    display: none;
+  }
+
+  .sidebar-toggle {
+    margin: 0 auto;
   }
 }
 
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  padding: 0.75rem 0;
-  gap: 2px;
+  padding: 1rem 0.75rem;
+  gap: 0.25rem;
+  flex: 1;
 
   a {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 12px 20px;
-    color: $gray-600;
+    gap: 0.875rem;
+    padding: 0.625rem 1rem;
+    color: #475569;
     text-decoration: none;
-    font-size: 14px;
+    font-size: 0.875rem;
     font-weight: 500;
-    border-left: 3px solid transparent;
+    border-radius: 0.5rem;
     transition: all 0.2s ease;
-    margin: 0 6px;
-    border-radius: 0 10px 10px 0;
+    white-space: nowrap;
 
     &:hover {
-      background: rgba($logo-red, 0.04);
-      color: $logo-red;
+      background: rgba(220, 38, 38, 0.06);
+      color: #DC2626;
     }
 
     &.active {
-      color: $logo-red-deep;
-      background: rgba($logo-red, 0.07);
-      border-left-color: $logo-red;
+      color: #B91C1C;
+      background: rgba(220, 38, 38, 0.08);
       font-weight: 600;
-
-      .nav-icon svg {
-        stroke: $logo-red;
-      }
     }
   }
 
@@ -197,35 +301,119 @@ $gray-900: #111827;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
 
     svg {
-      stroke: $gray-400;
+      stroke: #94A3B8;
       transition: stroke 0.2s;
+      width: 18px;
+      height: 18px;
     }
   }
 
   .nav-label {
     transition: opacity 0.2s;
+    white-space: nowrap;
   }
 }
 
-/* ── Main content ───────────────────────────────── */
-.main-content {
-  flex: 1;
-  overflow-y: auto;
-  background: $bg-page;
-  padding: 0;
+/* Topbar end (user info + logout) inside sidebar */
+.sidebar .topbar-end {
+  padding: 1rem 0.75rem;
+  border-top: 1px solid #E2E8F0;
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+
+  .user-info {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    padding: 0.625rem 1rem;
+    color: #475569;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+    
+    .nav-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      width: 20px;
+      height: 20px;
+      
+      svg {
+        stroke: #94A3B8;
+        transition: stroke 0.2s;
+        width: 18px;
+        height: 18px;
+      }
+    }
+    
+    .username {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    &:hover {
+      background: rgba(220, 38, 38, 0.06);
+      
+      .nav-icon svg {
+        stroke: #DC2626;
+      }
+    }
+  }
+
+  .logout-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    padding: 0.625rem 1rem;
+    width: 100%;
+    background: none;
+    border: none;
+    color: #DC2626;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    .nav-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      width: 20px;
+      height: 20px;
+      
+      svg {
+        stroke: #DC2626;
+        width: 18px;
+        height: 18px;
+      }
+    }
+    
+    .btn-text {
+      white-space: nowrap;
+    }
+
+    &:hover {
+      background: rgba(220, 38, 38, 0.08);
+    }
+  }
 }
 
-/* ── Language toggle ────────────────────────────── */
+/* Language toggle styles */
 .lang-toggle-wrapper {
   margin-top: auto;
-  padding: 1.25rem 16px;
-  display: flex;
-  justify-content: center;
-  border-top: 1px solid $gray-200;
+  padding: 1rem 0.75rem 1.25rem;
+  border-top: 1px solid #E2E8F0;
 }
 
 .lang-toggle {
@@ -241,6 +429,7 @@ $gray-900: #111827;
   height: 32px;
   user-select: none;
   transition: background 0.25s;
+  margin: 0 auto;
 
   &:hover {
     background: $gray-200;
@@ -279,28 +468,54 @@ $gray-900: #111827;
   }
 }
 
-.sidebar.collapsed {
-  .lang-toggle-wrapper {
-    padding: 1rem 4px;
+.sidebar.collapsed .lang-toggle-wrapper {
+  padding: 1rem 4px;
+}
+
+.sidebar.collapsed .lang-toggle {
+  width: 52px;
+  height: 28px;
+
+  .lang-label {
+    font-size: 10px;
   }
 
-  .lang-toggle {
-    width: 52px;
-    height: 28px;
-
-    .lang-label {
-      font-size: 10px;
-    }
-
-    .lang-slider {
-      width: 23px;
-      height: 22px;
-    }
-
-    &.en .lang-slider {
-      transform: translateX(23px);
-    }
+  .lang-slider {
+    width: 23px;
+    height: 22px;
   }
+
+  &.en .lang-slider {
+    transform: translateX(23px);
+  }
+}
+
+/* Pour les éléments de navigation avec des SVG personnalisés */
+.nav-icon svg line,
+.nav-icon svg rect,
+.nav-icon svg polyline,
+.nav-icon svg path,
+.nav-icon svg circle {
+  stroke: currentColor;
+}
+
+.sidebar-nav a:hover .nav-icon svg {
+  stroke: #DC2626;
+}
+
+.sidebar-nav a.active .nav-icon svg {
+  stroke: #B91C1C;
+}
+
+/* ── Main content (authentifié) ───────────────────────────────── */
+.main-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: $bg-page;
+  padding: 0;
+  height: 100%;
+  min-height: 0;
 }
 
 /* ── Responsive ─────────────────────────────────── */
@@ -328,4 +543,10 @@ $gray-900: #111827;
       font-size: 17px;
     }
   }
+}
+.public-content {
+  display: block;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
 }

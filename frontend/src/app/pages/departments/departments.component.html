@@ -1,6 +1,10 @@
 <div class="departments-page">
     <div class="page-header">
-        <h1>{{ i18n.t('dept.title') }}</h1>
+        <div>
+            <h1><strong>{{ i18n.t('dept.title') }}</strong></h1>
+            <p class="muted">{{ i18n.t('dept.subtitle') }}</p>
+        </div>
+     
         <a routerLink="/dashboard" class="back-link">{{ i18n.t('dept.backToDashboard') }}</a>
     </div>
 
@@ -14,20 +18,22 @@
         <button (click)="success = ''">&times;</button>
     </div>
 
-    <!-- Barre de recherche (autocomplete) -->
-    <div class="search-row">
-        <app-department-autocomplete [placeholder]="i18n.t('dept.searchPlaceholder')" (searchResults)="onSearch($event)"
-            (searchCleared)="onSearchCleared()" (departmentSelected)="onDepartmentPicked($event)">
-        </app-department-autocomplete>
-    </div>
+    <!-- Remplacez les lignes de recherche et d'ajout par ceci -->
+    <div class="search-add-container">
+        <!-- Barre d'ajout -->
+        <div class="add-row">
+            <input type="text" [(ngModel)]="newName" [placeholder]="i18n.t('dept.placeholder')"
+                (keyup.enter)="addDepartment()" />
+            <button class="btn-add" (click)="addDepartment()" [disabled]="!newName.trim()">{{ i18n.t('dept.add') }}</button>
+        </div>
 
-    <!-- Ajout -->
-    <div class="add-row">
-        <input type="text" [(ngModel)]="newName" [placeholder]="i18n.t('dept.placeholder')"
-            (keyup.enter)="addDepartment()" />
-        <button class="btn-add" (click)="addDepartment()" [disabled]="!newName.trim()">{{ i18n.t('dept.add') }}</button>
+        <!-- Barre de recherche (autocomplete) à droite -->
+        <div class="search-row">
+            <app-department-autocomplete [placeholder]="i18n.t('dept.searchPlaceholder')" (searchResults)="onSearch($event)"
+                (searchCleared)="onSearchCleared()" (departmentSelected)="onDepartmentPicked($event)">
+            </app-department-autocomplete>
+        </div>
     </div>
-
     <!-- Liste -->
     <p class="center" *ngIf="loading">{{ i18n.t('dept.loading') }}</p>
     <p class="center" *ngIf="!loading && filteredDepartments.length === 0 && departments.length === 0">

@@ -11,99 +11,105 @@ import { I18nService } from '../../services/i18n.service';
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule, SkillAutocompleteComponent],
   template: `
-    <div class="skills-page">
-      <div class="header">
-        <h1>{{ i18n.t('skills.title') }}</h1>
-        <a routerLink="/dashboard" class="back-link">{{ i18n.t('skills.backToDashboard') }}</a>
-      </div>
-
-      <!-- Messages -->
-      <div class="alert error" *ngIf="error">
-        {{ error }}
-        <button (click)="error = ''">&times;</button>
-      </div>
-      <div class="alert success" *ngIf="success">
-        {{ success }}
-        <button (click)="success = ''">&times;</button>
-      </div>
-
-      <!-- Add skill -->
-      <div class="add-row">
-        <input
-          type="text"
-          [(ngModel)]="newName"
-          [placeholder]="i18n.t('skills.placeholder')"
-          (keyup.enter)="addSkill()"
-        />
-        <button class="btn-add" (click)="addSkill()" [disabled]="!newName.trim()">{{ i18n.t('skills.add') }}</button>
-      </div>
-
-      <!-- Search bar using Reusable Autocomplete -->
-      <div class="search-bar">
-        <app-skill-autocomplete
-          [initialValue]="searchQuery"
-          (searchResults)="onSearchResults($event)"
-          (searchCleared)="onSearchCleared()"
-          (queryChange)="onQueryChange($event)"
-          (skillSelected)="onSkillSelected($event)"
-          [placeholder]="i18n.t('skills.searchPlaceholder')"
-        ></app-skill-autocomplete>
-        
-        <span class="search-count" *ngIf="searchQuery && !loading">
-          {{ searchResults.length }} {{ searchResults.length !== 1 ? i18n.t('skills.results') : i18n.t('skills.result') }}
-        </span>
-      </div>
-
-      <!-- Loading (initial) -->
-      <p class="center" *ngIf="loading && !searchQuery">{{ i18n.t('skills.loading') }}</p>
-
-      <!-- ── SEARCH RESULTS ── -->
-      <ng-container *ngIf="searchQuery">
-        <p class="center" *ngIf="!loading && searchResults.length === 0">
-          {{ i18n.t('skills.noResults') }} "<strong>{{ searchQuery }}</strong>".
-        </p>
-        <div class="list" *ngIf="!loading && searchResults.length > 0">
-          <div class="row search-result-row" *ngFor="let skill of searchResults">
-            <span class="name" [innerHTML]="highlight(skill.name, searchQuery)"></span>
-            <div class="actions">
-              <button class="btn-edit" (click)="startEdit(skill)">{{ i18n.t('skills.edit') }}</button>
-              <button class="btn-delete" (click)="remove(skill)">{{ i18n.t('skills.delete') }}</button>
-            </div>
-          </div>
-        </div>
-      </ng-container>
-
-      <!-- ── ALL SKILLS LIST ── -->
-      <ng-container *ngIf="!searchQuery">
-        <p class="center" *ngIf="!loading && skills.length === 0">{{ i18n.t('skills.empty') }}</p>
-        <div class="list" *ngIf="!loading && skills.length > 0">
-          <div class="row" *ngFor="let skill of skills">
-            <!-- View mode -->
-            <ng-container *ngIf="editingId !== skill.documentId">
-              <span class="name">{{ skill.name }}</span>
-              <div class="actions">
-                <button class="btn-edit" (click)="startEdit(skill)">{{ i18n.t('skills.edit') }}</button>
-                <button class="btn-delete" (click)="remove(skill)">{{ i18n.t('skills.delete') }}</button>
-              </div>
-            </ng-container>
-
-            <!-- Edit mode -->
-            <ng-container *ngIf="editingId === skill.documentId">
-              <input
-                type="text"
-                [(ngModel)]="editName"
-                (keyup.enter)="saveEdit()"
-                class="edit-input"
-              />
-              <div class="actions">
-                <button class="btn-save" (click)="saveEdit()" [disabled]="!editName.trim()">{{ i18n.t('skills.save') }}</button>
-                <button class="btn-cancel" (click)="cancelEdit()">{{ i18n.t('skills.cancel') }}</button>
-              </div>
-            </ng-container>
-          </div>
-        </div>
-      </ng-container>
+<div class="skills-page">
+  <div class="header">
+    <div>
+        <h4><strong>{{ i18n.t('skills.title') }}</strong></h4>
+        <p class="muted">{{ i18n.t('skills.subtitle') }}</p>
     </div>
+    <a routerLink="/dashboard" class="back-link">{{ i18n.t('skills.backToDashboard') }}</a>
+  </div>
+
+  <!-- Messages -->
+  <div class="alert error" *ngIf="error">
+    {{ error }}
+    <button (click)="error = ''">&times;</button>
+  </div>
+  <div class="alert success" *ngIf="success">
+    {{ success }}
+    <button (click)="success = ''">&times;</button>
+  </div>
+
+  <!-- Conteneur pour la recherche et l'ajout sur la même ligne -->
+  <div class="search-add-row">
+    <!-- Barre d'ajout (à gauche) -->
+    <div class="add-row">
+      <input
+        type="text"
+        [(ngModel)]="newName"
+        [placeholder]="i18n.t('skills.placeholder')"
+        (keyup.enter)="addSkill()"
+      />
+      <button class="btn-add" (click)="addSkill()" [disabled]="!newName.trim()">{{ i18n.t('skills.add') }}</button>
+    </div>
+
+    <!-- Barre de recherche (à droite) -->
+    <div class="search-bar">
+      <app-skill-autocomplete
+        [initialValue]="searchQuery"
+        (searchResults)="onSearchResults($event)"
+        (searchCleared)="onSearchCleared()"
+        (queryChange)="onQueryChange($event)"
+        (skillSelected)="onSkillSelected($event)"
+        [placeholder]="i18n.t('skills.searchPlaceholder')"
+      ></app-skill-autocomplete>
+      
+      <span class="search-count" *ngIf="searchQuery && !loading">
+        {{ searchResults.length }} {{ searchResults.length !== 1 ? i18n.t('skills.results') : i18n.t('skills.result') }}
+      </span>
+    </div>
+  </div>
+
+  <!-- Loading (initial) -->
+  <p class="center" *ngIf="loading && !searchQuery">{{ i18n.t('skills.loading') }}</p>
+
+  <!-- ── SEARCH RESULTS ── -->
+  <ng-container *ngIf="searchQuery">
+    <p class="center" *ngIf="!loading && searchResults.length === 0">
+      {{ i18n.t('skills.noResults') }} "<strong>{{ searchQuery }}</strong>".
+    </p>
+    <div class="list" *ngIf="!loading && searchResults.length > 0">
+      <div class="row search-result-row" *ngFor="let skill of searchResults">
+        <span class="name" [innerHTML]="highlight(skill.name, searchQuery)"></span>
+        <div class="actions">
+          <button class="btn-edit" (click)="startEdit(skill)">{{ i18n.t('skills.edit') }}</button>
+          <button class="btn-delete" (click)="remove(skill)">{{ i18n.t('skills.delete') }}</button>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ── ALL SKILLS LIST ── -->
+  <ng-container *ngIf="!searchQuery">
+    <p class="center" *ngIf="!loading && skills.length === 0">{{ i18n.t('skills.empty') }}</p>
+    <div class="list" *ngIf="!loading && skills.length > 0">
+      <div class="row" *ngFor="let skill of skills">
+        <!-- View mode -->
+        <ng-container *ngIf="editingId !== skill.documentId">
+          <span class="name">{{ skill.name }}</span>
+          <div class="actions">
+            <button class="btn-edit" (click)="startEdit(skill)">{{ i18n.t('skills.edit') }}</button>
+            <button class="btn-delete" (click)="remove(skill)">{{ i18n.t('skills.delete') }}</button>
+          </div>
+        </ng-container>
+
+        <!-- Edit mode -->
+        <ng-container *ngIf="editingId === skill.documentId">
+          <input
+            type="text"
+            [(ngModel)]="editName"
+            (keyup.enter)="saveEdit()"
+            class="edit-input"
+          />
+          <div class="actions">
+            <button class="btn-save" (click)="saveEdit()" [disabled]="!editName.trim()">{{ i18n.t('skills.save') }}</button>
+            <button class="btn-cancel" (click)="cancelEdit()">{{ i18n.t('skills.cancel') }}</button>
+          </div>
+        </ng-container>
+      </div>
+    </div>
+  </ng-container>
+</div>
   `,
   styles: [`
     $logo-red: #8b1f1f;
@@ -119,205 +125,574 @@ import { I18nService } from '../../services/i18n.service';
     $gray-800: #252b3b;
     $error: #dc2626;
     $success: #16a34a;
+/* Skills Page Styles - Modern Red & White Design with Cards */
+.skills-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f5f5f5 0%, #ffffff 100%);
+}
 
+/* Page Header */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+   
+  
+}
+.header div {
+    flex: 1;
+}
+
+
+.header h4 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: #0e0c0c;
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    letter-spacing: -0.5px;
+    margin-bottom: 0.5rem;
+  
+}
+
+.back-link {
+    color: #0a0505;
+    text-decoration: none;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    background: white;
+    border: 1px solid #0a0101;
+}
+
+.back-link:hover {
+    background: #170f0f;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(139, 0, 0, 0.2);
+}
+
+/* Alert Messages */
+.alert {
+    padding: 1rem;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.alert.error {
+    background: #ffe4e4;
+    color: #8B0000;
+    border-left: 4px solid #8B0000;
+    border-radius: 8px;
+}
+
+.alert.success {
+    background: #e8f5e9;
+    color: #2e7d32;
+    border-left: 4px solid #2e7d32;
+    border-radius: 8px;
+    animation: slideIn 0.3s ease, glow 1s ease-in-out;
+}
+
+@keyframes glow {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(46, 125, 50, 0);
+    }
+    50% {
+        box-shadow: 0 0 20px 5px rgba(46, 125, 50, 0.3);
+    }
+}
+
+.alert button {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: inherit;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.alert button:hover {
+    opacity: 1;
+}
+
+/* Container for Search and Add in row */
+.search-add-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* Add Row - Left side */
+.add-row {
+    display: flex;
+    gap: 1rem;
+    background: white;
+    padding: 1.5rem;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border: 1px solid #f0f0f0;
+    flex: 2;
+    min-width: 250px;
+}
+
+.add-row input {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    font-family: inherit;
+}
+
+.add-row input:focus {
+    outline: none;
+    border-color: #8B0000;
+    box-shadow: 0 0 0 3px rgba(139, 0, 0, 0.1);
+}
+
+.btn-add {
+    padding: 0.75rem 1.5rem;
+    background: #8B0000;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    font-size: 0.95rem;
+    white-space: nowrap;
+}
+
+.btn-add:hover:not(:disabled) {
+    background: #6d0000;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(139, 0, 0, 0.3);
+}
+
+.btn-add:disabled {
+    background: #cccccc;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* Search Bar Container - Right side */
+.search-bar {
+    flex: 1;
+    min-width: 280px;
+    background: white;
+    padding: 1.5rem;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border: 1px solid #f0f0f0;
+}
+
+/* Style for skill-autocomplete component */
+::ng-deep .search-bar app-skill-autocomplete {
+    display: block;
+    width: 100%;
+}
+
+::ng-deep .search-bar input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    font-family: inherit;
+    background: white;
+}
+
+::ng-deep .search-bar input:focus {
+    outline: none;
+    border-color: #8B0000;
+    box-shadow: 0 0 0 3px rgba(139, 0, 0, 0.1);
+}
+
+.search-count {
+    display: inline-block;
+    margin-top: 0.75rem;
+    font-size: 0.875rem;
+    color: #666;
+    font-weight: 500;
+    padding: 0.25rem 0.75rem;
+    background: #f5f5f5;
+    border-radius: 20px;
+}
+
+/* Center Text */
+.center {
+    text-align: center;
+    padding: 3rem;
+    color: #666;
+    font-size: 1rem;
+    background: white;
+    border-radius: 12px;
+    margin: 1rem 0;
+}
+
+/* Cards Grid Container */
+.list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+    padding: 0.5rem 0;
+}
+
+/* Card Styles */
+.row {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    border: 1px solid #f0f0f0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Card Hover Effect */
+.row:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(139, 0, 0, 0.1);
+    border-color: rgba(139, 0, 0, 0.2);
+}
+
+/* Card Decorative Border */
+.row::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #8B0000, #d42020, #8B0000);
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.row:hover::before {
+    transform: scaleX(1);
+}
+
+/* Skill Name in Card */
+.name {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #2c2c2c;
+    padding: 0.5rem 0;
+    border-bottom: 2px solid #f0f0f0;
+    word-break: break-word;
+    text-align: center;
+}
+
+/* Highlighted search text */
+.name ::ng-deep mark {
+    background: #ffeb3b;
+    color: #2c2c2c;
+    padding: 0 2px;
+    border-radius: 3px;
+    font-weight: 600;
+}
+
+/* Actions Container in Card - Below the name */
+.actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+    margin-top: 0.5rem;
+}
+
+/* Buttons Styles */
+.btn-edit, .btn-delete, .btn-save, .btn-cancel {
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    flex: 1;
+    text-align: center;
+}
+
+.btn-edit {
+    background: #f0f0f0;
+    color: #555;
+}
+
+.btn-edit:hover {
+    background: #e0e0e0;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn-delete {
+    background: #820303;
+    color: #fefcfc;
+}
+
+.btn-delete:hover {
+    background: #ffcccc;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(139, 0, 0, 0.2);
+}
+
+.btn-save {
+    background: #8B0000;
+    color: white;
+}
+
+.btn-save:hover:not(:disabled) {
+    background: #6d0000;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(139, 0, 0, 0.3);
+}
+
+.btn-save:disabled {
+    background: #cccccc;
+    cursor: not-allowed;
+}
+
+.btn-cancel {
+    background: #f0f0f0;
+    color: #666;
+}
+
+.btn-cancel:hover {
+    background: #e0e0e0;
+    transform: translateY(-2px);
+}
+
+/* Edit Input in Card */
+.edit-input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    margin-bottom: 0.5rem;
+    text-align: center;
+}
+
+.edit-input:focus {
+    outline: none;
+    border-color: #8B0000;
+    box-shadow: 0 0 0 3px rgba(139, 0, 0, 0.1);
+}
+
+/* Loading State */
+.loading {
+    text-align: center;
+    padding: 3rem;
+    color: #8B0000;
+    font-size: 1.1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
     .skills-page {
-      max-width: 660px;
-      margin: 32px auto;
-      padding: 0 24px;
+        padding: 1rem;
     }
-
+    
     .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 28px;
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
     }
+    
     .header h1 {
-      margin: 0;
-      font-size: 1.5rem;
-      font-weight: 800;
-      color: $gray-800;
+        font-size: 1.5rem;
     }
-    .back-link {
-      text-decoration: none;
-      color: $logo-red;
-      font-size: 13.5px;
-      font-weight: 600;
-      transition: color 0.2s;
+    
+    .search-add-row {
+        flex-direction: column;
     }
-    .back-link:hover { color: $logo-red-deep; }
-
-    /* Alerts */
-    .alert {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 16px;
-      border-radius: 12px;
-      margin-bottom: 16px;
-      font-size: 13.5px;
-      font-weight: 500;
-      animation: slideIn 0.3s ease;
-    }
-    .alert button {
-      background: none;
-      border: none;
-      font-size: 18px;
-      cursor: pointer;
-      padding: 0 4px;
-    }
-    .alert.error {
-      background: #fff5f5;
-      color: $error;
-      border: 1px solid rgba($error, 0.2);
-    }
-    .alert.success {
-      background: #f0fdf4;
-      color: $success;
-      border: 1px solid rgba($success, 0.2);
-    }
-
-    @keyframes slideIn {
-      from { opacity: 0; transform: translateY(-8px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Add row */
+    
     .add-row {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 18px;
+        flex-direction: column;
+        min-width: auto;
+        padding: 1rem;
     }
-    .add-row input {
-      flex: 1;
-      height: 46px;
-      padding: 0 16px;
-      border: 1.5px solid $gray-200;
-      border-radius: 12px;
-      font-size: 14px;
-      outline: none;
-      background: white;
-      transition: all 0.25s;
-    }
-    .add-row input:focus {
-      border-color: $logo-red-deep;
-      box-shadow: 0 0 0 3px rgba($logo-red-deep, 0.08);
-    }
-    .btn-add {
-      padding: 0 22px;
-      height: 46px;
-      background: linear-gradient(135deg, $logo-red-deep, $logo-red);
-      color: #fff;
-      border: none;
-      border-radius: 12px;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.25s;
-      box-shadow: 0 4px 12px rgba($logo-red, 0.2);
-    }
-    .btn-add:hover:not(:disabled) {
-      background: linear-gradient(135deg, $logo-red-mid, $logo-red-deep);
-      transform: translateY(-1px);
-      box-shadow: 0 6px 18px rgba($logo-red, 0.3);
-    }
-    .btn-add:disabled { opacity: 0.5; cursor: not-allowed; }
-
-    /* Search bar */
+    
     .search-bar {
-      margin-bottom: 22px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
+        min-width: auto;
+        padding: 1rem;
     }
-    .search-count {
-      font-size: 12.5px;
-      color: $gray-400;
-      white-space: nowrap;
-      font-weight: 500;
-    }
-
-    /* Highlight match */
-    :host ::ng-deep .highlight {
-      background: rgba($logo-red, 0.1);
-      color: $logo-red-deep;
-      font-weight: 700;
-      border-radius: 3px;
-      padding: 0 2px;
-    }
-
-    .search-result-row { border-left: 3px solid $logo-red; }
-
-    .center {
-      text-align: center;
-      color: $gray-400;
-      font-size: 14px;
-      padding: 24px 0;
-    }
-
-    /* List */
+    
     .list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+        grid-template-columns: 1fr;
+        gap: 1rem;
     }
+    
     .row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 14px 18px;
-      background: white;
-      border: 1px solid $gray-200;
-      border-radius: 12px;
-      transition: all 0.2s;
+        padding: 1.2rem;
     }
-    .row:hover {
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-      border-color: rgba($logo-red, 0.1);
+    
+    .actions {
+        flex-direction: column;
     }
-    .name { font-size: 15px; color: $gray-800; font-weight: 500; }
-    .edit-input {
-      flex: 1;
-      padding: 8px 12px;
-      border: 1.5px solid $gray-200;
-      border-radius: 8px;
-      font-size: 14px;
-      margin-right: 10px;
-      outline: none;
+    
+    .btn-edit, .btn-delete, .btn-save, .btn-cancel {
+        width: 100%;
     }
-    .edit-input:focus { border-color: $logo-red-deep; }
+    
+    .name {
+        font-size: 1.1rem;
+    }
+}
 
-    .actions { display: flex; gap: 6px; }
-    .actions button {
-      padding: 7px 14px;
-      border: none;
-      border-radius: 8px;
-      font-size: 12.5px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
+/* Tablet Responsive */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .list {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     }
-    .btn-edit {
-      background: rgba($logo-red, 0.08);
-      color: $logo-red;
+    
+    .add-row {
+        flex: 1.5;
     }
-    .btn-edit:hover { background: rgba($logo-red, 0.15); }
-    .btn-delete {
-      background: rgba($error, 0.08);
-      color: $error;
+    
+    .search-bar {
+        flex: 1;
     }
-    .btn-delete:hover { background: rgba($error, 0.15); }
-    .btn-save {
-      background: rgba($success, 0.08);
-      color: $success;
+}
+
+/* Desktop Large */
+@media (min-width: 1200px) {
+    .skills-page {
+        max-width: 1400px;
     }
-    .btn-save:hover { background: rgba($success, 0.15); }
-    .btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
-    .btn-cancel {
-      background: $gray-100;
-      color: $gray-600;
+    
+    .add-row {
+        flex: 2;
     }
-    .btn-cancel:hover { background: $gray-200; }
+    
+    .search-bar {
+        flex: 1;
+    }
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #8B0000;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #6d0000;
+}
+
+/* Smooth Transitions */
+* {
+    transition: all 0.2s ease-in-out;
+}
+
+/* Focus Visible for Accessibility */
+:focus-visible {
+    outline: 2px solid #8B0000;
+    outline-offset: 2px;
+}
+
+/* Card Animation */
+@keyframes cardAppear {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.row {
+    animation: cardAppear 0.3s ease backwards;
+}
+
+/* Staggered Animation for Cards */
+.row:nth-child(1) { animation-delay: 0.05s; }
+.row:nth-child(2) { animation-delay: 0.1s; }
+.row:nth-child(3) { animation-delay: 0.15s; }
+.row:nth-child(4) { animation-delay: 0.2s; }
+.row:nth-child(5) { animation-delay: 0.25s; }
+.row:nth-child(6) { animation-delay: 0.3s; }
+
+/* Search result specific styling */
+.search-result-row {
+    animation: cardAppear 0.3s ease backwards;
+}
+
+/* Print Styles */
+@media print {
+    .skills-page {
+        background: white;
+        padding: 0;
+    }
+    
+    .btn-add, .btn-edit, .btn-delete, .btn-save, .btn-cancel, .back-link {
+        display: none;
+    }
+    
+    .list {
+        display: block;
+    }
+    
+    .row {
+        break-inside: avoid;
+        page-break-inside: avoid;
+        margin-bottom: 1rem;
+        box-shadow: none;
+        border: 1px solid #ddd;
+    }
+    
+    .row::before {
+        display: none;
+    }
+}
   `]
 })
 export class SkillsComponent implements OnInit {

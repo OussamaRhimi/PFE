@@ -30,10 +30,10 @@ const TRANSLATIONS: Record<string, Record<Lang, string>> = {
 
   // ── Home Page ──
   'home.hero.poweredBy':      { fr: 'Propulsé par', en: 'Powered by' },
-  'home.hero.subtitle':       { fr: 'Transformez le recrutement avec l\'analyse de CV et le scoring basés sur l\'IA. Réduisez le temps de recrutement et améliorez la qualité de décision avec des données fiables et structurées.', en: 'Transform recruitment with AI-powered CV parsing and candidate scoring. Reduce hiring cycle time and improve decision quality with structured, reliable profile data.' },
+  'home.hero.subtitle':       { fr: 'Explorez nos offres, postulez en un instant et suivez l\'évolution de vos candidatures — parce que votre prochaine opportunité mérite toute votre attention.', en: 'Explore our job openings, apply in seconds, and track the progress of your applications — because your next opportunity deserves your full attention.' },
   'home.hero.cta.dashboard':  { fr: 'Tableau de bord RH', en: 'HR Dashboard' },
   'home.hero.cta.portal':     { fr: 'Portail Candidat', en: 'Candidate Portal' },
-  'home.hero.typedText':      { fr: 'Analyseur de CV et d\'Évaluation', en: 'CV Parser and Evaluation Platform' },
+  'home.hero.typedText':      { fr: 'Construisez votre avenir chez iovision', en: 'Build Your Future at iovision' },
 
   'home.stats.cvProcessed':   { fr: 'CV Traités', en: 'CVs Processed' },
   'home.stats.accuracy':      { fr: 'Précision d\'Analyse', en: 'Parsing Accuracy' },
@@ -139,6 +139,7 @@ const TRANSLATIONS: Record<string, Record<Lang, string>> = {
 
   // ── Skills ──
   'skills.title':             { fr: 'Gestion des compétences', en: 'Skills Management' },
+  'skills.subtitle':          { fr: 'Gérez vos compétences de manière efficace.', en: 'Manage your skills efficiently.' },
   'skills.backToDashboard':   { fr: '← Retour au tableau de bord', en: '← Back to Dashboard' },
   'skills.placeholder':       { fr: 'Nom de la compétence', en: 'Enter skill name' },
   'skills.add':               { fr: 'Ajouter',          en: 'Add' },
@@ -163,6 +164,7 @@ const TRANSLATIONS: Record<string, Record<Lang, string>> = {
 
   // ── Departments ──
   'dept.title':               { fr: 'Gestion des départements', en: 'Departments Management' },
+  'dept.subtitle':            { fr: 'Gérez vos départements de manière efficace.', en: 'Manage your departments efficiently.' },
   'dept.backToDashboard':     { fr: '← Retour au tableau de bord', en: '← Back to Dashboard' },
   'dept.searchPlaceholder':   { fr: 'Rechercher un département...', en: 'Search departments...' },
   'dept.placeholder':         { fr: 'Nom du nouveau département', en: 'New department name' },

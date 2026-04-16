@@ -376,7 +376,7 @@ function inc(counts: Record<string, number>, key: string, n = 1) {
         --radius: 14px;
         --radius-sm: 10px;
       }
-
+   
       .analytics-page {
         max-width: 1100px;
         margin: 0 auto;
