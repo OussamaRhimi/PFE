@@ -43,6 +43,8 @@ export interface TrackingApplication {
   createdAt: string;
   updatedAt: string;
   retentionUntil: string;
+  score: number;
+  qualityLabel: 'excellent' | 'good' | 'fair' | 'poor';
 }
 
 export interface VerifyTrackingCodeResponse {

@@ -98,10 +98,32 @@ type TrackStep = 'email' | 'code' | 'list';
         <div class="applications" *ngIf="applications.length > 0; else emptyState">
           <article class="application" *ngFor="let app of applications">
             <div class="application-row">
-              <h3>{{ app.jobTitle || i18n.t('track.unknownJob') }}</h3>
-              <span class="status-badge" [attr.data-status]="app.status">
-                {{ i18n.t('track.status_' + app.status) }}
-              </span>
+              <div class="application-header">
+                <h3>{{ app.jobTitle || i18n.t('track.unknownJob') }}</h3>
+                <span class="status-badge" [attr.data-status]="app.status">
+                  {{ i18n.t('track.status_' + app.status) }}
+                </span>
+              </div>
+              
+              <!-- AI Score Display -->
+              <div class="score-display" *ngIf="app.status === 'processed'">
+                <svg class="score-circle" viewBox="0 0 100 100">
+                  <circle class="score-bg" cx="50" cy="50" r="45"/>
+                  <circle 
+                    class="score-progress" 
+                    cx="50" cy="50" r="45"
+                    [attr.data-quality]="app.qualityLabel"
+                    [style.strokeDasharray]="'283.6 283.6'"
+                    [style.strokeDashoffset]="283.6 - (app.score / 100) * 283.6"
+                  />
+                </svg>
+                <div class="score-content">
+                  <div class="score-value">{{ app.score }}</div>
+                  <div class="score-label" [attr.data-quality]="app.qualityLabel">
+                    {{ app.qualityLabel | uppercase }}
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div class="meta">
@@ -401,6 +423,97 @@ type TrackStep = 'email' | 'code' | 'list';
     .status-badge[data-status="rejected"]    { background: #fef2f2; color: $error; }
     .status-badge[data-status="error"]       { background: #fef2f2; color: $error; }
 
+    /* ─ Score Display ─ */
+    .application-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+    }
+
+    .score-display {
+      position: relative;
+      width: 90px;
+      height: 90px;
+      flex-shrink: 0;
+    }
+
+    .score-circle {
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+    }
+
+    .score-bg {
+      fill: none;
+      stroke: $gray-100;
+      stroke-width: 4;
+    }
+
+    .score-progress {
+      fill: none;
+      stroke-width: 4;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.6s ease;
+    }
+
+    .score-progress[data-quality="excellent"] {
+      stroke: #10b981;
+    }
+
+    .score-progress[data-quality="good"] {
+      stroke: #3b82f6;
+    }
+
+    .score-progress[data-quality="fair"] {
+      stroke: #f59e0b;
+    }
+
+    .score-progress[data-quality="poor"] {
+      stroke: #ef4444;
+    }
+
+    .score-content {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      pointer-events: none;
+    }
+
+    .score-value {
+      font-size: 22px;
+      font-weight: 800;
+      color: $gray-800;
+      line-height: 1;
+    }
+
+    .score-label {
+      font-size: 10px;
+      font-weight: 700;
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .score-label[data-quality="excellent"] {
+      color: #10b981;
+    }
+
+    .score-label[data-quality="good"] {
+      color: #3b82f6;
+    }
+
+    .score-label[data-quality="fair"] {
+      color: #f59e0b;
+    }
+
+    .score-label[data-quality="poor"] {
+      color: #ef4444;
+    }
+
     .empty {
       margin-top: 16px;
       border: 1px dashed $gray-300;
@@ -426,6 +539,28 @@ type TrackStep = 'email' | 'code' | 'list';
       .card-head {
         flex-direction: column;
         align-items: flex-start;
+      }
+
+      .application-row {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .application-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+
+      .score-display {
+        width: 80px;
+        height: 80px;
+        align-self: flex-end;
+        margin-top: 10px;
+      }
+
+      .score-value {
+        font-size: 18px;
       }
     }
   `],

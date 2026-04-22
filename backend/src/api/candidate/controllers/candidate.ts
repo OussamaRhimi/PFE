@@ -653,15 +653,26 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
       )
     );
 
-    const applications = candidates.map((candidate) => ({
-      documentId: candidate.documentId,
-      publicToken: candidate.publicToken,
-      status: candidate.status,
-      jobTitle: (candidate as any).job_posting?.title || null,
-      createdAt: candidate.createdAt,
-      updatedAt: candidate.updatedAt,
-      retentionUntil: (candidate as any).retentionUntil,
-    }));
+    const applications = candidates.map((candidate) => {
+      const score = candidate.score || 0;
+      let qualityLabel: 'excellent' | 'good' | 'fair' | 'poor' = 'poor';
+      if (score >= 80) qualityLabel = 'excellent';
+      else if (score >= 60) qualityLabel = 'good';
+      else if (score >= 40) qualityLabel = 'fair';
+      else qualityLabel = 'poor';
+
+      return {
+        documentId: candidate.documentId,
+        publicToken: candidate.publicToken,
+        status: candidate.status,
+        jobTitle: (candidate as any).job_posting?.title || null,
+        createdAt: candidate.createdAt,
+        updatedAt: candidate.updatedAt,
+        retentionUntil: (candidate as any).retentionUntil,
+        score: Math.round(score),
+        qualityLabel,
+      };
+    });
 
     return ctx.send({
       data: {
