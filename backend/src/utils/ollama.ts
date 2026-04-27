@@ -53,18 +53,63 @@ If a CV has both "Skills" and "Technical Skills" sections, merge all items into 
 Do NOT duplicate items. Extract unique skills only.
 
 CRITICAL CLASSIFICATION RULES:
+
+IMPORTANT - DISTINGUISHING WORK EXPERIENCE FROM EDUCATION:
+- "experience" array: Jobs, positions, roles, internships, freelance work at COMPANIES/ORGANIZATIONS
+  - Format clue: "[Job Title] at [Company Name] ([Start Date] – [End Date])"
+  - Example entry: "Senior Developer at Google (2020-2023)" → goes to experience
+  - Has: company name, job title, employment dates
+  - Usually appears under "Work Experience" / "Experience" / "Career" / "Employment" sections
+  - EXTRACT HIGHLIGHTS: Each work position may have bullet points below it with accomplishments/achievements
+    These bullet points become the "highlights" array for that experience entry
+    Example: "- Built CI/CD pipelines using GitHub Actions" becomes a highlight
+  
+- "education" array: ONLY Degrees, diplomas, programs, certifications from SCHOOLS/UNIVERSITIES
+  - Format clue: "[Degree Name] from [School/University] ([Start Date] – [End Date])"
+  - Example entry: "Bachelor of Science in Computer Science from MIT (2018-2022)" → goes to education
+  - Has: school/university name, degree name, graduation dates
+  - Usually appears under "Education" / "Academic Background" / "Qualifications" sections
+  - IMPORTANT: Job titles found in education section are WRONG - they go to "experience" array if they're actual jobs
+
+KEY DISTINCTION CLUES:
+- If you see company names (Google, Apple, Microsoft, StartupXYZ, etc.) → it's work experience
+- If you see university/school names (Harvard, MIT, UC Berkeley, etc.) → it's education
+- Job titles like "Developer", "Engineer", "Manager" with company names → work experience
+- Degree names like "Bachelor", "Master", "PhD", "Certification" with school names → education
+- If a company name appears with dates, classify as work experience regardless of what section it's under
+
+EXTRACTING WORK EXPERIENCE HIGHLIGHTS:
+- Look for bullet points (-, •, *, etc.) that appear under a job position
+- These bullet points describe accomplishments, responsibilities, or achievements
+- Extract EACH bullet point as a separate string in the "highlights" array
+- Remove the bullet marker (-, •, *) but keep the text
+- Examples of highlights:
+  • "Built CI/CD pipelines using GitHub Actions"
+  • "Managed Kubernetes clusters for production workloads"
+  • "Implemented monitoring using Prometheus and Grafana"
+  • "Led cross-functional team of 5 developers"
+- Highlights should be complete, meaningful sentences/phrases that describe what was accomplished
+- If no highlights are found for a position, use empty array: "highlights": []
+- IMPORTANT: Extract highlights into BOTH the "highlights" array AND the "competencies" array (see below)
+
 - "skills" array: ONLY short technology/tool names (e.g. "React", "Node.js", "Docker", "Python", "AWS").
   - This includes items from: "Skills", "Technical Skills", "Core Skills", "Technologies", "Technical Expertise", 
     "Tools & Technologies", "Programming Languages", "Technical Stack", "Technical Knowledge", "Specializations"
   - If a skills section header appears (ANY variation), extract all technical items there as "skills"
   - When multiple skill-type sections exist, combine them into one "skills" array (avoid duplicates)
+  - NEVER include accomplishments/capabilities in "skills" array
   
-- "competencies" array: accomplishment descriptions or capability statements that describe WHAT the person can DO
-  - e.g. "Built scalable microservices", "Designed user interfaces", "Led cross-functional teams"
-  - These are sentences/phrases describing capabilities, NOT tool names
-  - Only use "competencies" if there's an explicit "Competencies" section that contains descriptions, NOT tool lists
+- "competencies" array: accomplishment descriptions and capability statements that describe WHAT the person can DO
+  - These are NOT tool names - they are CAPABILITIES and ACCOMPLISHMENTS
+  - Examples: "Built scalable microservices", "Designed user interfaces", "Led cross-functional teams", "CI/CD automation"
+  - SOURCE 1 - From work experience: Extract ALL bullet points (highlights) from job positions as competencies
+    • "Built CI/CD pipelines using GitHub Actions" → goes to competencies
+    • "Managed Kubernetes clusters for production workloads" → goes to competencies
+    • "Implemented monitoring using Prometheus and Grafana" → goes to competencies
+  - SOURCE 2 - From explicit sections: If there's a "Competencies" or "Core Competencies" section, extract items from there
+  - IMPORTANT: Competencies are BOTH in the job highlights AND in a separate competencies array
+  - DO NOT include tool names (React, Docker, etc.) in competencies - those go to "skills"
   
-- "education" is for degrees, diplomas, academic programs
 - "certifications" is for professional certifications, online courses, bootcamps
 - "projects" is for personal/academic projects
 
@@ -212,7 +257,11 @@ EXAMPLE 3 OUTPUT (demonstrating YYYY-YYYY date parsing):
   },
   "summary": "DevOps engineer focused on CI/CD pipelines, cloud infrastructure and automation.",
   "skills": ["Docker", "Kubernetes", "AWS", "Terraform", "Linux", "GitHub Actions", "Prometheus", "Grafana"],
-  "competencies": [],
+  "competencies": [
+    "Built CI/CD pipelines using GitHub Actions",
+    "Managed Kubernetes clusters for production workloads",
+    "Implemented monitoring using Prometheus and Grafana"
+  ],
   "languages": [],
   "qualities": [],
   "interests": [],
@@ -299,7 +348,72 @@ EXAMPLE 4 OUTPUT (All skill sections merged into single "skills" array - no dupl
   }],
   "certifications": [],
   "projects": []
-}`;
+}
+
+EXAMPLE 5 INPUT (Job title + Company name = WORK EXPERIENCE, not education. Extract bullet points as highlights):
+"Sarah Mitchell
+email: sarah.mitchell@email.com
+phone: +1 (555) 987-6543
+
+EXPERIENCE
+Senior Software Engineer
+Acme Tech Solutions
+2019–2023
+- Architected and deployed microservices for 10+ internal tools
+- Led a team of 4 junior developers in feature development
+- Reduced API response time by 40% through optimization
+
+EDUCATION
+Bachelor of Science in Software Engineering
+State University
+2015–2019"
+
+EXAMPLE 5 OUTPUT (Distinguishing company jobs from school degrees, extracting experience highlights):
+{
+  "contact": {
+    "fullName": "Sarah Mitchell",
+    "email": "sarah.mitchell@email.com",
+    "phone": "+1 (555) 987-6543",
+    "location": null,
+    "linkedin": null,
+    "portfolio": null,
+    "links": []
+  },
+  "summary": null,
+  "skills": [],
+  "competencies": [
+    "Architected and deployed microservices for 10+ internal tools",
+    "Led a team of 4 junior developers in feature development",
+    "Reduced API response time by 40% through optimization"
+  ],
+  "languages": [],
+  "qualities": [],
+  "interests": [],
+  "experience": [{
+    "company": "Acme Tech Solutions",
+    "title": "Senior Software Engineer",
+    "startDate": "2019",
+    "endDate": "2023",
+    "highlights": [
+      "Architected and deployed microservices for 10+ internal tools",
+      "Led a team of 4 junior developers in feature development",
+      "Reduced API response time by 40% through optimization"
+    ]
+  }],
+  "education": [{
+    "school": "State University",
+    "degree": "Bachelor of Science in Software Engineering",
+    "startDate": "2015",
+    "endDate": "2019"
+  }],
+  "certifications": [],
+  "projects": []
+}
+
+CRITICAL: "Senior Software Engineer" + "Acme Tech Solutions" = WORK EXPERIENCE (not education)
+"Bachelor of Science in Software Engineering" + "State University" = EDUCATION (not experience)
+Bullet points under the job position = HIGHLIGHTS (extracted as separate array items AND in competencies)
+Job accomplishments = COMPETENCIES (general capability/achievement statements)
 
 /**
  * Send a chat message to Ollama and get response
@@ -407,6 +521,46 @@ export async function parseResumeWithOllama(resumeText: string): Promise<Extract
   }
 
   // Ensure required arrays exist with defaults
+  let experience = Array.isArray(parsed.experience) ? parsed.experience : [];
+  let education = Array.isArray(parsed.education) ? parsed.education : [];
+
+  // POST-PROCESSING FIX: Move misclassified work experience entries from education to experience
+  // This handles cases where the LLM incorrectly classifies job positions as education
+  const universityKeywords = /university|college|institute|school|academy|technical|polytechnic|faculty/i;
+  const companyKeywords = /inc\.|llc|corp\.|ltd\.|company|corporation|solutions|consulting|services|cloud|systems|tech/i;
+  const jobTitles = /engineer|developer|manager|specialist|coordinator|analyst|architect|lead|senior|junior|intern|associate|director|officer|executive|consultant|designer|administrator|technician/i;
+
+  const mislassifiedEntries = education.filter(edu => {
+    // Check if this looks like a work experience entry
+    const schoolName = (edu.school || '').toLowerCase();
+    const degreeName = (edu.degree || '').toLowerCase();
+    
+    // If school name looks like a company (has company keywords, no university keywords)
+    const looksLikeCompany = companyKeywords.test(schoolName) && !universityKeywords.test(schoolName);
+    
+    // If degree name looks like a job title (has job title keywords, no degree keywords)
+    const looksLikeJobTitle = jobTitles.test(degreeName) && !/(bachelor|master|phd|diploma|degree|certificate|program|course|certification)/i.test(degreeName);
+    
+    return looksLikeCompany || looksLikeJobTitle;
+  });
+
+  // Move misclassified entries to experience
+  if (mislassifiedEntries.length > 0) {
+    mislassifiedEntries.forEach(entry => {
+      // Convert education entry to experience entry
+      experience.push({
+        company: entry.school || '',  // school name becomes company
+        title: entry.degree || '',     // degree becomes job title
+        startDate: entry.startDate || '',
+        endDate: entry.endDate || '',
+        highlights: [],
+      });
+    });
+    
+    // Remove misclassified entries from education
+    education = education.filter(edu => !mislassifiedEntries.includes(edu));
+  }
+
   return {
     contact: parsed.contact || {},
     summary: parsed.summary || null,
@@ -415,8 +569,8 @@ export async function parseResumeWithOllama(resumeText: string): Promise<Extract
     languages: Array.isArray(parsed.languages) ? parsed.languages : [],
     qualities: Array.isArray(parsed.qualities) ? parsed.qualities : [],
     interests: Array.isArray(parsed.interests) ? parsed.interests : [],
-    experience: Array.isArray(parsed.experience) ? parsed.experience : [],
-    education: Array.isArray(parsed.education) ? parsed.education : [],
+    experience,
+    education,
     certifications: Array.isArray(parsed.certifications) ? parsed.certifications : [],
     projects: Array.isArray(parsed.projects) ? parsed.projects : [],
   };
