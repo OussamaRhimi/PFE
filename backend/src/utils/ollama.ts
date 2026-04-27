@@ -37,21 +37,36 @@ For all dates (startDate, endDate), extract in this priority order:
 ALWAYS extract BOTH startDate and endDate separately - never combine them as one string.
 
 SECTION HEADER RECOGNITION:
-Recognize these header variations as work experience sections (treat them identically):
-- "Work Experience" / "Experience" / "Professional Experience" / "Career" / "Employment"
+Recognize these header variations as work experience sections (treat them identically - merge if multiple):
+- "Work Experience" / "Experience" / "Professional Experience" / "Career" / "Employment" / "Work History" / "Professional Background"
 
-Recognize these as education sections:
-- "Education" / "Academic Background" / "Qualifications" / "Studies"
+Recognize these as education sections (treat them identically - merge if multiple):
+- "Education" / "Academic Background" / "Qualifications" / "Studies" / "Academic Qualifications" / "Schooling"
 
-Recognize these as skills sections:
-- "Skills" / "Technical Skills" / "Competencies" / "Technologies" / "Technical Expertise"
+Recognize these as skills sections (treat them IDENTICALLY - merge into single "skills" array if multiple appear):
+- "Skills" / "Technical Skills" / "Core Skills" / "Competencies" / "Technologies" / "Technical Expertise"
+- "Programming Languages" / "Tools & Technologies" / "Technical Stack" / "Expertise" / "Core Competencies"
+- "Technical Knowledge" / "Specializations" / "Capabilities" / "Technical Proficiencies"
+
+IMPORTANT: "Skills" section headers and "Technical Skills" section headers are the SAME thing.
+If a CV has both "Skills" and "Technical Skills" sections, merge all items into the single "skills" array.
+Do NOT duplicate items. Extract unique skills only.
 
 CRITICAL CLASSIFICATION RULES:
-- "skills" is ONLY for short technology/tool names (e.g. "React", "Node.js", "Docker").
-- "competencies" is for accomplishment descriptions or capability statements.
-- "education" is for degrees, diplomas, academic programs.
-- "certifications" is for professional certifications, online courses, bootcamps.
-- "projects" is for personal/academic projects.
+- "skills" array: ONLY short technology/tool names (e.g. "React", "Node.js", "Docker", "Python", "AWS").
+  - This includes items from: "Skills", "Technical Skills", "Core Skills", "Technologies", "Technical Expertise", 
+    "Tools & Technologies", "Programming Languages", "Technical Stack", "Technical Knowledge", "Specializations"
+  - If a skills section header appears (ANY variation), extract all technical items there as "skills"
+  - When multiple skill-type sections exist, combine them into one "skills" array (avoid duplicates)
+  
+- "competencies" array: accomplishment descriptions or capability statements that describe WHAT the person can DO
+  - e.g. "Built scalable microservices", "Designed user interfaces", "Led cross-functional teams"
+  - These are sentences/phrases describing capabilities, NOT tool names
+  - Only use "competencies" if there's an explicit "Competencies" section that contains descriptions, NOT tool lists
+  
+- "education" is for degrees, diplomas, academic programs
+- "certifications" is for professional certifications, online courses, bootcamps
+- "projects" is for personal/academic projects
 
 Output JSON schema:
 {
@@ -224,6 +239,66 @@ EXAMPLE 3 OUTPUT (demonstrating YYYY-YYYY date parsing):
     "description": "Reusable Kubernetes deployment configuration for microservices.",
     "links": ["https://github.com/karimops/k8s-template"]
   }]
+}
+
+EXAMPLE 4 INPUT (Multiple skills sections with different headers - should merge into one):
+"Alex Johnson
+Full Stack Developer
+alex@example.com
++1 (555) 123-4567
+San Francisco, CA
+
+Professional Summary
+Experienced developer proficient in modern web technologies and cloud platforms.
+
+Skills
+- React
+- Vue.js
+- TypeScript
+- HTML/CSS
+
+Technical Skills
+- Node.js
+- Express
+- MongoDB
+- PostgreSQL
+
+Core Competencies
+- RESTful API Design
+- Database Optimization
+- Responsive Design
+- Agile Development
+
+Education
+Bachelor of Science in Computer Science
+University of California (2020–2024)"
+
+EXAMPLE 4 OUTPUT (All skill sections merged into single "skills" array - no duplicates):
+{
+  "contact": {
+    "fullName": "Alex Johnson",
+    "email": "alex@example.com",
+    "phone": "+1 (555) 123-4567",
+    "location": "San Francisco, CA",
+    "linkedin": null,
+    "portfolio": null,
+    "links": []
+  },
+  "summary": "Experienced developer proficient in modern web technologies and cloud platforms.",
+  "skills": ["React", "Vue.js", "TypeScript", "HTML/CSS", "Node.js", "Express", "MongoDB", "PostgreSQL"],
+  "competencies": ["RESTful API Design", "Database Optimization", "Responsive Design", "Agile Development"],
+  "languages": [],
+  "qualities": [],
+  "interests": [],
+  "experience": [],
+  "education": [{
+    "school": "University of California",
+    "degree": "Bachelor of Science in Computer Science",
+    "startDate": "2020",
+    "endDate": "2024"
+  }],
+  "certifications": [],
+  "projects": []
 }`;
 
 /**
