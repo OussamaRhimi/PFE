@@ -414,6 +414,7 @@ CRITICAL: "Senior Software Engineer" + "Acme Tech Solutions" = WORK EXPERIENCE (
 "Bachelor of Science in Software Engineering" + "State University" = EDUCATION (not experience)
 Bullet points under the job position = HIGHLIGHTS (extracted as separate array items AND in competencies)
 Job accomplishments = COMPETENCIES (general capability/achievement statements)
+`;
 
 /**
  * Send a chat message to Ollama and get response
