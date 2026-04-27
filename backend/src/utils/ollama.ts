@@ -527,22 +527,28 @@ export async function parseResumeWithOllama(resumeText: string): Promise<Extract
 
   // POST-PROCESSING FIX: Move misclassified work experience entries from education to experience
   // This handles cases where the LLM incorrectly classifies job positions as education
-  const universityKeywords = /university|college|institute|school|academy|technical|polytechnic|faculty/i;
-  const companyKeywords = /inc\.|llc|corp\.|ltd\.|company|corporation|solutions|consulting|services|cloud|systems|tech/i;
-  const jobTitles = /engineer|developer|manager|specialist|coordinator|analyst|architect|lead|senior|junior|intern|associate|director|officer|executive|consultant|designer|administrator|technician/i;
+  const universityKeywords = /university|college|institute|school|academy|technical|polytechnic|faculty|estudios|escuela|universidad/i;
+  const companyKeywords = /inc\.|llc|corp\.|ltd\.|company|corporation|solutions|consulting|services|cloud|systems|tech|africa|north|south|east|west|center|group|network|infrastructure|platform|hub|labs|consulting|digital|innovation|ventures|holdings|media|international|global/i;
+  const jobTitles = /engineer|developer|manager|specialist|coordinator|analyst|architect|lead|senior|junior|intern|associate|director|officer|executive|consultant|designer|administrator|technician|devops|sre|sys|admin|ops/i;
+  const degreeKeywords = /bachelor|master|phd|diploma|degree|certificate|program|course|certification|associate|bs|ms|ba|ma/i;
 
   const mislassifiedEntries = education.filter(edu => {
     // Check if this looks like a work experience entry
-    const schoolName = (edu.school || '').toLowerCase();
-    const degreeName = (edu.degree || '').toLowerCase();
+    const schoolName = (edu.school || '').toLowerCase().trim();
+    const degreeName = (edu.degree || '').toLowerCase().trim();
     
     // If school name looks like a company (has company keywords, no university keywords)
     const looksLikeCompany = companyKeywords.test(schoolName) && !universityKeywords.test(schoolName);
     
     // If degree name looks like a job title (has job title keywords, no degree keywords)
-    const looksLikeJobTitle = jobTitles.test(degreeName) && !/(bachelor|master|phd|diploma|degree|certificate|program|course|certification)/i.test(degreeName);
+    const looksLikeJobTitle = jobTitles.test(degreeName) && !degreeKeywords.test(degreeName);
     
-    return looksLikeCompany || looksLikeJobTitle;
+    // Additional heuristic: if dates exist and no degree keyword found, likely work experience
+    const hasDateRange = edu.startDate && edu.endDate;
+    const noDegreeKeyword = !degreeKeywords.test(degreeName);
+    const isPlausibleWorkEntry = hasDateRange && noDegreeKeyword && (looksLikeJobTitle || looksLikeCompany);
+    
+    return looksLikeCompany || looksLikeJobTitle || isPlausibleWorkEntry;
   });
 
   // Move misclassified entries to experience
