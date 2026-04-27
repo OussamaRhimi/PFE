@@ -26,8 +26,25 @@ export type OllamaChatOptions = {
 export const PARSER_SYSTEM_PROMPT = `Extract contact info, skills, and work history from this CV into a clean JSON structure.
 Return ONLY valid JSON (no markdown, no code fences).
 
-IMPORTANT: For all dates (startDate, endDate), use the format "Month YYYY" (e.g. "June 2025").
-If only a year is given, use "YYYY". If the role is current/ongoing, set endDate to "Present".
+IMPORTANT - DATE FORMATS:
+For all dates (startDate, endDate), extract in this priority order:
+1. If "Month YYYY" format exists (e.g. "June 2025"), use it exactly: "June 2025"
+2. If "Month YYYY – Month YYYY" format (e.g. "June 2022 – August 2024"), parse both dates: startDate="June 2022", endDate="August 2024"
+3. If "YYYY–YYYY" format (e.g. "2022–2024"), parse both years: startDate="2022", endDate="2024"
+4. If "MM/YYYY" format (e.g. "06/2025"), convert to "June 2025"
+5. If only a year is given (e.g. "2022"), use "2022" as is
+6. If the role is current/ongoing (e.g. "Present", "Current", "Ongoing"), set endDate to "Present"
+ALWAYS extract BOTH startDate and endDate separately - never combine them as one string.
+
+SECTION HEADER RECOGNITION:
+Recognize these header variations as work experience sections (treat them identically):
+- "Work Experience" / "Experience" / "Professional Experience" / "Career" / "Employment"
+
+Recognize these as education sections:
+- "Education" / "Academic Background" / "Qualifications" / "Studies"
+
+Recognize these as skills sections:
+- "Skills" / "Technical Skills" / "Competencies" / "Technologies" / "Technical Expertise"
 
 CRITICAL CLASSIFICATION RULES:
 - "skills" is ONLY for short technology/tool names (e.g. "React", "Node.js", "Docker").
@@ -135,6 +152,78 @@ EXAMPLE 2 OUTPUT:
   "education": [],
   "certifications": [],
   "projects": []
+}
+
+EXAMPLE 3 INPUT (YYYY-YYYY dates and section header variation):
+"Karim Haddad
+DevOps Engineer
+Email: karim.haddad.ops@gmail.com
+Phone: +216 54 778 902
+Location: Sousse, Tunisia
+LinkedIn: https://linkedin.com/in/karim-haddad-devops
+Portfolio: https://karimops.dev
+Professional Summary
+DevOps engineer focused on CI/CD pipelines, cloud infrastructure and automation.
+Technical Skills
+- Docker
+- Kubernetes
+- AWS
+- Terraform
+- Linux
+- GitHub Actions
+- Prometheus
+- Grafana
+Work Experience
+DevOps Engineer — North Africa Cloud Services (2022–2024)
+- Built CI/CD pipelines using GitHub Actions
+- Managed Kubernetes clusters for production workloads
+- Implemented monitoring using Prometheus and Grafana
+Education
+Master in Computer Networks – University of Sousse (2019–2022)
+Projects
+Kubernetes Deployment Template — https://github.com/karimops/k8s-template
+- Reusable Kubernetes deployment configuration for microservices."
+
+EXAMPLE 3 OUTPUT (demonstrating YYYY-YYYY date parsing):
+{
+  "contact": {
+    "fullName": "Karim Haddad",
+    "email": "karim.haddad.ops@gmail.com",
+    "phone": "+216 54 778 902",
+    "location": "Sousse, Tunisia",
+    "linkedin": "https://linkedin.com/in/karim-haddad-devops",
+    "portfolio": "https://karimops.dev",
+    "links": ["https://linkedin.com/in/karim-haddad-devops", "https://karimops.dev"]
+  },
+  "summary": "DevOps engineer focused on CI/CD pipelines, cloud infrastructure and automation.",
+  "skills": ["Docker", "Kubernetes", "AWS", "Terraform", "Linux", "GitHub Actions", "Prometheus", "Grafana"],
+  "competencies": [],
+  "languages": [],
+  "qualities": [],
+  "interests": [],
+  "experience": [{
+    "company": "North Africa Cloud Services",
+    "title": "DevOps Engineer",
+    "startDate": "2022",
+    "endDate": "2024",
+    "highlights": [
+      "Built CI/CD pipelines using GitHub Actions",
+      "Managed Kubernetes clusters for production workloads",
+      "Implemented monitoring using Prometheus and Grafana"
+    ]
+  }],
+  "education": [{
+    "school": "University of Sousse",
+    "degree": "Master in Computer Networks",
+    "startDate": "2019",
+    "endDate": "2022"
+  }],
+  "certifications": [],
+  "projects": [{
+    "name": "Kubernetes Deployment Template",
+    "description": "Reusable Kubernetes deployment configuration for microservices.",
+    "links": ["https://github.com/karimops/k8s-template"]
+  }]
 }`;
 
 /**

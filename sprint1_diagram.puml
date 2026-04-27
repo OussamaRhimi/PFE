@@ -1,0 +1,95 @@
+@startuml "IOhire - Sprint 1: Fondations RH + CRUD de base"
+!define DOMAIN_COLOR #E1F5FF
+!define VALUE_OBJECT_COLOR #F3E5F5
+!define ENUM_COLOR #E8F5E9
+!define ACTOR_COLOR #FFEBEE
+
+skinparam backgroundColor #FAFAFA
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam linetype ortho
+skinparam class {
+    BackgroundColor DOMAIN_COLOR
+    BorderColor #0277BD
+    ArrowColor #01579B
+}
+
+left to right direction
+
+'======================
+' Enums
+'======================
+enum JobPostingStatus <<ENUM>> #E8F5E9 {
+    DRAFT
+    OPEN
+    CLOSED
+}
+
+'======================
+' Actors
+'======================
+class HRUser <<ACTOR>> #FFEBEE {
+    -email: String
+    -password: String
+    -role: String
+    +createSkill(name: String): Skill
+    +updateSkill(id: Integer, name: String): Skill
+    +deleteSkill(id: Integer): void
+    +createDepartment(name: String): Department
+    +updateDepartment(id: Integer, name: String): Department
+    +deleteDepartment(id: Integer): void
+    +createJobPosting(data: Object): JobPosting
+    +updateJobPosting(id: Integer, data: Object): JobPosting
+    +deleteJobPosting(id: Integer): void
+}
+
+'======================
+' Domain Entities
+'======================
+class Skill #E1F5FF {
+    -id: Integer
+    -name: String
+    +getName(): String
+    +validate(): Boolean
+}
+
+class Department #E1F5FF {
+    -id: Integer
+    -name: String
+    +getName(): String
+    +validate(): Boolean
+}
+
+class JobPosting #E1F5FF {
+    -id: Integer
+    -title: String
+    -description: String
+    -status: JobPostingStatus
+    +publish(): void
+    +close(): void
+    +updateRequirements(requirements: Requirements): void
+    +getOpenJobs(): JobPosting[*]
+}
+
+'======================
+' Value Objects
+'======================
+class Requirements <<VALUE_OBJECT>> #F3E5F5 {
+    -skillsRequired: String[*]
+    -skillsNiceToHave: String[*]
+    -departments: String[*]
+    -minYearsExperience: Integer
+    -notes: String
+}
+
+'======================
+' Relationships
+'======================
+JobPosting "1" *-- "1" Requirements : contains
+Requirements "0..*" --> "0..*" Skill : references
+Requirements "0..*" --> "0..*" Department : references
+HRUser "1" --> "0..*" JobPosting : manages
+HRUser "1" --> "0..*" Skill : manages_catalog
+HRUser "1" --> "0..*" Department : manages_catalog
+
+@enduml
