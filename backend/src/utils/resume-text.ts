@@ -60,8 +60,9 @@ function normalizeExtractedText(raw: string): string {
     /\b(Email|E-mail|Phone|Tel|Telephone|Mobile|Location|Address|Adresse|LinkedIn|Linkedin|GitHub|Github|Portfolio|Website|Web)\b\s*:?(?=\S)/g,
     '$1: '
   );
+  // Normalize section headers - includes ALL variations for work experience, education, skills, certifications, projects
   text = text.replace(
-    /\b(Professional Summary|Technical Skills|Work Experience|Education|Projects|Languages|Skills)\b/gi,
+    /\b(Professional Summary|Summary|Profile|Objective|Professional Objective|Career Objective|Technical Skills|Skills|Core Skills|Competencies|Technologies|Technical Expertise|Programming Languages|Tools & Technologies|Technical Stack|Expertise|Core Competencies|Technical Knowledge|Specializations|Capabilities|Technical Proficiencies|Work Experience|Experience|Professional Experience|Career|Employment|Work History|Professional Background|Education|Academic Background|Qualifications|Studies|Academic Qualifications|Schooling|Certifications|Certification|Professional Certifications|Courses|Projects|Academic Projects|Personal Projects|Portfolio|Languages|Languages & Frameworks|Interests|Hobbies|Awards|Publications|Volunteering|Volunteering Experience|Volunteer Work|References|References Available|Achievements|Key Achievements)\b/gi,
     '\n$1\n'
   );
   text = text.replace(/[ \t]+\n/g, '\n');
