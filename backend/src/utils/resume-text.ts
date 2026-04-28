@@ -71,39 +71,118 @@ function normalizeExtractedText(raw: string): string {
   return text.trim();
 }
 
-async function extractPdfText(buffer: Buffer): Promise<string> {
+/**
+ * Validate extracted text to detect extraction failures
+ */
+function validateExtractedText(text: string, filename: string): { valid: boolean; issues: string[] } {
+  const issues: string[] = [];
+
+  // Check for minimum length
+  if (text.length < 50) {
+    issues.push(`Text too short (${text.length} chars) - possible extraction failure`);
+  }
+
+  // Check for dates (should have at least one year)
+  if (!/\d{4}/.test(text)) {
+    issues.push('No date patterns found - possible extraction failure');
+  }
+
+  // Check for job/company keywords
+  if (!/\b(developer|engineer|company|intern|stagiaire|architect|analyst|manager|role|position|at|experience)\b/i.test(text)) {
+    issues.push('No job/company keywords found - possible extraction failure');
+  }
+
+  // Check for common CV content
+  if (!/\b(email|phone|linkedin|education|skills|experience|project)\b/i.test(text)) {
+    issues.push('Missing common CV sections - possible extraction failure');
+  }
+
+  return {
+    valid: issues.length === 0,
+    issues,
+  };
+}
+
+async function extractPdfText(buffer: Buffer, filename?: string): Promise<string> {
+  let extractedText = '';
+  let extractionMethod = '';
+
   try {
     const pdfParse = (await import('pdf-parse')).default;
-    const parsed = await pdfParse(buffer);
-    return parsed.text;
-  } catch (error) {
-    // Fallback to pdfjs for PDFs with malformed xref tables.
-    try {
-      const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
-      const loadingTask = pdfjs.getDocument({
-        data: new Uint8Array(buffer),
-        disableFontFace: true,
-        useSystemFonts: true,
-        stopAtErrors: false,
-        disableRange: true,
-        disableStream: true,
-      } as any);
-      const doc = await loadingTask.promise;
-      let text = '';
-      for (let i = 1; i <= doc.numPages; i += 1) {
-        const page = await doc.getPage(i);
-        const content = await page.getTextContent();
-        const pageText = (content.items as any[])
-          .map((item) => (typeof item?.str === 'string' ? item.str : ''))
-          .filter((str) => str)
-          .join(' ');
-        text += `${pageText}\n`;
-      }
-      return text;
-    } catch {
-      throw error;
+    
+    // Configure pdf-parse with options for better decompression
+    const parsed = await pdfParse(buffer, {
+      max: 0, // No page limit
+      version: 'v2.0.550', // Use stable version
+    } as any);
+    
+    extractedText = parsed.text;
+    extractionMethod = 'pdf-parse';
+
+    // Log extraction results for debugging (CV3 diagnosis)
+    const validation = validateExtractedText(extractedText, filename || 'unknown');
+    console.log(`[PDF EXTRACT] Method: ${extractionMethod}`);
+    console.log(`[PDF EXTRACT] Length: ${extractedText.length} chars`);
+    console.log(`[PDF EXTRACT] Valid: ${validation.valid}`);
+    if (validation.issues.length > 0) {
+      console.log(`[PDF EXTRACT] Issues: ${validation.issues.join('; ')}`);
     }
+    console.log(`[PDF EXTRACT] Has 'devops': ${/devops/i.test(extractedText)}`);
+    console.log(`[PDF EXTRACT] Has 'experience': ${/experience/i.test(extractedText)}`);
+    console.log(`[PDF EXTRACT] First 300 chars: ${extractedText.substring(0, 300).replace(/\n/g, ' ')}`);
+
+    if (extractedText && extractedText.length > 50) {
+      return extractedText;
+    }
+  } catch (error) {
+    console.warn(`[PDF EXTRACT] pdf-parse failed: ${error instanceof Error ? error.message : String(error)}`);
+    // Continue to fallback
   }
+
+  // Fallback to pdfjs for PDFs with malformed xref tables or compression issues
+  try {
+    const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
+    const loadingTask = pdfjs.getDocument({
+      data: new Uint8Array(buffer),
+      disableFontFace: true,
+      useSystemFonts: true,
+      stopAtErrors: false,
+      disableRange: true,
+      disableStream: true,
+    } as any);
+    const doc = await loadingTask.promise;
+    let text = '';
+    for (let i = 1; i <= doc.numPages; i += 1) {
+      const page = await doc.getPage(i);
+      const content = await page.getTextContent();
+      const pageText = (content.items as any[])
+        .map((item) => (typeof item?.str === 'string' ? item.str : ''))
+        .filter((str) => str)
+        .join(' ');
+      text += `${pageText}\n`;
+    }
+    extractedText = text;
+    extractionMethod = 'pdfjs';
+
+    // Log fallback extraction results
+    const validation = validateExtractedText(extractedText, filename || 'unknown');
+    console.log(`[PDF EXTRACT] Fallback to ${extractionMethod}`);
+    console.log(`[PDF EXTRACT] Length: ${extractedText.length} chars`);
+    console.log(`[PDF EXTRACT] Valid: ${validation.valid}`);
+    if (validation.issues.length > 0) {
+      console.log(`[PDF EXTRACT] Issues: ${validation.issues.join('; ')}`);
+    }
+
+    if (extractedText && extractedText.length > 50) {
+      return extractedText;
+    }
+  } catch (fallbackError) {
+    console.error(`[PDF EXTRACT] Both pdf-parse and pdfjs failed`);
+    console.error(`[PDF EXTRACT] pdf-parse error: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`);
+  }
+
+  // If both methods failed, throw error with diagnostic info
+  throw new Error(`PDF extraction failed for "${filename || 'unknown'}": tried ${extractionMethod || 'pdf-parse and pdfjs'}, got ${extractedText.length} chars`);
 }
 
 /**
@@ -118,10 +197,15 @@ export async function extractTextFromResume(file: UploadFileLike, strapi: Core.S
   const buffer = await readFileBuffer(file, strapi);
   const mime = String(file.mime ?? file.mimetype ?? '').toLowerCase().trim();
   const ext = getFileExtension(file);
+  const filename = String(file.name ?? file.originalFilename ?? 'unknown');
 
   // PDF extraction using pdf-parse with pdfjs fallback
   if (mime.includes('pdf') || ext === '.pdf') {
-    return normalizeExtractedText(await extractPdfText(buffer));
+    const rawText = await extractPdfText(buffer, filename);
+    const normalized = normalizeExtractedText(rawText);
+    console.log(`[NORMALIZE] Input: ${rawText.length} chars → Output: ${normalized.length} chars`);
+    console.log(`[NORMALIZE] Has 'experience' section after normalization: ${/^experience$/im.test(normalized)}`);
+    return normalized;
   }
 
   // DOCX extraction using mammoth

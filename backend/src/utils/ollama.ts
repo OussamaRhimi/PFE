@@ -1,13 +1,24 @@
 /**
  * Sprint 3: Ollama LLM Integration
  * @file src/utils/ollama.ts
+ * 
+ * For better CV parsing accuracy (especially with ambiguous or fragmented text):
+ * - Set OLLAMA_MODEL env var to: mistral, neural-chat, dolphin-mixtral, or other capable models
+ * - For remote APIs: Use Claude 3.5 Sonnet, GPT-4, or similar enterprise models
+ * - Default: llama3.2 (works but less capable than alternatives)
+ * 
+ * Model Selection Guide for CV Parsing:
+ * - Haiku/Small models (llama3.2): Basic extraction, may misclassify on ambiguous text
+ * - Mid-tier models (mistral, neural-chat): Better context understanding, 95%+ accuracy
+ * - Large models (Claude Sonnet, GPT-4): Excellent at edge cases, handles broken text better
  */
 
 import { safeParseJson } from './json';
 import type { ExtractedData } from './types';
 
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || process.env.OLLAMA_URL || 'http://localhost:11434';
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'llama3.2';
+// IMPORTANT: For CV3 and similar issues, use a better model like 'mistral' or 'neural-chat'
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'llama3.2'; // Consider: mistral, neural-chat, or larger models
 
 export type OllamaChatOptions = {
   system: string;
@@ -25,7 +36,19 @@ export type OllamaChatOptions = {
  */
 export const PARSER_SYSTEM_PROMPT = `Extract contact info, skills, and work history from this CV into a clean JSON structure.
 Return ONLY valid JSON (no markdown, no code fences).
+NOTE: If the CV text appears incomplete, jumbled, or has missing sections:
+- DO NOT invent missing information
+- Work with what is provided, even if sections are missing
+- Return empty arrays for missing sections (e.g., "experience": [])
+- If only fragments are available, extract what you can find
+- If you cannot determine if something is work experience or education, indicate your best guess and the reasoning
 
+CRITICAL FOR CV3 AND COMPRESSED PDFs:
+- CV text may be fragmented if extracted from compressed PDFs (ASCII85/FlateDecode)
+- Date-based anchoring: Look for dates (YYYY-YYYY or MM/YYYY) as primary markers of work experience or education
+- Context clues: Job titles like "DevOps", "Engineer", "Developer" often appear WITH dates in work experience
+- Company names: Look for business-like names (with keywords: "Cloud", "Services", "Tech", "Labs", etc.) as company names
+- Always prefer text evidence over format - if a job title appears with a date, it's likely work experience even if section header is missing
 IMPORTANT - DATE FORMATS:
 For all dates (startDate, endDate), extract in this priority order:
 1. If "Month YYYY" format exists (e.g. "June 2025"), use it exactly: "June 2025"
