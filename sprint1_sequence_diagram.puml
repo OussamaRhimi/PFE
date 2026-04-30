@@ -1,0 +1,45 @@
+@startuml Sprint1_Authentication_Sequence
+!theme plain
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 10
+skinparam maxMessageSize 200
+
+title Sprint 1: Authentication Process - MVC Sequence
+
+actor User
+participant "LoginComponent\n(View)" as View
+participant "AuthController\n(Controller)" as Controller
+database "HRUser Table\n(Model)" as Model
+
+== **Authentication Flow** ==
+
+User -> View: Submit login form\n(email, password)
+activate View
+
+View -> Controller: POST /api/auth/local\n{identifier, password}
+activate Controller
+
+Controller -> Model: Query HRUser table\nWHERE email = identifier
+activate Model
+
+alt User found & password valid
+    Model -> Controller: {id, email, username}
+    Controller -> Controller: Generate JWT token\n(sign with secret key)
+    Controller -> View: HTTP 200\n{jwt: token, user: {...}}
+    
+else Invalid credentials
+    Model -> Controller: No match
+    Controller -> View: HTTP 401 Unauthorized\n{error: "Invalid email or password"}
+    View -> User: Show error message
+    stop
+end
+
+deactivate Model
+deactivate Controller
+
+View -> View: Store token in localStorage\nlocalStorage.setItem('token', jwt)
+View -> View: Store user data in localStorage\nlocalStorage.setItem('user', JSON.stringify(user))
+View -> User: Redirect to /dashboard
+deactivate View
+
+@enduml

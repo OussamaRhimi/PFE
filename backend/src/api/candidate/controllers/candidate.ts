@@ -885,8 +885,16 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
       filters.status = { $eq: status };
     }
 
-    if (jobPostingId) {
-      filters.job_posting = { documentId: jobPostingId };
+    // Always exclude candidates whose job posting is closed
+    // This ensures candidates disappear from the HR list when their job is closed
+    if (!jobPostingId) {
+      filters.job_posting = { status: { $ne: 'closed' } };
+    } else {
+      // If filtering by specific job, still exclude closed jobs
+      filters.job_posting = {
+        documentId: jobPostingId,
+        status: { $ne: 'closed' },
+      };
     }
 
     if (search) {
@@ -899,13 +907,14 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
       } else if (normalizedField === 'status') {
         filters.status = { $containsi: search };
       } else if (normalizedField === 'job') {
+        // Merge with existing job_posting filter to preserve status check
         filters.job_posting = { ...(filters.job_posting || {}), title: { $containsi: search } };
       } else {
         filters.$or = [
           { fullName: { $containsi: search } },
           { email: { $containsi: search } },
           { status: { $containsi: search } },
-          { job_posting: { title: { $containsi: search } } },
+          { job_posting: { ...(filters.job_posting || {}), title: { $containsi: search } } },
         ];
       }
     }
