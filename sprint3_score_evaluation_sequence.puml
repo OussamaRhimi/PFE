@@ -1,0 +1,100 @@
+@startuml Sprint3_ScoreEvaluation_CVDownload_Sequence
+!theme plain
+
+skinparam defaultFontName Verdana
+skinparam defaultFontColor black
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 10
+skinparam maxMessageSize 200
+skinparam padding 10
+
+title Sprint 3: CV Preview & PDF Download - MVC Sequence\nHR Views Standardized CV
+
+actor "HR User" as HR
+participant "CandidateComponent\n(View)" as View
+participant "CandidateController\n(Controller)" as Controller
+participant "CVTemplateController\n(Controller)" as TemplateController
+participant "CVRenderingService\n(AI)" as AI
+database "Candidate\n(Model)" as CandidateModel
+database "CVTemplate\n(Model)" as TemplateModel
+
+== **AUTH (Referenced Flow)** ==
+
+group #F0F0F0 AUTH
+    HR -> HR: Verify JWT Token
+    activate HR
+    note right: See: Sprint1_Authentication_Sequence
+    deactivate HR
+end
+
+== **CV Preview & Download** ==
+
+HR -> View: Click "View CV" on processed\ncandidate id=99
+activate View
+
+View -> Controller: GET /api/candidates/:id/cv-preview\nHeaders: Authorization: Bearer {jwt_token}
+activate Controller
+
+Controller -> Controller: Validate JWT & access
+
+Controller -> CandidateModel: SELECT fullName, standardizedCvMarkdown,\nscore, qualityLabel FROM candidates\nWHERE id = 99
+activate CandidateModel
+
+alt candidate not found
+    CandidateModel -> Controller: No result
+    deactivate CandidateModel
+    Controller -> View: HTTP 404
+    deactivate Controller
+    View -> HR: Show error
+    stop
+end
+
+CandidateModel -> Controller: {fullName: "John Doe",\nstandardizedCvMarkdown: "# John...",\nscore: 82.5, qualityLabel: "good"}
+deactivate CandidateModel
+
+Controller -> TemplateController: Load CV template (default)
+activate TemplateController
+TemplateController -> TemplateModel: SELECT structure, css_styles FROM cv_templates\nWHERE is_default = true
+activate TemplateModel
+TemplateModel -> TemplateController: {structure, css_styles}
+deactivate TemplateModel
+TemplateController -> Controller: Template data
+deactivate TemplateController
+
+Controller -> AI: Render markdown → HTML\nApply template styling
+activate AI
+AI -> Controller: {html: "<html>...</html>"}
+deactivate AI
+
+Controller -> View: HTTP 200 OK\n{cvReady: true, cvHtml: "...",\nscore: 82.5, qualityLabel: "good"}
+deactivate Controller
+
+View -> View: Render CV preview in HTML\nDisplay score badge
+View -> HR: ✅ CV Preview loaded\nShow [Download PDF] button
+deactivate View
+
+== **PDF Download (Optional)** ==
+
+HR -> View: Click "Download PDF"
+activate View
+
+View -> Controller: GET /api/candidates/:id/cv-pdf\nHeaders: Authorization: Bearer {jwt_token}
+activate Controller
+
+Controller -> CandidateModel: SELECT standardizedCvMarkdown\nFROM candidates WHERE id = 99
+activate CandidateModel
+CandidateModel -> Controller: markdown content
+deactivate CandidateModel
+
+Controller -> AI: Render HTML → PDF
+activate AI
+AI -> Controller: {pdf: <binary>}
+deactivate AI
+
+Controller -> View: HTTP 200 OK + PDF binary\nContent-Type: application/pdf\nContent-Disposition: attachment
+deactivate Controller
+
+View -> HR: 📥 Browser downloads PDF\nFilename: John-Doe-CV.pdf
+deactivate View
+
+@enduml

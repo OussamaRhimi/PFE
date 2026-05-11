@@ -1,45 +1,59 @@
 @startuml Sprint1_Authentication_Sequence
 !theme plain
+
+skinparam defaultFontName Verdana
+skinparam defaultFontColor black
 skinparam sequenceArrowThickness 2
 skinparam roundcorner 10
 skinparam maxMessageSize 200
+skinparam padding 10
 
-title Sprint 1: Authentication Process - MVC Sequence
+title Sprint 1: Authentication - MVC Sequence\nHR User Login & JWT Generation
 
-actor User
+actor "HR User" as HR
 participant "LoginComponent\n(View)" as View
 participant "AuthController\n(Controller)" as Controller
-database "HRUser Table\n(Model)" as Model
+database "HRUser\n(Model)" as Model
 
 == **Authentication Flow** ==
 
-User -> View: Submit login form\n(email, password)
+HR -> View: Submit login form\n{email, password}
 activate View
 
 View -> Controller: POST /api/auth/local\n{identifier, password}
 activate Controller
 
-Controller -> Model: Query HRUser table\nWHERE email = identifier
+Controller -> Model: SELECT * FROM hr_users\nWHERE email = identifier
 activate Model
 
-alt User found & password valid
-    Model -> Controller: {id, email, username}
-    Controller -> Controller: Generate JWT token\n(sign with secret key)
-    Controller -> View: HTTP 200\n{jwt: token, user: {...}}
-    
-else Invalid credentials
-    Model -> Controller: No match
-    Controller -> View: HTTP 401 Unauthorized\n{error: "Invalid email or password"}
-    View -> User: Show error message
+alt user not found
+    Model -> Controller: No result
+    deactivate Model
+    Controller -> View: HTTP 401 Unauthorized
+    deactivate Controller
+    View -> HR: Show error
     stop
 end
 
+Model -> Controller: {id: 2, passwordHash, role: "hr_manager"}
 deactivate Model
+
+Controller -> Controller: Verify password\ncompare(input, hash)
+alt password mismatch
+    Controller -> View: HTTP 401
+    deactivate Controller
+    View -> HR: Show error
+    stop
+end
+
+Controller -> Controller: Generate JWT token\nPayload: {userId: 2, role, iat, exp}
+
+Controller -> View: HTTP 200 OK\n{token, user}
 deactivate Controller
 
-View -> View: Store token in localStorage\nlocalStorage.setItem('token', jwt)
-View -> View: Store user data in localStorage\nlocalStorage.setItem('user', JSON.stringify(user))
-View -> User: Redirect to /dashboard
+View -> View: Store token in localStorage
+
+View -> HR: Redirect to /dashboard
 deactivate View
 
 @enduml
