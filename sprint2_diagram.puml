@@ -1,10 +1,8 @@
 @startuml
 title IOhire - Sprint 2: Candidature publique + GDPR + RH candidates
 
-' Cache tous les cercles par défaut
+' Cache absolument tous les cercles (Classes, Enums, etc.)
 hide circle
-' Réactive le cercle uniquement pour les enums
-show enum circle
 
 ' Paramètres pour un rendu pur Noir et Blanc
 skinparam monochrome true
