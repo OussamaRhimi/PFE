@@ -9,7 +9,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, Subscription } from 'rxjs';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import { LucideAngularModule } from 'lucide-angular';
 import {
@@ -25,6 +25,7 @@ import {
 import { RevealOnScrollDirective } from '../../components/reveal-on-scroll.directive';
 import { CandidateService, AnalyticsCandidate } from '../../services/candidate.service';
 import { JobPostingService, JobPosting } from '../../services/job-posting.service';
+import { I18nService } from '../../services/i18n.service';
 
 Chart.register(...registerables);
 
@@ -81,13 +82,13 @@ function inc(counts: Record<string, number>, key: string, n = 1) {
     <div class="analytics-page">
       <div class="analytics-head analytics-fade">
         <div>
-          <h1>Analytics</h1>
-          <p class="muted">Clear metrics and trends for hiring pipeline health.</p>
+          <h1>{{ i18n.t('analytics.title') }}</h1>
+          <p class="muted">{{ i18n.t('analytics.subtitle') }}</p>
         </div>
         <div class="actions">
           <button class="btn btn--ghost analytics-refresh-btn" type="button" (click)="refresh()" [disabled]="loading">
             <lucide-angular [img]="icons.refresh" [size]="16"></lucide-angular>
-            <span>Refresh</span>
+            <span>{{ i18n.t('analytics.refresh') }}</span>
           </button>
         </div>
       </div>
@@ -104,45 +105,47 @@ function inc(counts: Record<string, number>, key: string, n = 1) {
           <div class="card analytics-kpi-wrap" appRevealOnScroll>
             <div class="header-row">
               <div>
-                <div class="strong">KPIs</div>
-                <div class="muted small">Last refreshed: {{ formatDateTime(lastRefreshedAt) }}</div>
+                <div class="strong">{{ i18n.t('analytics.kpi.title') }}</div>
+                <div class="muted small">{{ i18n.t('analytics.kpi.lastRefreshed') }} {{ formatDateTime(lastRefreshedAt) }}</div>
               </div>
             </div>
 
             <div class="analytics-kpi-grid">
               <div class="analytics-kpi">
                 <div class="analytics-kpi__icon"><lucide-angular [img]="icons.jobs" [size]="16"></lucide-angular></div>
-                <div class="kpi__label">Open jobs</div>
+                <div class="kpi__label">{{ i18n.t('analytics.kpi.openJobs') }}</div>
                 <div class="kpi__value">{{ kpi.openJobs }}</div>
-                <div class="kpi__hint muted small">of {{ kpi.totalJobs }} total</div>
+                <div class="kpi__hint muted small">{{ i18n.t('analytics.kpi.of') }} {{ kpi.totalJobs }} {{ i18n.t('analytics.kpi.total') }}</div>
               </div>
 
               <div class="analytics-kpi">
                 <div class="analytics-kpi__icon"><lucide-angular [img]="icons.candidates" [size]="16"></lucide-angular></div>
-                <div class="kpi__label">Candidates</div>
+                <div class="kpi__label">{{ i18n.t('analytics.kpi.candidates') }}</div>
                 <div class="kpi__value">{{ kpi.totalCandidates }}</div>
-                <div class="kpi__hint muted small">in pipeline</div>
+                <div class="kpi__hint muted small">{{ i18n.t('analytics.kpi.inPipeline') }}</div>
               </div>
 
               <div class="analytics-kpi">
                 <div class="analytics-kpi__icon"><lucide-angular [img]="icons.activity" [size]="16"></lucide-angular></div>
-                <div class="kpi__label">Processed</div>
+                <div class="kpi__label">{{ i18n.t('analytics.kpi.processed') }}</div>
                 <div class="kpi__value">{{ kpi.processed }}</div>
-                <div class="kpi__hint muted small">Processing: {{ kpi.processing }} | Errors: {{ kpi.error }}</div>
+                <div class="kpi__hint muted small">
+                  {{ i18n.t('analytics.kpi.processing') }} {{ kpi.processing }} | {{ i18n.t('analytics.kpi.errors') }} {{ kpi.error }}
+                </div>
               </div>
 
               <div class="analytics-kpi">
                 <div class="analytics-kpi__icon"><lucide-angular [img]="icons.target" [size]="16"></lucide-angular></div>
-                <div class="kpi__label">Avg score</div>
+                <div class="kpi__label">{{ i18n.t('analytics.kpi.avgScore') }}</div>
                 <div class="kpi__value">{{ kpi.avgScore ?? '-' }}</div>
-                <div class="kpi__hint muted small">out of 100</div>
+                <div class="kpi__hint muted small">{{ i18n.t('analytics.kpi.outOf100') }}</div>
               </div>
 
               <div class="analytics-kpi">
                 <div class="analytics-kpi__icon"><lucide-angular [img]="icons.clock" [size]="16"></lucide-angular></div>
-                <div class="kpi__label">Avg processing</div>
+                <div class="kpi__label">{{ i18n.t('analytics.kpi.avgProcessing') }}</div>
                 <div class="kpi__value">{{ kpi.avgProcessingMinutes ?? '-' }}</div>
-                <div class="kpi__hint muted small">minutes (approx.)</div>
+                <div class="kpi__hint muted small">{{ i18n.t('analytics.kpi.minutesApprox') }}</div>
               </div>
             </div>
           </div>
@@ -150,8 +153,8 @@ function inc(counts: Record<string, number>, key: string, n = 1) {
           <div class="card analytics-chart-card" appRevealOnScroll [revealDelay]="80">
             <div class="analytics-card-head">
               <div>
-                <div class="strong">Candidates submitted (last 14 days)</div>
-                <div class="muted small">Trend line</div>
+                <div class="strong">{{ i18n.t('analytics.chart.submitted14Days') }}</div>
+                <div class="muted small">{{ i18n.t('analytics.chart.trendLine') }}</div>
               </div>
               <span class="analytics-card-icon"><lucide-angular [img]="icons.chart" [size]="16"></lucide-angular></span>
             </div>
@@ -165,8 +168,8 @@ function inc(counts: Record<string, number>, key: string, n = 1) {
           <div class="card analytics-chart-card" appRevealOnScroll>
             <div class="analytics-card-head">
               <div>
-                <div class="strong">Candidates by status</div>
-                <div class="muted small">Doughnut</div>
+                <div class="strong">{{ i18n.t('analytics.chart.candidatesByStatus') }}</div>
+                <div class="muted small">{{ i18n.t('analytics.chart.doughnut') }}</div>
               </div>
             </div>
             <div class="analytics-chart-h">
@@ -177,8 +180,8 @@ function inc(counts: Record<string, number>, key: string, n = 1) {
           <div class="card analytics-chart-card" appRevealOnScroll [revealDelay]="90">
             <div class="analytics-card-head">
               <div>
-                <div class="strong">Jobs by status</div>
-                <div class="muted small">Pie</div>
+                <div class="strong">{{ i18n.t('analytics.chart.jobsByStatus') }}</div>
+                <div class="muted small">{{ i18n.t('analytics.chart.pie') }}</div>
               </div>
             </div>
             <div class="analytics-chart-h">
@@ -191,8 +194,8 @@ function inc(counts: Record<string, number>, key: string, n = 1) {
           <div class="card analytics-chart-card" appRevealOnScroll>
             <div class="analytics-card-head">
               <div>
-                <div class="strong">Score distribution</div>
-                <div class="muted small">Histogram</div>
+                <div class="strong">{{ i18n.t('analytics.chart.scoreDistribution') }}</div>
+                <div class="muted small">{{ i18n.t('analytics.chart.histogram') }}</div>
               </div>
             </div>
             <div class="analytics-chart-h">
@@ -203,8 +206,8 @@ function inc(counts: Record<string, number>, key: string, n = 1) {
           <div class="card analytics-chart-card" appRevealOnScroll [revealDelay]="90">
             <div class="analytics-card-head">
               <div>
-                <div class="strong">Candidates per job (top)</div>
-                <div class="muted small">Bar</div>
+                <div class="strong">{{ i18n.t('analytics.chart.candidatesPerJob') }}</div>
+                <div class="muted small">{{ i18n.t('analytics.chart.bar') }}</div>
               </div>
             </div>
             <div class="analytics-chart-h">
@@ -216,8 +219,8 @@ function inc(counts: Record<string, number>, key: string, n = 1) {
         <div class="card analytics-chart-card" appRevealOnScroll>
           <div class="analytics-card-head">
             <div>
-              <div class="strong">Top missing fields</div>
-              <div class="muted small">What candidates most often forget</div>
+              <div class="strong">{{ i18n.t('analytics.chart.topMissingFields') }}</div>
+              <div class="muted small">{{ i18n.t('analytics.chart.topMissingHint') }}</div>
             </div>
           </div>
           <div class="analytics-chart-h analytics-chart-h--tall">
@@ -230,39 +233,39 @@ function inc(counts: Record<string, number>, key: string, n = 1) {
             <div class="cmp-header__title">
               <span class="cmp-header__icon"><lucide-angular [img]="icons.compare" [size]="18"></lucide-angular></span>
               <div>
-                <h2>Compare Job Postings</h2>
-                <p class="muted small">Select two job postings to compare candidate quality side-by-side.</p>
+                <h2>{{ i18n.t('analytics.compare.title') }}</h2>
+                <p class="muted small">{{ i18n.t('analytics.compare.subtitle') }}</p>
               </div>
             </div>
           </div>
 
           <div class="cmp-selectors">
             <div class="cmp-select-wrap">
-              <label class="cmp-label cmp-label--a" for="cmpJobA">Job A</label>
+              <label class="cmp-label cmp-label--a" for="cmpJobA">{{ i18n.t('analytics.compare.jobA') }}</label>
               <select
                 id="cmpJobA"
                 class="cmp-select"
                 [ngModel]="compareJobA ?? ''"
                 (ngModelChange)="onCompareJobChange('A', $event)"
               >
-                <option value="">- Select a job posting -</option>
+                <option value="">{{ i18n.t('analytics.compare.selectJob') }}</option>
                 <option *ngFor="let job of comparableJobs" [value]="jobKey(job)" [disabled]="jobKey(job) === compareJobB">
-                  {{ job.title || 'Untitled' }}
+                  {{ job.title || i18n.t('analytics.untitled') }}
                 </option>
               </select>
             </div>
-            <span class="cmp-vs">vs</span>
+            <span class="cmp-vs">{{ i18n.t('analytics.compare.vs') }}</span>
             <div class="cmp-select-wrap">
-              <label class="cmp-label cmp-label--b" for="cmpJobB">Job B</label>
+              <label class="cmp-label cmp-label--b" for="cmpJobB">{{ i18n.t('analytics.compare.jobB') }}</label>
               <select
                 id="cmpJobB"
                 class="cmp-select"
                 [ngModel]="compareJobB ?? ''"
                 (ngModelChange)="onCompareJobChange('B', $event)"
               >
-                <option value="">- Select a job posting -</option>
+                <option value="">{{ i18n.t('analytics.compare.selectJob') }}</option>
                 <option *ngFor="let job of comparableJobs" [value]="jobKey(job)" [disabled]="jobKey(job) === compareJobA">
-                  {{ job.title || 'Untitled' }}
+                  {{ job.title || i18n.t('analytics.untitled') }}
                 </option>
               </select>
             </div>
@@ -274,23 +277,23 @@ function inc(counts: Record<string, number>, key: string, n = 1) {
                 <div class="cmp-kpi-card cmp-kpi-card--a">
                   <div class="cmp-kpi-card__label">{{ cmp.titleA }}</div>
                   <div class="cmp-kpi-card__grid">
-                    <div class="cmp-kpi-item"><span class="cmp-kpi-item__val">{{ cmp.countA }}</span><span class="cmp-kpi-item__lbl">Candidates</span></div>
-                    <div class="cmp-kpi-item"><span class="cmp-kpi-item__val">{{ cmp.avgA }}</span><span class="cmp-kpi-item__lbl">Avg Score</span></div>
-                    <div class="cmp-kpi-item"><span class="cmp-kpi-item__val">{{ cmp.medianA }}</span><span class="cmp-kpi-item__lbl">Median</span></div>
-                    <div class="cmp-kpi-item"><span class="cmp-kpi-item__val">{{ cmp.pctAbove60A }}%</span><span class="cmp-kpi-item__lbl">>= 60</span></div>
-                    <div class="cmp-kpi-item"><span class="cmp-kpi-item__val">{{ cmp.pctAbove80A }}%</span><span class="cmp-kpi-item__lbl">>= 80</span></div>
-                    <div class="cmp-kpi-item"><span class="cmp-kpi-item__val">{{ cmp.shortlistedPctA }}%</span><span class="cmp-kpi-item__lbl">Shortlisted</span></div>
+                    <div class="cmp-kpi-item"><span class="cmp-kpi-item__val">{{ cmp.countA }}</span><span class="cmp-kpi-item__lbl">{{ i18n.t('analytics.compare.kpi.candidates') }}</span></div>
+                    <div class="cmp-kpi-item"><span class="cmp-kpi-item__val">{{ cmp.avgA }}</span><span class="cmp-kpi-item__lbl">{{ i18n.t('analytics.compare.kpi.avgScore') }}</span></div>
+                    <div class="cmp-kpi-item"><span class="cmp-kpi-item__val">{{ cmp.medianA }}</span><span class="cmp-kpi-item__lbl">{{ i18n.t('analytics.compare.kpi.median') }}</span></div>
+                    <div class="cmp-kpi-item"><span class="cmp-kpi-item__val">{{ cmp.pctAbove60A }}%</span><span class="cmp-kpi-item__lbl">{{ i18n.t('analytics.compare.kpi.gte60') }}</span></div>
+                    <div class="cmp-kpi-item"><span class="cmp-kpi-item__val">{{ cmp.pctAbove80A }}%</span><span class="cmp-kpi-item__lbl">{{ i18n.t('analytics.compare.kpi.gte80') }}</span></div>
+                    <div class="cmp-kpi-item"><span class="cmp-kpi-item__val">{{ cmp.shortlistedPctA }}%</span><span class="cmp-kpi-item__lbl">{{ i18n.t('analytics.compare.kpi.shortlisted') }}</span></div>
                   </div>
                 </div>
                 <div class="cmp-kpi-card cmp-kpi-card--b">
                   <div class="cmp-kpi-card__label">{{ cmp.titleB }}</div>
                   <div class="cmp-kpi-card__grid">
-                    <div class="cmp-kpi-item"><span class="cmp-kpi-item__val">{{ cmp.countB }}</span><span class="cmp-kpi-item__lbl">Candidates</span></div>
-                    <div class="cmp-kpi-item"><span class="cmp-kpi-item__val">{{ cmp.avgB }}</span><span class="cmp-kpi-item__lbl">Avg Score</span></div>
-                    <div class="cmp-kpi-item"><span class="cmp-kpi-item__val">{{ cmp.medianB }}</span><span class="cmp-kpi-item__lbl">Median</span></div>
-                    <div class="cmp-kpi-item"><span class="cmp-kpi-item__val">{{ cmp.pctAbove60B }}%</span><span class="cmp-kpi-item__lbl">>= 60</span></div>
-                    <div class="cmp-kpi-item"><span class="cmp-kpi-item__val">{{ cmp.pctAbove80B }}%</span><span class="cmp-kpi-item__lbl">>= 80</span></div>
-                    <div class="cmp-kpi-item"><span class="cmp-kpi-item__val">{{ cmp.shortlistedPctB }}%</span><span class="cmp-kpi-item__lbl">Shortlisted</span></div>
+                    <div class="cmp-kpi-item"><span class="cmp-kpi-item__val">{{ cmp.countB }}</span><span class="cmp-kpi-item__lbl">{{ i18n.t('analytics.compare.kpi.candidates') }}</span></div>
+                    <div class="cmp-kpi-item"><span class="cmp-kpi-item__val">{{ cmp.avgB }}</span><span class="cmp-kpi-item__lbl">{{ i18n.t('analytics.compare.kpi.avgScore') }}</span></div>
+                    <div class="cmp-kpi-item"><span class="cmp-kpi-item__val">{{ cmp.medianB }}</span><span class="cmp-kpi-item__lbl">{{ i18n.t('analytics.compare.kpi.median') }}</span></div>
+                    <div class="cmp-kpi-item"><span class="cmp-kpi-item__val">{{ cmp.pctAbove60B }}%</span><span class="cmp-kpi-item__lbl">{{ i18n.t('analytics.compare.kpi.gte60') }}</span></div>
+                    <div class="cmp-kpi-item"><span class="cmp-kpi-item__val">{{ cmp.pctAbove80B }}%</span><span class="cmp-kpi-item__lbl">{{ i18n.t('analytics.compare.kpi.gte80') }}</span></div>
+                    <div class="cmp-kpi-item"><span class="cmp-kpi-item__val">{{ cmp.shortlistedPctB }}%</span><span class="cmp-kpi-item__lbl">{{ i18n.t('analytics.compare.kpi.shortlisted') }}</span></div>
                   </div>
                 </div>
               </div>
@@ -299,8 +302,8 @@ function inc(counts: Record<string, number>, key: string, n = 1) {
                 <div class="card analytics-chart-card">
                   <div class="analytics-card-head">
                     <div>
-                      <div class="strong">Score distribution (overlay)</div>
-                      <div class="muted small">Histogram comparison</div>
+                      <div class="strong">{{ i18n.t('analytics.compare.scoreDistributionOverlay') }}</div>
+                      <div class="muted small">{{ i18n.t('analytics.compare.histogramComparison') }}</div>
                     </div>
                   </div>
                   <div class="analytics-chart-h"><canvas #chartCmpScoreHist></canvas></div>
@@ -308,8 +311,8 @@ function inc(counts: Record<string, number>, key: string, n = 1) {
                 <div class="card analytics-chart-card">
                   <div class="analytics-card-head">
                     <div>
-                      <div class="strong">Score metrics</div>
-                      <div class="muted small">Average, median and percentages</div>
+                      <div class="strong">{{ i18n.t('analytics.compare.scoreMetrics') }}</div>
+                      <div class="muted small">{{ i18n.t('analytics.compare.scoreMetricsHint') }}</div>
                     </div>
                   </div>
                   <div class="analytics-chart-h"><canvas #chartCmpScoreBox></canvas></div>
@@ -320,8 +323,8 @@ function inc(counts: Record<string, number>, key: string, n = 1) {
                 <div class="card analytics-chart-card">
                   <div class="analytics-card-head">
                     <div>
-                      <div class="strong">Status breakdown</div>
-                      <div class="muted small">Candidates per status</div>
+                      <div class="strong">{{ i18n.t('analytics.compare.statusBreakdown') }}</div>
+                      <div class="muted small">{{ i18n.t('analytics.compare.candidatesPerStatus') }}</div>
                     </div>
                   </div>
                   <div class="analytics-chart-h"><canvas #chartCmpStatus></canvas></div>
@@ -329,8 +332,8 @@ function inc(counts: Record<string, number>, key: string, n = 1) {
                 <div class="card analytics-chart-card">
                   <div class="analytics-card-head">
                     <div>
-                      <div class="strong">Quality radar</div>
-                      <div class="muted small">Multi-dimensional quality comparison</div>
+                      <div class="strong">{{ i18n.t('analytics.compare.qualityRadar') }}</div>
+                      <div class="muted small">{{ i18n.t('analytics.compare.qualityRadarHint') }}</div>
                     </div>
                   </div>
                   <div class="analytics-chart-h"><canvas #chartCmpRadar></canvas></div>
@@ -340,8 +343,8 @@ function inc(counts: Record<string, number>, key: string, n = 1) {
               <div class="card analytics-chart-card">
                 <div class="analytics-card-head">
                   <div>
-                    <div class="strong">Missing fields comparison</div>
-                    <div class="muted small">Top fields candidates are missing</div>
+                    <div class="strong">{{ i18n.t('analytics.compare.missingFieldsComparison') }}</div>
+                    <div class="muted small">{{ i18n.t('analytics.compare.missingFieldsHint') }}</div>
                   </div>
                 </div>
                 <div class="analytics-chart-h analytics-chart-h--tall"><canvas #chartCmpMissing></canvas></div>
@@ -352,7 +355,7 @@ function inc(counts: Record<string, number>, key: string, n = 1) {
           <ng-template #comparePlaceholder>
             <div class="cmp-placeholder">
               <lucide-angular [img]="icons.compare" [size]="32"></lucide-angular>
-              <p>Select two different job postings above to see comparative charts.</p>
+              <p>{{ i18n.t('analytics.compare.placeholder') }}</p>
             </div>
           </ng-template>
         </div>
@@ -797,12 +800,14 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
   private viewReady = false;
   private charts: Chart[] = [];
   private compareCharts: Chart[] = [];
+  private langSub?: Subscription;
 
   constructor(
     private candidateService: CandidateService,
     private jobPostingService: JobPostingService,
     private http: HttpClient,
-    private host: ElementRef
+    private host: ElementRef,
+    public i18n: I18nService
   ) {}
 
   get kpi() {
@@ -910,8 +915,8 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     const scoresB = scoresFn(candB);
 
     return {
-      titleA: jobA.title ?? 'Job A',
-      titleB: jobB.title ?? 'Job B',
+      titleA: jobA.title ?? this.i18n.t('analytics.compare.jobA'),
+      titleB: jobB.title ?? this.i18n.t('analytics.compare.jobB'),
       countA: candA.length,
       countB: candB.length,
       avgA: avgFn(scoresA),
@@ -947,6 +952,10 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
 
 
   async ngOnInit() {
+    this.langSub = this.i18n.lang$.subscribe(() => {
+      window.setTimeout(() => this.renderCharts(), 0);
+      window.setTimeout(() => this.renderCompareCharts(), 0);
+    });
     await this.refresh();
   }
 
@@ -959,6 +968,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnDestroy() {
     this.destroyCharts();
     this.destroyCompareCharts();
+    if (this.langSub) this.langSub.unsubscribe();
   }
 
   onCompareJobChange(slot: 'A' | 'B', value: string) {
@@ -972,6 +982,48 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     if (job.documentId) return job.documentId;
     if (job.id != null) return String(job.id);
     return '';
+  }
+
+  private candidateStatusLabel(status: string): string {
+    const key = `candidateDetail.status.${status}`;
+    const label = this.i18n.t(key);
+    return label === key ? status : label;
+  }
+
+  private jobStatusLabel(status: string): string {
+    const map: Record<string, string> = {
+      draft: 'jobs.statusDraft',
+      open: 'jobs.statusOpen',
+      closed: 'jobs.statusClosed',
+    };
+    const key = map[status];
+    if (key) {
+      const label = this.i18n.t(key);
+      return label === key ? status : label;
+    }
+    return status;
+  }
+
+  private missingFieldLabel(raw: string): string {
+    const normalized = raw.trim().toLowerCase();
+    const map: Record<string, string> = {
+      'full name': 'candidateDetail.missing.fullName',
+      email: 'candidateDetail.missing.email',
+      phone: 'candidateDetail.missing.phone',
+      location: 'candidateDetail.missing.location',
+      linkedin: 'candidateDetail.missing.linkedin',
+      portfolio: 'candidateDetail.missing.portfolio',
+      summary: 'candidateDetail.missing.summary',
+      skills: 'candidateDetail.missing.skills',
+      experience: 'candidateDetail.missing.experience',
+      'experience dates': 'candidateDetail.missing.experienceDates',
+      education: 'candidateDetail.missing.education',
+      projects: 'candidateDetail.missing.projects',
+    };
+    const key = map[normalized];
+    if (!key) return raw;
+    const label = this.i18n.t(key);
+    return label === key ? raw : label;
   }
 
   private matchesJobCandidate(job: JobPosting, candidate: AnalyticsCandidate): boolean {
@@ -1029,7 +1081,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     try {
       return JSON.stringify(error);
     } catch {
-      return 'Unexpected error.';
+      return this.i18n.t('analytics.error.unexpected');
     }
   }
 
@@ -1097,14 +1149,16 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
       : ['new', 'processing', 'processed', 'reviewing', 'shortlisted', 'rejected', 'hired', 'error'];
     const candCounts: Record<string, number> = {};
     for (const c of candidates) inc(candCounts, c.status ?? 'unknown');
-    const candStatusLabels = statusOrder.filter((s) => (candCounts[s] ?? 0) > 0);
-    const candStatusData = candStatusLabels.map((s) => candCounts[s] ?? 0);
+    const candStatusKeys = statusOrder.filter((s) => (candCounts[s] ?? 0) > 0);
+    const candStatusLabels = candStatusKeys.map((s) => this.candidateStatusLabel(s));
+    const candStatusData = candStatusKeys.map((s) => candCounts[s] ?? 0);
 
     const jobOrder = this.jobStatuses.length > 0 ? this.jobStatuses : ['draft', 'open', 'closed'];
     const jobCounts: Record<string, number> = {};
     for (const j of jobs) inc(jobCounts, j.status ?? 'unknown');
-    const jobStatusLabels = jobOrder.filter((s) => (jobCounts[s] ?? 0) > 0);
-    const jobStatusData = jobStatusLabels.map((s) => jobCounts[s] ?? 0);
+    const jobStatusKeys = jobOrder.filter((s) => (jobCounts[s] ?? 0) > 0);
+    const jobStatusLabels = jobStatusKeys.map((s) => this.jobStatusLabel(s));
+    const jobStatusData = jobStatusKeys.map((s) => jobCounts[s] ?? 0);
 
     const histLabels = ['0-19', '20-39', '40-59', '60-79', '80-100'];
     const histCounts = [0, 0, 0, 0, 0];
@@ -1117,7 +1171,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     const byJob: Record<string, number> = {};
-    for (const c of candidates) inc(byJob, c.jobTitle || 'Unknown');
+    for (const c of candidates) inc(byJob, c.jobTitle || this.i18n.t('analytics.unknownJob'));
     const topJobs = topEntries(byJob, 8);
     const topJobLabels = topJobs.map(([k]) => k);
     const topJobData = topJobs.map(([, v]) => v);
@@ -1127,7 +1181,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
       for (const m of c.missing ?? []) inc(missingCounts, m);
     }
     const topMissing = topEntries(missingCounts, 10);
-    const missingLabels = topMissing.map(([k]) => k);
+    const missingLabels = topMissing.map(([k]) => this.missingFieldLabel(k));
     const missingData = topMissing.map(([, v]) => v);
 
     const commonOptions = {
@@ -1148,7 +1202,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
         labels: dayLabels,
         datasets: [
           {
-            label: 'Candidates',
+            label: this.i18n.t('analytics.chart.candidates'),
             data: dayCounts,
             borderColor: colors.accent,
             backgroundColor: 'rgba(139,31,31,0.12)',
@@ -1175,7 +1229,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
         labels: candStatusLabels,
         datasets: [
           {
-            label: 'Candidates',
+            label: this.i18n.t('analytics.chart.candidates'),
             data: candStatusData,
             backgroundColor: [
               'rgba(139,31,31,0.28)',
@@ -1205,7 +1259,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
         labels: jobStatusLabels,
         datasets: [
           {
-            label: 'Job postings',
+            label: this.i18n.t('analytics.chart.jobPostings'),
             data: jobStatusData,
             backgroundColor: ['rgba(107,114,128,0.25)', 'rgba(139,31,31,0.22)', 'rgba(17,24,39,0.15)'],
             borderColor: colors.border,
@@ -1225,7 +1279,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
         labels: histLabels,
         datasets: [
           {
-            label: 'Candidates',
+            label: this.i18n.t('analytics.chart.candidates'),
             data: histCounts,
             borderColor: colors.accent,
             backgroundColor: 'rgba(139,31,31,0.20)',
@@ -1249,7 +1303,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
         labels: topJobLabels,
         datasets: [
           {
-            label: 'Candidates',
+            label: this.i18n.t('analytics.chart.candidates'),
             data: topJobData,
             borderColor: colors.ok,
             backgroundColor: 'rgba(22,163,74,0.20)',
@@ -1274,7 +1328,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
         labels: missingLabels,
         datasets: [
           {
-            label: 'Missing',
+            label: this.i18n.t('analytics.chart.missing'),
             data: missingData,
             borderColor: colors.danger,
             backgroundColor: 'rgba(220,38,38,0.20)',
@@ -1360,10 +1414,11 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
       ...Object.keys(data.statusA),
       ...Object.keys(data.statusB),
     ])).sort();
+    const statusLabels = allStatuses.map((s) => this.candidateStatusLabel(s));
     const statusConfig: ChartConfiguration<'bar'> = {
       type: 'bar',
       data: {
-        labels: allStatuses,
+        labels: statusLabels,
         datasets: [
           { label: data.titleA, data: allStatuses.map((s) => data.statusA[s] ?? 0), backgroundColor: colorA, borderColor: colorA, borderWidth: 1 },
           { label: data.titleB, data: allStatuses.map((s) => data.statusB[s] ?? 0), backgroundColor: colorB, borderColor: colorB, borderWidth: 1 },
@@ -1381,7 +1436,14 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     const radarConfig: ChartConfiguration<'radar'> = {
       type: 'radar',
       data: {
-        labels: ['Avg Score', 'Median Score', '% >= 60', '% >= 80', 'Shortlisted %', 'Completeness'],
+        labels: [
+          this.i18n.t('analytics.compare.radar.avgScore'),
+          this.i18n.t('analytics.compare.radar.medianScore'),
+          this.i18n.t('analytics.compare.radar.pctGte60'),
+          this.i18n.t('analytics.compare.radar.pctGte80'),
+          this.i18n.t('analytics.compare.radar.shortlistedPct'),
+          this.i18n.t('analytics.compare.radar.completeness'),
+        ],
         datasets: [
           {
             label: data.titleA,
@@ -1441,11 +1503,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
       .sort((x, y) => (y[1].a + y[1].b) - (x[1].a + x[1].b))
       .slice(0, 8)
       .map(([k]) => k);
+    const missingDisplayLabels = topMissingKeys.map((k) => this.missingFieldLabel(k));
 
     const missingConfig: ChartConfiguration<'bar'> = {
       type: 'bar',
       data: {
-        labels: topMissingKeys,
+        labels: missingDisplayLabels,
         datasets: [
           { label: data.titleA, data: topMissingKeys.map((k) => allMissing[k]?.a ?? 0), backgroundColor: colorA, borderColor: colorA, borderWidth: 1 },
           { label: data.titleB, data: topMissingKeys.map((k) => allMissing[k]?.b ?? 0), backgroundColor: colorB, borderColor: colorB, borderWidth: 1 },
@@ -1464,7 +1527,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     const scoreBoxConfig: ChartConfiguration<'bar'> = {
       type: 'bar',
       data: {
-        labels: ['Avg Score', 'Median Score', '% Score >= 60', '% Score >= 80'],
+        labels: [
+          this.i18n.t('analytics.compare.scoreBox.avgScore'),
+          this.i18n.t('analytics.compare.scoreBox.medianScore'),
+          this.i18n.t('analytics.compare.scoreBox.pctGte60'),
+          this.i18n.t('analytics.compare.scoreBox.pctGte80'),
+        ],
         datasets: [
           { label: data.titleA, data: [data.avgA, data.medianA, data.pctAbove60A, data.pctAbove80A], backgroundColor: colorA, borderColor: colorA, borderWidth: 1 },
           { label: data.titleB, data: [data.avgB, data.medianB, data.pctAbove60B, data.pctAbove80B], backgroundColor: colorB, borderColor: colorB, borderWidth: 1 },

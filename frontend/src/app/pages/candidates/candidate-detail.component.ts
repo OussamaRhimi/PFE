@@ -12,6 +12,7 @@ import {
 } from '../../services/candidate.service';
 import { AuthService } from '../../services/auth.service';
 import { LocationMapComponent } from '../../components/location-map/location-map.component';
+import { I18nService } from '../../services/i18n.service';
 
 @Component({
   selector: 'app-candidate-detail',
@@ -24,7 +25,7 @@ import { LocationMapComponent } from '../../components/location-map/location-map
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
           <polyline points="15 18 9 12 15 6"/>
         </svg>
-        All Candidates
+        {{ i18n.t('candidateDetail.back') }}
       </a>
 
       <!-- Loading skeleton -->
@@ -62,12 +63,13 @@ import { LocationMapComponent } from '../../components/location-map/location-map
               </span>
               <span class="meta-chip" *ngIf="candidate.selfReportedYearsExperience != null">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                {{ candidate.selfReportedYearsExperience }} yr{{ candidate.selfReportedYearsExperience !== 1 ? 's' : '' }} exp.
+                {{ candidate.selfReportedYearsExperience }}
+                {{ candidate.selfReportedYearsExperience === 1 ? i18n.t('candidateDetail.yearExp') : i18n.t('candidateDetail.yearsExp') }}
               </span>
             </div>
           </div>
           <div class="hero-actions">
-            <span class="status-badge" [ngClass]="'badge-' + candidate.status">{{ candidate.status }}</span>
+            <span class="status-badge" [ngClass]="'badge-' + candidate.status">{{ getStatusShortLabel(candidate.status) }}</span>
           </div>
         </div>
 
@@ -78,7 +80,7 @@ import { LocationMapComponent } from '../../components/location-map/location-map
           <div class="card card-score">
             <div class="card-label">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-              AI Score
+              {{ i18n.t('candidateDetail.aiScore') }}
             </div>
             <div class="score-display">
               <svg class="score-ring" viewBox="0 0 80 80">
@@ -96,35 +98,35 @@ import { LocationMapComponent } from '../../components/location-map/location-map
               </svg>
               <span class="score-num">{{ candidate.score | number:'1.0-0' }}</span>
             </div>
-            <div class="score-label">out of 100</div>
+            <div class="score-label">{{ i18n.t('candidateDetail.outOf100') }}</div>
           </div>
 
           <!-- Status card -->
           <div class="card">
             <div class="card-label">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-              Application Status
+              {{ i18n.t('candidateDetail.applicationStatus') }}
             </div>
             <div class="stat-value">
               <ng-container *ngIf="!editingStatus">
-                <span class="status-badge large-badge" [ngClass]="'badge-' + candidate.status">{{ candidate.status }}</span>
-                <button class="btn-edit" (click)="startEditStatus()" title="Edit status">
+                <span class="status-badge large-badge" [ngClass]="'badge-' + candidate.status">{{ getStatusShortLabel(candidate.status) }}</span>
+                <button class="btn-edit" (click)="startEditStatus()" [title]="i18n.t('candidateDetail.editStatus')">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 </button>
               </ng-container>
               <ng-container *ngIf="editingStatus">
                 <select class="status-select" [(ngModel)]="statusDraft" [disabled]="statusSaving">
-                  <option *ngFor="let status of statusOptions" [value]="status">{{ status }}</option>
+                  <option *ngFor="let status of statusOptions" [value]="status">{{ getStatusShortLabel(status) }}</option>
                 </select>
                 <button class="btn-save" (click)="saveStatus()" [disabled]="statusSaving">
-                  {{ statusSaving ? 'Saving...' : 'Save' }}
+                  {{ statusSaving ? i18n.t('candidateDetail.saving') : i18n.t('candidateDetail.save') }}
                 </button>
-                <button class="btn-cancel" (click)="cancelEdit()" [disabled]="statusSaving">Cancel</button>
+                <button class="btn-cancel" (click)="cancelEdit()" [disabled]="statusSaving">{{ i18n.t('candidateDetail.cancel') }}</button>
               </ng-container>
             </div>
-            <div class="card-sub">Applied {{ candidate.createdAt | date:'dd MMM yyyy' }}</div>
+            <div class="card-sub">{{ i18n.t('candidateDetail.applied') }} {{ candidate.createdAt | date:'dd MMM yyyy' }}</div>
             <div class="card-sub" *ngIf="candidate.updatedAt !== candidate.createdAt">
-              Updated {{ candidate.updatedAt | date:'dd MMM yyyy' }}
+              {{ i18n.t('candidateDetail.updated') }} {{ candidate.updatedAt | date:'dd MMM yyyy' }}
             </div>
           </div>
 
@@ -132,20 +134,20 @@ import { LocationMapComponent } from '../../components/location-map/location-map
           <div class="card card-gdpr">
             <div class="card-label">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-              GDPR / Consent
+              {{ i18n.t('candidateDetail.gdprConsent') }}
             </div>
             <div class="gdpr-row">
-              <span class="gdpr-key">Consent given</span>
+              <span class="gdpr-key">{{ i18n.t('candidateDetail.consentGiven') }}</span>
               <span class="gdpr-val" [class.yes]="candidate.consent" [class.no]="!candidate.consent">
-                {{ candidate.consent ? '✓ Yes' : '✗ No' }}
+                {{ candidate.consent ? i18n.t('candidateDetail.consentYes') : i18n.t('candidateDetail.consentNo') }}
               </span>
             </div>
             <div class="gdpr-row" *ngIf="candidate.consentAt">
-              <span class="gdpr-key">Consent date</span>
+              <span class="gdpr-key">{{ i18n.t('candidateDetail.consentDate') }}</span>
               <span class="gdpr-val">{{ candidate.consentAt | date:'dd MMM yyyy, HH:mm' }}</span>
             </div>
             <div class="gdpr-row" *ngIf="candidate.retentionUntil">
-              <span class="gdpr-key">Retain until</span>
+              <span class="gdpr-key">{{ i18n.t('candidateDetail.retainUntil') }}</span>
               <span class="gdpr-val">{{ candidate.retentionUntil | date:'dd MMM yyyy' }}</span>
             </div>
           </div>
@@ -154,16 +156,16 @@ import { LocationMapComponent } from '../../components/location-map/location-map
           <div class="card" *ngIf="candidate.linkedin || candidate.portfolio">
             <div class="card-label">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
-              Links
+              {{ i18n.t('candidateDetail.links') }}
             </div>
             <div class="links">
               <a *ngIf="candidate.linkedin" [href]="candidate.linkedin" target="_blank" rel="noopener" class="external-link linkedin-link">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg>
-                LinkedIn Profile
+                {{ i18n.t('candidateDetail.linkedinProfile') }}
               </a>
               <a *ngIf="candidate.portfolio" [href]="candidate.portfolio" target="_blank" rel="noopener" class="external-link portfolio-link">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
-                Portfolio / Website
+                {{ i18n.t('candidateDetail.portfolioWebsite') }}
               </a>
             </div>
           </div>
@@ -172,11 +174,11 @@ import { LocationMapComponent } from '../../components/location-map/location-map
           <div class="card card-location">
             <div class="card-label">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-              Location
+              {{ i18n.t('candidateDetail.location') }}
             </div>
             <div class="location-card-body">
               <app-location-map *ngIf="candidateLocation" [location]="candidateLocation" [height]="360"></app-location-map>
-              <span *ngIf="!candidateLocation" class="text-muted">Location not available</span>
+              <span *ngIf="!candidateLocation" class="text-muted">{{ i18n.t('candidateDetail.locationNotAvailable') }}</span>
             </div>
           </div>
         </div>
@@ -186,7 +188,7 @@ import { LocationMapComponent } from '../../components/location-map/location-map
           <div class="note-card" *ngIf="candidate.candidateNotes">
             <div class="note-header">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-              Candidate's Note
+              {{ i18n.t('candidateDetail.candidateNote') }}
             </div>
             <p class="note-text">{{ candidate.candidateNotes }}</p>
           </div>
@@ -194,8 +196,8 @@ import { LocationMapComponent } from '../../components/location-map/location-map
           <div class="note-card note-card-hr" *ngIf="candidate.hrNotes && !editingNotes">
             <div class="note-header">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-              HR Notes
-              <button class="btn-edit-notes" (click)="startEditNotes()" title="Edit notes">
+              {{ i18n.t('candidateDetail.hrNotes') }}
+              <button class="btn-edit-notes" (click)="startEditNotes()" [title]="i18n.t('candidateDetail.editNotes')">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               </button>
             </div>
@@ -205,26 +207,26 @@ import { LocationMapComponent } from '../../components/location-map/location-map
           <div class="note-card note-card-hr" *ngIf="editingNotes">
             <div class="note-header">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-              HR Notes (Editing)
+              {{ i18n.t('candidateDetail.hrNotesEditing') }}
             </div>
-            <textarea [(ngModel)]="notesDraft" class="notes-textarea" [disabled]="notesSaving" placeholder="Add or update HR notes..."></textarea>
+            <textarea [(ngModel)]="notesDraft" class="notes-textarea" [disabled]="notesSaving" [placeholder]="i18n.t('candidateDetail.hrNotesPlaceholder')"></textarea>
             <div class="notes-actions">
               <button class="btn-save" (click)="saveNotes()" [disabled]="notesSaving">
-                {{ notesSaving ? 'Saving...' : 'Save Notes' }}
+                {{ notesSaving ? i18n.t('candidateDetail.saving') : i18n.t('candidateDetail.saveNotes') }}
               </button>
-              <button class="btn-cancel" (click)="cancelEdit()" [disabled]="notesSaving">Cancel</button>
+              <button class="btn-cancel" (click)="cancelEdit()" [disabled]="notesSaving">{{ i18n.t('candidateDetail.cancel') }}</button>
             </div>
           </div>
 
           <div class="note-card note-placeholder" *ngIf="!candidate.hrNotes && !editingNotes">
             <div class="note-header">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-              HR Notes
-              <button class="btn-edit-notes" (click)="startEditNotes()" title="Add notes">
+              {{ i18n.t('candidateDetail.hrNotes') }}
+              <button class="btn-edit-notes" (click)="startEditNotes()" [title]="i18n.t('candidateDetail.addNotes')">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               </button>
             </div>
-            <p class="note-text placeholder">No HR notes yet. Click the + button to add one.</p>
+            <p class="note-text placeholder">{{ i18n.t('candidateDetail.noHrNotes') }}</p>
           </div>
         </div>
 
@@ -233,7 +235,7 @@ import { LocationMapComponent } from '../../components/location-map/location-map
           <div class="resume-header">
             <div class="section-title">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-              Resume
+              {{ i18n.t('candidateDetail.resume') }}
             </div>
           </div>
 
@@ -254,14 +256,14 @@ import { LocationMapComponent } from '../../components/location-map/location-map
                 <polyline points="7 10 12 15 17 10"/>
                 <line x1="12" y1="15" x2="12" y2="3"/>
               </svg>
-              Download Resume
+              {{ i18n.t('candidateDetail.downloadResume') }}
             </a>
           </div>
 
           <ng-template #noResume>
             <div class="no-resume">
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#cbd0dc" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-              <span>No resume attached</span>
+              <span>{{ i18n.t('candidateDetail.noResume') }}</span>
             </div>
           </ng-template>
         </div>
@@ -272,7 +274,7 @@ import { LocationMapComponent } from '../../components/location-map/location-map
         <div class="ai-actions-section">
           <div class="section-title">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"/><path d="M7.5 13a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/><path d="M16.5 13a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/></svg>
-            AI Processing
+            {{ i18n.t('candidateDetail.aiProcessing') }}
           </div>
 
           <div class="ai-actions-row">
@@ -312,7 +314,7 @@ import { LocationMapComponent } from '../../components/location-map/location-map
                 (click)="triggerProcess()"
                 [disabled]="processingAction">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                {{ processingAction ? 'Starting...' : 'Process CV' }}
+                {{ processingAction ? i18n.t('candidateDetail.starting') : i18n.t('candidateDetail.processCv') }}
               </button>
 
               <!-- Reprocess button -->
@@ -321,7 +323,7 @@ import { LocationMapComponent } from '../../components/location-map/location-map
                 (click)="confirmReprocess()"
                 [disabled]="processingAction">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
-                {{ processingAction ? 'Reprocessing...' : 'Reprocess' }}
+                {{ processingAction ? i18n.t('candidateDetail.reprocessing') : i18n.t('candidateDetail.reprocess') }}
               </button>
 
               <!-- Download CV button -->
@@ -331,7 +333,7 @@ import { LocationMapComponent } from '../../components/location-map/location-map
                 target="_blank"
                 class="btn-ai-action btn-download-cv">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                Download CV (PDF)
+                {{ i18n.t('candidateDetail.downloadCvPdf') }}
               </a>
             </div>
           </div>
@@ -346,11 +348,11 @@ import { LocationMapComponent } from '../../components/location-map/location-map
               <div class="dialog-icon">
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
               </div>
-              <h3>Reprocess CV?</h3>
-              <p>This will re-parse the CV and recalculate the score. The current extracted data and generated CV will be overwritten.</p>
+              <h3>{{ i18n.t('candidateDetail.reprocessTitle') }}</h3>
+              <p>{{ i18n.t('candidateDetail.reprocessDesc') }}</p>
               <div class="dialog-actions">
-                <button class="btn-cancel" (click)="cancelReprocess()">Cancel</button>
-                <button class="btn-confirm" (click)="executeReprocess()">Yes, Reprocess</button>
+                <button class="btn-cancel" (click)="cancelReprocess()">{{ i18n.t('candidateDetail.cancel') }}</button>
+                <button class="btn-confirm" (click)="executeReprocess()">{{ i18n.t('candidateDetail.confirmReprocess') }}</button>
               </div>
             </div>
           </div>
@@ -362,14 +364,14 @@ import { LocationMapComponent } from '../../components/location-map/location-map
         <div class="template-override-section" *ngIf="cvTemplates.length > 0">
           <div class="section-title">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
-            CV Template Override
+            {{ i18n.t('candidateDetail.cvTemplateOverride') }}
           </div>
 
           <div class="template-override-card">
             <div class="template-override-info">
-              <div class="template-override-title">Apply a different template for this candidate</div>
+              <div class="template-override-title">{{ i18n.t('candidateDetail.templateApplyDifferent') }}</div>
               <div class="template-override-sub">
-                Global default: <strong>{{ getTemplateName(defaultTemplateKey) }}</strong>
+                {{ i18n.t('candidateDetail.templateGlobalDefault') }} <strong>{{ getTemplateName(defaultTemplateKey) }}</strong>
               </div>
             </div>
             <div class="template-override-control">
@@ -381,7 +383,7 @@ import { LocationMapComponent } from '../../components/location-map/location-map
                 <option *ngFor="let template of cvTemplates" [value]="template.key">{{ template.name }}</option>
               </select>
               <div class="template-override-note" *ngIf="selectedTemplateKey === defaultTemplateKey">
-                Using global default
+                {{ i18n.t('candidateDetail.templateUsingGlobal') }}
               </div>
             </div>
           </div>
@@ -394,7 +396,7 @@ import { LocationMapComponent } from '../../components/location-map/location-map
           <div class="cv-preview-header">
             <div class="section-title">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-              Standardized CV Preview
+              {{ i18n.t('candidateDetail.standardizedPreview') }}
             </div>
             <div class="preview-controls">
               <button class="btn-zoom" (click)="zoomOut()" [disabled]="cvZoom <= 0.5">−</button>
@@ -411,39 +413,39 @@ import { LocationMapComponent } from '../../components/location-map/location-map
         <!-- CV not ready message -->
         <div class="cv-not-ready" *ngIf="cvPreview && !cvPreview.cvReady && candidate.status !== 'processing'">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#9aa0b4" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          <span>{{ cvPreview.message || 'CV not yet generated. Click "Process CV" to start.' }}</span>
+          <span>{{ cvPreview.message || i18n.t('candidateDetail.cvNotGenerated') }}</span>
         </div>
 
         <!-- Parsed CV Details -->
         <div class="parsed-cv-section" *ngIf="cvPreview?.extractedData as extracted">
           <div class="section-title">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
-            Parsed CV Details
+            {{ i18n.t('candidateDetail.parsedDetails') }}
           </div>
-          <p class="section-subtitle">This information is extracted automatically from the resume. Review and edit if something looks off.</p>
+          <p class="section-subtitle">{{ i18n.t('candidateDetail.parsedSubtitle') }}</p>
 
           <ng-container *ngIf="getExtractedContact(extracted) as contact">
             <div class="parsed-grid">
               <section class="parsed-card">
-                <div class="parsed-card-title">Personal details</div>
+                <div class="parsed-card-title">{{ i18n.t('candidateDetail.personalDetails') }}</div>
                 <div class="kv-grid">
                   <div class="kv-item">
-                    <div class="kv-label">Full name</div>
+                    <div class="kv-label">{{ i18n.t('candidateDetail.fullName') }}</div>
                     <div class="kv-value">{{ contact.fullName }}</div>
                   </div>
                   <div class="kv-item">
-                    <div class="kv-label">Email</div>
+                    <div class="kv-label">{{ i18n.t('candidateDetail.email') }}</div>
                     <div class="kv-value">
                       <a *ngIf="contact.email !== '-'" [href]="'mailto:' + contact.email" class="kv-link">{{ contact.email }}</a>
                       <span *ngIf="contact.email === '-'">-</span>
                     </div>
                   </div>
                   <div class="kv-item">
-                    <div class="kv-label">Phone</div>
+                    <div class="kv-label">{{ i18n.t('candidateDetail.phone') }}</div>
                     <div class="kv-value">{{ contact.phone }}</div>
                   </div>
                   <div class="kv-item kv-item-full">
-                    <div class="kv-label">Location</div>
+                    <div class="kv-label">{{ i18n.t('candidateDetail.location') }}</div>
                     <div class="kv-value location-value">
                       <span>{{ contact.location }}</span>
                     </div>
@@ -452,12 +454,12 @@ import { LocationMapComponent } from '../../components/location-map/location-map
               </section>
 
               <section class="parsed-card">
-                <div class="parsed-card-title">Professional summary</div>
+                <div class="parsed-card-title">{{ i18n.t('candidateDetail.summary') }}</div>
                 <p class="parsed-text">{{ getSummaryText(extracted) }}</p>
               </section>
 
               <section class="parsed-card">
-                <div class="parsed-card-title">Links and profiles</div>
+                <div class="parsed-card-title">{{ i18n.t('candidateDetail.linksProfiles') }}</div>
                 <div class="link-list" *ngIf="getContactLinks(extracted).length; else noLinks">
                   <a class="link-pill" *ngFor="let link of getContactLinks(extracted)" [href]="link.url" target="_blank" rel="noopener">
                     <span class="link-label">{{ link.label }}</span>
@@ -465,20 +467,20 @@ import { LocationMapComponent } from '../../components/location-map/location-map
                   </a>
                 </div>
                 <ng-template #noLinks>
-                  <div class="text-muted">No links extracted yet.</div>
+                  <div class="text-muted">{{ i18n.t('candidateDetail.noLinks') }}</div>
                 </ng-template>
               </section>
 
               <section class="parsed-card">
-                <div class="parsed-card-title">Skills and competencies</div>
+                <div class="parsed-card-title">{{ i18n.t('candidateDetail.skillsCompetencies') }}</div>
                 <div class="chip-wrap" *ngIf="getSkills(extracted).length; else noSkills">
                   <span class="chip" *ngFor="let skill of getSkills(extracted)">{{ skill }}</span>
                 </div>
                 <ng-template #noSkills>
-                  <div class="text-muted">No skills extracted yet.</div>
+                  <div class="text-muted">{{ i18n.t('candidateDetail.noSkills') }}</div>
                 </ng-template>
 
-                <div class="chip-subtitle" *ngIf="getCompetencies(extracted).length">Competencies</div>
+                <div class="chip-subtitle" *ngIf="getCompetencies(extracted).length">{{ i18n.t('candidateDetail.competencies') }}</div>
                 <div class="chip-wrap" *ngIf="getCompetencies(extracted).length">
                   <span class="chip chip-soft" *ngFor="let comp of getCompetencies(extracted)">{{ comp }}</span>
                 </div>
@@ -486,28 +488,28 @@ import { LocationMapComponent } from '../../components/location-map/location-map
 
               <section class="parsed-card span-2" *ngIf="getScoreExplanation(extracted) as scoreExp">
                 <div class="score-header">
-                  <div class="parsed-card-title">Score explanation</div>
+                  <div class="parsed-card-title">{{ i18n.t('candidateDetail.scoreExplanation') }}</div>
                   <span class="score-pill" [ngClass]="'score-' + scoreExp.qualityTone">{{ scoreExp.qualityLabel }}</span>
                 </div>
-                <p class="score-formula">Final score blends fit and completeness for a quick, reliable screening signal.</p>
+                <p class="score-formula">{{ i18n.t('candidateDetail.scoreFormula') }}</p>
 
                 <div class="score-bars">
                   <div class="score-row">
-                    <div class="score-label">Final score</div>
+                    <div class="score-label">{{ i18n.t('candidateDetail.finalScore') }}</div>
                     <div class="score-track">
                       <div class="score-fill" [style.width.%]="scoreExp.score"></div>
                     </div>
                     <div class="score-value">{{ scoreExp.score | number:'1.0-0' }}</div>
                   </div>
                   <div class="score-row">
-                    <div class="score-label">Fit score</div>
+                    <div class="score-label">{{ i18n.t('candidateDetail.fitScore') }}</div>
                     <div class="score-track">
                       <div class="score-fill score-fill-alt" [style.width.%]="scoreExp.fitScore"></div>
                     </div>
                     <div class="score-value">{{ scoreExp.fitScore | number:'1.0-0' }}</div>
                   </div>
                   <div class="score-row">
-                    <div class="score-label">Completeness</div>
+                    <div class="score-label">{{ i18n.t('candidateDetail.completeness') }}</div>
                     <div class="score-track">
                       <div class="score-fill score-fill-soft" [style.width.%]="scoreExp.completenessScore"></div>
                     </div>
@@ -516,17 +518,17 @@ import { LocationMapComponent } from '../../components/location-map/location-map
                 </div>
 
                 <div class="score-rationale" *ngIf="getScoreRationale(extracted) as rationale">
-                  <div class="score-subtitle">Why this score</div>
+                  <div class="score-subtitle">{{ i18n.t('candidateDetail.whyScore') }}</div>
                   <ul class="rationale-list">
-                    <li>Required skills matched: {{ rationale.requiredMatched }}/{{ rationale.requiredTotal }}</li>
-                    <li *ngIf="rationale.niceToHaveMatched > 0">Nice-to-have matched: {{ rationale.niceToHaveMatched }}</li>
+                    <li>{{ i18n.t('candidateDetail.requiredSkillsMatched') }} {{ rationale.requiredMatched }}/{{ rationale.requiredTotal }}</li>
+                    <li *ngIf="rationale.niceToHaveMatched > 0">{{ i18n.t('candidateDetail.niceToHaveMatched') }} {{ rationale.niceToHaveMatched }}</li>
                     <li *ngIf="rationale.experienceYears !== null">
-                      Experience detected: {{ rationale.experienceYears | number:'1.0-1' }} years ({{ rationale.experienceLabel }})
+                      {{ i18n.t('candidateDetail.experienceDetected') }} {{ rationale.experienceYears | number:'1.0-1' }} {{ i18n.t('candidateDetail.years') }} ({{ rationale.experienceLabel }})
                     </li>
-                    <li>Completeness: {{ rationale.completenessScore | number:'1.0-0' }} / 100</li>
+                    <li>{{ i18n.t('candidateDetail.completenessScore') }} {{ rationale.completenessScore | number:'1.0-0' }} / 100</li>
                   </ul>
                   <div class="rationale-missing" *ngIf="rationale.missingFields.length">
-                    <div class="score-subtitle">Missing data</div>
+                    <div class="score-subtitle">{{ i18n.t('candidateDetail.missingData') }}</div>
                     <div class="chip-wrap">
                       <span class="chip chip-negative" *ngFor="let field of rationale.missingFields">{{ field }}</span>
                     </div>
@@ -535,7 +537,7 @@ import { LocationMapComponent } from '../../components/location-map/location-map
 
                 <div class="score-details">
                   <div class="score-block">
-                    <div class="score-subtitle">Required skills</div>
+                    <div class="score-subtitle">{{ i18n.t('candidateDetail.requiredSkills') }}</div>
                     <div class="chip-wrap" *ngIf="scoreExp.skillsMatched.length">
                       <span class="chip chip-positive" *ngFor="let skill of scoreExp.skillsMatched">{{ skill }}</span>
                     </div>
@@ -543,24 +545,24 @@ import { LocationMapComponent } from '../../components/location-map/location-map
                       <span class="chip chip-negative" *ngFor="let skill of scoreExp.skillsMissing">{{ skill }}</span>
                     </div>
                     <div class="text-muted" *ngIf="!scoreExp.skillsMatched.length && !scoreExp.skillsMissing.length">
-                      No required skills listed.
+                      {{ i18n.t('candidateDetail.noRequiredSkills') }}
                     </div>
                   </div>
 
                   <div class="score-block">
-                    <div class="score-subtitle">Nice to have skills</div>
+                    <div class="score-subtitle">{{ i18n.t('candidateDetail.niceToHaveSkills') }}</div>
                     <div class="chip-wrap" *ngIf="scoreExp.niceToHaveMatched.length">
                       <span class="chip chip-soft" *ngFor="let skill of scoreExp.niceToHaveMatched">{{ skill }}</span>
                     </div>
-                    <div class="text-muted" *ngIf="!scoreExp.niceToHaveMatched.length">No nice to have skills matched.</div>
+                    <div class="text-muted" *ngIf="!scoreExp.niceToHaveMatched.length">{{ i18n.t('candidateDetail.noNiceToHave') }}</div>
                   </div>
 
                   <div class="score-block">
-                    <div class="score-subtitle">Experience</div>
-                    <div class="score-metric">Detected: {{ scoreExp.experienceYears | number:'1.0-1' }} years</div>
+                    <div class="score-subtitle">{{ i18n.t('candidateDetail.experience') }}</div>
+                    <div class="score-metric">{{ i18n.t('candidateDetail.detected') }} {{ scoreExp.experienceYears | number:'1.0-1' }} {{ i18n.t('candidateDetail.years') }}</div>
                     <div class="score-metric" *ngIf="scoreExp.experienceMatch !== null">
-                      Requirement: <span [class.score-ok]="scoreExp.experienceMatch" [class.score-warn]="scoreExp.experienceMatch === false">
-                        {{ scoreExp.experienceMatch ? 'Met' : 'Not met' }}
+                      {{ i18n.t('candidateDetail.requirement') }} <span [class.score-ok]="scoreExp.experienceMatch" [class.score-warn]="scoreExp.experienceMatch === false">
+                        {{ scoreExp.experienceMatch ? i18n.t('candidateDetail.requirementMet') : i18n.t('candidateDetail.requirementNotMet') }}
                       </span>
                     </div>
                   </div>
@@ -568,14 +570,14 @@ import { LocationMapComponent } from '../../components/location-map/location-map
               </section>
 
               <section class="parsed-card span-2">
-                <div class="parsed-card-title">Work experience</div>
+                <div class="parsed-card-title">{{ i18n.t('candidateDetail.workExperience') }}</div>
                 <div class="timeline" *ngIf="getExperienceItems(extracted).length; else noExperience">
                   <div class="timeline-item" *ngFor="let exp of getExperienceItems(extracted)">
                     <div class="timeline-marker">W</div>
                     <div class="timeline-body">
-                      <div class="timeline-title">{{ exp.title || 'Role' }}</div>
+                      <div class="timeline-title">{{ exp.title || i18n.t('candidateDetail.rolePlaceholder') }}</div>
                       <div class="timeline-sub">
-                        {{ exp.company || 'Company' }}
+                        {{ exp.company || i18n.t('candidateDetail.companyPlaceholder') }}
                         <span class="timeline-dot">•</span>
                         {{ formatDateRange(exp.startDate, exp.endDate) }}
                       </div>
@@ -586,19 +588,19 @@ import { LocationMapComponent } from '../../components/location-map/location-map
                   </div>
                 </div>
                 <ng-template #noExperience>
-                  <div class="text-muted">No experience extracted yet.</div>
+                  <div class="text-muted">{{ i18n.t('candidateDetail.noExperience') }}</div>
                 </ng-template>
               </section>
 
               <section class="parsed-card">
-                <div class="parsed-card-title">Education</div>
+                <div class="parsed-card-title">{{ i18n.t('candidateDetail.education') }}</div>
                 <div class="timeline" *ngIf="getEducationItems(extracted).length; else noEducation">
                   <div class="timeline-item" *ngFor="let edu of getEducationItems(extracted)">
                     <div class="timeline-marker">E</div>
                     <div class="timeline-body">
-                      <div class="timeline-title">{{ edu.degree || 'Education' }}</div>
+                      <div class="timeline-title">{{ edu.degree || i18n.t('candidateDetail.educationPlaceholder') }}</div>
                       <div class="timeline-sub">
-                        {{ edu.school || 'School' }}
+                        {{ edu.school || i18n.t('candidateDetail.schoolPlaceholder') }}
                         <span class="timeline-dot">•</span>
                         {{ formatDateRange(edu.startDate, edu.endDate) }}
                       </div>
@@ -606,65 +608,65 @@ import { LocationMapComponent } from '../../components/location-map/location-map
                   </div>
                 </div>
                 <ng-template #noEducation>
-                  <div class="text-muted">No education extracted yet.</div>
+                  <div class="text-muted">{{ i18n.t('candidateDetail.noEducation') }}</div>
                 </ng-template>
               </section>
 
               <section class="parsed-card">
-                <div class="parsed-card-title">Projects</div>
+                <div class="parsed-card-title">{{ i18n.t('candidateDetail.projects') }}</div>
                 <div class="project-grid" *ngIf="getProjects(extracted).length; else noProjects">
                   <div class="project-card" *ngFor="let proj of getProjects(extracted)">
-                    <div class="project-title">{{ proj.name || 'Project' }}</div>
-                    <div class="project-desc">{{ proj.description || 'No description provided.' }}</div>
+                    <div class="project-title">{{ proj.name || i18n.t('candidateDetail.projectPlaceholder') }}</div>
+                    <div class="project-desc">{{ proj.description || i18n.t('candidateDetail.noProjectDescription') }}</div>
                     <div class="project-links" *ngIf="proj.links.length">
                       <a *ngFor="let link of proj.links" [href]="normalizeUrl(link)" target="_blank" rel="noopener">{{ link }}</a>
                     </div>
                   </div>
                 </div>
                 <ng-template #noProjects>
-                  <div class="text-muted">No projects extracted yet.</div>
+                  <div class="text-muted">{{ i18n.t('candidateDetail.noProjects') }}</div>
                 </ng-template>
               </section>
 
               <section class="parsed-card span-2">
-                <div class="parsed-card-title">Additional info</div>
+                <div class="parsed-card-title">{{ i18n.t('candidateDetail.additionalInfo') }}</div>
                 <div class="info-group">
-                  <div class="info-label">Certifications</div>
+                  <div class="info-label">{{ i18n.t('candidateDetail.certifications') }}</div>
                   <div class="chip-wrap" *ngIf="getCertifications(extracted).length; else noCerts">
                     <span class="chip chip-soft" *ngFor="let cert of getCertifications(extracted)">{{ cert }}</span>
                   </div>
                   <ng-template #noCerts>
-                    <div class="text-muted">No certifications extracted yet.</div>
+                    <div class="text-muted">{{ i18n.t('candidateDetail.noCertifications') }}</div>
                   </ng-template>
                 </div>
 
                 <div class="info-group">
-                  <div class="info-label">Languages</div>
+                  <div class="info-label">{{ i18n.t('candidateDetail.languages') }}</div>
                   <div class="chip-wrap" *ngIf="getLanguages(extracted).length; else noLangs">
                     <span class="chip chip-soft" *ngFor="let lang of getLanguages(extracted)">{{ lang }}</span>
                   </div>
                   <ng-template #noLangs>
-                    <div class="text-muted">No languages extracted yet.</div>
+                    <div class="text-muted">{{ i18n.t('candidateDetail.noLanguages') }}</div>
                   </ng-template>
                 </div>
 
                 <div class="info-group">
-                  <div class="info-label">Qualities</div>
+                  <div class="info-label">{{ i18n.t('candidateDetail.qualities') }}</div>
                   <div class="chip-wrap" *ngIf="getQualities(extracted).length; else noQualities">
                     <span class="chip chip-soft" *ngFor="let q of getQualities(extracted)">{{ q }}</span>
                   </div>
                   <ng-template #noQualities>
-                    <div class="text-muted">No qualities extracted yet.</div>
+                    <div class="text-muted">{{ i18n.t('candidateDetail.noQualities') }}</div>
                   </ng-template>
                 </div>
 
                 <div class="info-group">
-                  <div class="info-label">Interests</div>
+                  <div class="info-label">{{ i18n.t('candidateDetail.interests') }}</div>
                   <div class="chip-wrap" *ngIf="getInterests(extracted).length; else noInterests">
                     <span class="chip chip-soft" *ngFor="let interest of getInterests(extracted)">{{ interest }}</span>
                   </div>
                   <ng-template #noInterests>
-                    <div class="text-muted">No interests extracted yet.</div>
+                    <div class="text-muted">{{ i18n.t('candidateDetail.noInterests') }}</div>
                   </ng-template>
                 </div>
               </section>
@@ -1891,13 +1893,14 @@ export class CandidateDetailComponent implements OnInit {
     private route: ActivatedRoute,
     public candidateService: CandidateService,
     private authService: AuthService,
-    private sanitizer: DomSanitizer
+    private sanitizer: DomSanitizer,
+    public i18n: I18nService
   ) {}
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
     if (!id) {
-      this.error = 'Invalid candidate ID.';
+      this.error = this.i18n.t('candidateDetail.error.invalidId');
       return;
     }
     this.downloadUrl = this.buildDownloadUrl(id);
@@ -1921,7 +1924,7 @@ export class CandidateDetailComponent implements OnInit {
         }
       },
       error: (err) => {
-        this.error = err?.error?.error?.message || 'Failed to load candidate details.';
+        this.error = err?.error?.error?.message || this.i18n.t('candidateDetail.error.loadFailed');
         this.loading = false;
       }
     });
@@ -2026,7 +2029,7 @@ export class CandidateDetailComponent implements OnInit {
         this.statusSaving = false;
       },
       error: (err) => {
-        this.error = err?.error?.error?.message || 'Failed to update status.';
+        this.error = err?.error?.error?.message || this.i18n.t('candidateDetail.error.statusUpdate');
         this.statusDraft = this.candidate?.status || '';
         this.statusSaving = false;
       }
@@ -2058,7 +2061,7 @@ export class CandidateDetailComponent implements OnInit {
         this.notesSaving = false;
       },
       error: (err) => {
-        this.error = err?.error?.error?.message || 'Failed to update notes.';
+        this.error = err?.error?.error?.message || this.i18n.t('candidateDetail.error.notesUpdate');
         this.notesSaving = false;
       }
     });
@@ -2082,17 +2085,15 @@ export class CandidateDetailComponent implements OnInit {
    * Get human-readable status label
    */
   getStatusLabel(status: string): string {
-    const labels: Record<string, string> = {
-      new: 'New - Ready to Process',
-      processing: 'Processing CV...',
-      processed: 'CV Processed',
-      reviewing: 'Under Review',
-      shortlisted: 'Shortlisted',
-      rejected: 'Rejected',
-      hired: 'Hired',
-      error: 'Processing Error'
-    };
-    return labels[status] || status;
+    const key = `candidateDetail.statusDetail.${status}`;
+    const label = this.i18n.t(key);
+    return label === key ? this.getStatusShortLabel(status) : label;
+  }
+
+  getStatusShortLabel(status: string): string {
+    const key = `candidateDetail.status.${status}`;
+    const label = this.i18n.t(key);
+    return label === key ? status : label;
   }
 
   /**
@@ -2112,7 +2113,7 @@ export class CandidateDetailComponent implements OnInit {
         this.pollForCompletion();
       },
       error: (err) => {
-        this.error = err?.error?.error?.message || 'Failed to start processing.';
+        this.error = err?.error?.error?.message || this.i18n.t('candidateDetail.error.processStart');
         this.processingAction = false;
       }
     });
@@ -2153,7 +2154,7 @@ export class CandidateDetailComponent implements OnInit {
         this.pollForCompletion();
       },
       error: (err) => {
-        this.error = err?.error?.error?.message || 'Failed to reprocess.';
+        this.error = err?.error?.error?.message || this.i18n.t('candidateDetail.error.reprocess');
         this.processingAction = false;
       }
     });
@@ -2221,7 +2222,7 @@ export class CandidateDetailComponent implements OnInit {
         }
       },
       error: (err) => {
-        this.error = err?.error?.error?.message || 'Failed to update template.';
+        this.error = err?.error?.error?.message || this.i18n.t('candidateDetail.error.templateUpdate');
         this.applyTemplateSelection();
       }
     });
@@ -2263,7 +2264,7 @@ export class CandidateDetailComponent implements OnInit {
   getSummaryText(extracted: any): string {
     const summary = extracted?.summary;
     if (typeof summary === 'string' && summary.trim()) return summary.trim();
-    return 'No summary extracted yet.';
+    return this.i18n.t('candidateDetail.noSummary');
   }
 
   getSkills(extracted: any): string[] {
@@ -2376,7 +2377,11 @@ export class CandidateDetailComponent implements OnInit {
       ? evaluation.qualityLabel.trim().toLowerCase()
       : '';
     const qualityTone = ['excellent', 'good', 'fair', 'poor'].includes(qualityRaw) ? qualityRaw : 'neutral';
-    const qualityLabel = qualityRaw ? qualityRaw.charAt(0).toUpperCase() + qualityRaw.slice(1) : 'Score';
+    const qualityKey = qualityRaw ? `candidateDetail.quality.${qualityRaw}` : 'candidateDetail.scoreLabel';
+    const localized = this.i18n.t(qualityKey);
+    const qualityLabel = localized === qualityKey
+      ? (qualityRaw ? qualityRaw.charAt(0).toUpperCase() + qualityRaw.slice(1) : 'Score')
+      : localized;
 
     return {
       score,
@@ -2425,10 +2430,10 @@ export class CandidateDetailComponent implements OnInit {
         ? evaluation.experienceMatch
         : null;
     const experienceLabel = experienceMatch === null
-      ? 'requirement not specified'
+      ? this.i18n.t('candidateDetail.requirementNotSpecified')
       : experienceMatch
-        ? 'requirement met'
-        : 'requirement not met';
+        ? this.i18n.t('candidateDetail.requirementMet')
+        : this.i18n.t('candidateDetail.requirementNotMet');
 
     const completenessScore = this.toScore(breakdown?.completenessScore ?? evaluation?.completenessScore ?? 0);
     const missingFields = this.getCompletenessMissing(extracted);
@@ -2448,29 +2453,29 @@ export class CandidateDetailComponent implements OnInit {
     const missing: string[] = [];
     const contact = extracted?.contact ?? {};
 
-    if (!this.pickFirstText(contact?.fullName)) missing.push('full name');
-    if (!this.pickFirstText(contact?.email)) missing.push('email');
-    if (!this.pickFirstText(contact?.phone)) missing.push('phone');
-    if (!this.pickFirstText(contact?.location)) missing.push('location');
+    if (!this.pickFirstText(contact?.fullName)) missing.push(this.i18n.t('candidateDetail.missing.fullName'));
+    if (!this.pickFirstText(contact?.email)) missing.push(this.i18n.t('candidateDetail.missing.email'));
+    if (!this.pickFirstText(contact?.phone)) missing.push(this.i18n.t('candidateDetail.missing.phone'));
+    if (!this.pickFirstText(contact?.location)) missing.push(this.i18n.t('candidateDetail.missing.location'));
 
-    if (!this.pickFirstText(contact?.linkedin, this.candidate?.linkedin)) missing.push('LinkedIn');
-    if (!this.pickFirstText(contact?.portfolio, this.candidate?.portfolio)) missing.push('portfolio');
+    if (!this.pickFirstText(contact?.linkedin, this.candidate?.linkedin)) missing.push(this.i18n.t('candidateDetail.missing.linkedin'));
+    if (!this.pickFirstText(contact?.portfolio, this.candidate?.portfolio)) missing.push(this.i18n.t('candidateDetail.missing.portfolio'));
 
-    if (!this.pickFirstText(extracted?.summary)) missing.push('summary');
-    if (this.toTrimmedArray(extracted?.skills).length === 0) missing.push('skills');
+    if (!this.pickFirstText(extracted?.summary)) missing.push(this.i18n.t('candidateDetail.missing.summary'));
+    if (this.toTrimmedArray(extracted?.skills).length === 0) missing.push(this.i18n.t('candidateDetail.missing.skills'));
 
     const experience = Array.isArray(extracted?.experience) ? extracted.experience : [];
-    if (experience.length === 0) missing.push('experience');
+    if (experience.length === 0) missing.push(this.i18n.t('candidateDetail.missing.experience'));
     const hasDatedExperience = experience.some((row: any) =>
       this.pickFirstText(row?.startDate) && this.pickFirstText(row?.endDate)
     );
-    if (!hasDatedExperience) missing.push('experience dates');
+    if (!hasDatedExperience) missing.push(this.i18n.t('candidateDetail.missing.experienceDates'));
 
     const education = Array.isArray(extracted?.education) ? extracted.education : [];
-    if (education.length === 0) missing.push('education');
+    if (education.length === 0) missing.push(this.i18n.t('candidateDetail.missing.education'));
 
     const projects = Array.isArray(extracted?.projects) ? extracted.projects : [];
-    if (projects.length === 0) missing.push('projects');
+    if (projects.length === 0) missing.push(this.i18n.t('candidateDetail.missing.projects'));
 
     return missing;
   }
@@ -2490,11 +2495,11 @@ export class CandidateDetailComponent implements OnInit {
       links.push({ label, url: normalized, display: trimmed });
     };
 
-    if (contact.linkedin !== '-') pushLink('LinkedIn', contact.linkedin);
-    if (contact.portfolio !== '-') pushLink('Portfolio', contact.portfolio);
+    if (contact.linkedin !== '-') pushLink(this.i18n.t('candidateDetail.link.linkedin'), contact.linkedin);
+    if (contact.portfolio !== '-') pushLink(this.i18n.t('candidateDetail.link.portfolio'), contact.portfolio);
 
     for (const link of contact.links) {
-      pushLink('Link', link);
+      pushLink(this.i18n.t('candidateDetail.link.generic'), link);
     }
 
     return links;
@@ -2504,9 +2509,9 @@ export class CandidateDetailComponent implements OnInit {
     const startText = typeof start === 'string' && start.trim() ? start.trim() : '';
     const endText = typeof end === 'string' && end.trim() ? end.trim() : '';
     if (startText && endText) return `${startText} - ${endText}`;
-    if (startText && !endText) return `${startText} - Present`;
+    if (startText && !endText) return `${startText} - ${this.i18n.t('candidateDetail.present')}`;
     if (!startText && endText) return endText;
-    return 'Dates not provided';
+    return this.i18n.t('candidateDetail.datesNotProvided');
   }
 
   normalizeUrl(raw: string): string {

@@ -24,6 +24,7 @@ import {
   EvaluationConfig,
   QualityThresholds,
 } from '../../services/job-posting.service';
+import { I18nService } from '../../services/i18n.service';
 
 type FullEvaluationConfig = {
   fitWeight: number;
@@ -73,8 +74,8 @@ const DEFAULTS: FullEvaluationConfig = {
         <div class="page-header-row">
           <lucide-angular [img]="icons.brain" [size]="28" class="page-icon"></lucide-angular>
           <div>
-            <h1>AI Evaluation Configuration</h1>
-            <p class="page-subtitle">Customize how candidates are scored for each job posting</p>
+            <h1>{{ i18n.t('aiEval.title') }}</h1>
+            <p class="page-subtitle">{{ i18n.t('aiEval.subtitle') }}</p>
           </div>
         </div>
       </header>
@@ -82,16 +83,16 @@ const DEFAULTS: FullEvaluationConfig = {
       <section class="job-selector card">
         <div class="selector-label">
           <lucide-angular [img]="icons.settings" [size]="18"></lucide-angular>
-          Select Job Posting
+          {{ i18n.t('aiEval.selectJob') }}
         </div>
         <select
           class="selector-input"
           [ngModel]="selectedJobKey() ?? ''"
           (ngModelChange)="onSelectJob($event || null)"
         >
-          <option value="">- Choose a job posting -</option>
+          <option value="">{{ i18n.t('aiEval.chooseJob') }}</option>
           <option *ngFor="let job of jobs(); trackBy: trackJob" [value]="jobKey(job)">
-            {{ job.title || 'Untitled' }} ({{ job.status }})
+            {{ job.title || i18n.t('aiEval.untitled') }} ({{ job.status }})
           </option>
         </select>
       </section>
@@ -99,21 +100,21 @@ const DEFAULTS: FullEvaluationConfig = {
       <div class="alert alert--error" *ngIf="error()">{{ error() }}</div>
       <div class="alert alert--success" *ngIf="success()">{{ success() }}</div>
 
-      <div class="loading-state" *ngIf="loading() && !selectedJob()">Loading job postings...</div>
+      <div class="loading-state" *ngIf="loading() && !selectedJob()">{{ i18n.t('aiEval.loadingJobs') }}</div>
 
       <ng-container *ngIf="selectedJob()">
         <div class="action-bar">
           <span class="action-label">
-            Configuring: <strong>{{ selectedJob()?.title }}</strong>
+            {{ i18n.t('aiEval.configuring') }} <strong>{{ selectedJob()?.title }}</strong>
           </span>
           <div class="action-buttons">
             <button class="btn btn--outline" (click)="resetToDefaults()" [disabled]="saving()">
               <lucide-angular [img]="icons.reset" [size]="16"></lucide-angular>
-              Reset Defaults
+              {{ i18n.t('aiEval.resetDefaults') }}
             </button>
             <button class="btn btn--primary" (click)="save()" [disabled]="saving() || !dirty()">
               <lucide-angular [img]="icons.save" [size]="16"></lucide-angular>
-              {{ saving() ? 'Saving...' : 'Save Configuration' }}
+              {{ saving() ? i18n.t('aiEval.saving') : i18n.t('aiEval.saveConfig') }}
             </button>
           </div>
         </div>
@@ -121,20 +122,25 @@ const DEFAULTS: FullEvaluationConfig = {
         <section class="config-section card">
           <button class="section-header" (click)="toggleSection('weights')">
             <lucide-angular [img]="icons.sliders" [size]="20"></lucide-angular>
-            <span class="section-title">Score Weights</span>
-            <span class="section-badge">Fit {{ previewScore().fitPct }}% | Completeness {{ previewScore().completenessPct }}%</span>
+            <span class="section-title">{{ i18n.t('aiEval.scoreWeights') }}</span>
+            <span class="section-badge">
+              {{ i18n.t('aiEval.fit') }} {{ previewScore().fitPct }}% | {{ i18n.t('aiEval.completeness') }} {{ previewScore().completenessPct }}%
+            </span>
             <lucide-angular [img]="icons.chevron" [size]="18" [class.rotated]="isExpanded('weights')"></lucide-angular>
           </button>
 
           <div class="section-body" *ngIf="isExpanded('weights')">
             <p class="section-desc">
-              The final score is a weighted average of <strong>Fit Score</strong> (how well the candidate matches the job)
-              and <strong>Completeness Score</strong> (how complete the CV is). These two weights must sum to 100.
+              {{ i18n.t('aiEval.weightsDescStart') }}
+              <strong>{{ i18n.t('aiEval.fitScore') }}</strong>
+              {{ i18n.t('aiEval.weightsDescMiddle') }}
+              <strong>{{ i18n.t('aiEval.completenessScore') }}</strong>
+              {{ i18n.t('aiEval.weightsDescEnd') }}
             </p>
 
             <div class="weight-pair">
               <div class="weight-row">
-                <label class="weight-label">Fit Score Weight</label>
+                <label class="weight-label">{{ i18n.t('aiEval.fitScoreWeight') }}</label>
                 <input
                   type="range" min="0" max="100" step="1"
                   [ngModel]="fitWeight()"
@@ -144,7 +150,7 @@ const DEFAULTS: FullEvaluationConfig = {
                 <span class="weight-value">{{ fitWeight() }}%</span>
               </div>
               <div class="weight-row">
-                <label class="weight-label">Completeness Weight</label>
+                <label class="weight-label">{{ i18n.t('aiEval.completenessWeight') }}</label>
                 <input
                   type="range" min="0" max="100" step="1"
                   [ngModel]="completenessWeight()"
@@ -157,33 +163,38 @@ const DEFAULTS: FullEvaluationConfig = {
 
             <div class="weight-preview-bar">
               <div class="weight-preview-segment weight-preview-segment--fit" [style.width.%]="previewScore().fitPct">
-                Fit {{ previewScore().fitPct }}%
+                {{ i18n.t('aiEval.fit') }} {{ previewScore().fitPct }}%
               </div>
               <div class="weight-preview-segment weight-preview-segment--completeness" [style.width.%]="previewScore().completenessPct">
-                Comp. {{ previewScore().completenessPct }}%
+                {{ i18n.t('aiEval.compShort') }} {{ previewScore().completenessPct }}%
               </div>
             </div>
 
-            <p class="formula-text">Final Score = Fit Score × {{ previewScore().fitPct }}% + Completeness × {{ previewScore().completenessPct }}%</p>
+            <p class="formula-text">
+              {{ i18n.t('aiEval.finalScore') }} = {{ i18n.t('aiEval.fitScore') }} × {{ previewScore().fitPct }}% +
+              {{ i18n.t('aiEval.completenessScore') }} × {{ previewScore().completenessPct }}%
+            </p>
           </div>
         </section>
 
         <section class="config-section card">
           <button class="section-header" (click)="toggleSection('fitSub')">
             <lucide-angular [img]="icons.gauge" [size]="20"></lucide-angular>
-            <span class="section-title">Fit Score Breakdown</span>
-            <span class="section-badge">Skills {{ fitSubPreview().requiredPct }}% | Nice {{ fitSubPreview().nicePct }}% | Exp {{ fitSubPreview().expPct }}%</span>
+            <span class="section-title">{{ i18n.t('aiEval.fitScoreBreakdown') }}</span>
+            <span class="section-badge">
+              {{ i18n.t('aiEval.skillsBadge') }} {{ fitSubPreview().requiredPct }}% | {{ i18n.t('aiEval.niceBadge') }} {{ fitSubPreview().nicePct }}% | {{ i18n.t('aiEval.expBadge') }} {{ fitSubPreview().expPct }}%
+            </span>
             <lucide-angular [img]="icons.chevron" [size]="18" [class.rotated]="isExpanded('fitSub')"></lucide-angular>
           </button>
 
           <div class="section-body" *ngIf="isExpanded('fitSub')">
             <p class="section-desc">
-              How the Fit Score is composed from three sub-factors. Values are normalized to sum to 100%.
+              {{ i18n.t('aiEval.fitSubDesc') }}
             </p>
 
             <div class="weight-pair">
               <div class="weight-row">
-                <label class="weight-label">Required Skills</label>
+                <label class="weight-label">{{ i18n.t('aiEval.requiredSkills') }}</label>
                 <input
                   type="range" min="0" max="100" step="1"
                   [ngModel]="requiredSkillsWeight()"
@@ -193,7 +204,7 @@ const DEFAULTS: FullEvaluationConfig = {
                 <span class="weight-value">{{ requiredSkillsWeight() }}</span>
               </div>
               <div class="weight-row">
-                <label class="weight-label">Nice-to-Have Skills</label>
+                <label class="weight-label">{{ i18n.t('aiEval.niceSkills') }}</label>
                 <input
                   type="range" min="0" max="100" step="1"
                   [ngModel]="niceToHaveSkillsWeight()"
@@ -203,7 +214,7 @@ const DEFAULTS: FullEvaluationConfig = {
                 <span class="weight-value">{{ niceToHaveSkillsWeight() }}</span>
               </div>
               <div class="weight-row">
-                <label class="weight-label">Experience</label>
+                <label class="weight-label">{{ i18n.t('aiEval.experience') }}</label>
                 <input
                   type="range" min="0" max="100" step="1"
                   [ngModel]="experienceWeight()"
@@ -231,32 +242,32 @@ const DEFAULTS: FullEvaluationConfig = {
         <section class="config-section card">
           <button class="section-header" (click)="toggleSection('completeness')">
             <lucide-angular [img]="icons.settings" [size]="20"></lucide-angular>
-            <span class="section-title">Completeness Points</span>
-            <span class="section-badge">Total: {{ completenessPointsTotal() }} pts</span>
+            <span class="section-title">{{ i18n.t('aiEval.completenessPoints') }}</span>
+            <span class="section-badge">{{ i18n.t('aiEval.total') }}: {{ completenessPointsTotal() }} {{ i18n.t('aiEval.pts') }}</span>
             <lucide-angular [img]="icons.chevron" [size]="18" [class.rotated]="isExpanded('completeness')"></lucide-angular>
           </button>
 
           <div class="section-body" *ngIf="isExpanded('completeness')">
             <p class="section-desc">
-              Points awarded for each present field. The score is normalized to 0-100 regardless of total, but keeping them balanced helps maintain meaningful scores.
+              {{ i18n.t('aiEval.completenessDesc') }}
             </p>
 
             <div class="completeness-grid">
               <div class="completeness-row" *ngFor="let field of completenessFieldLabels; trackBy: trackField">
-                <label class="completeness-label">{{ field.label }}</label>
+                <label class="completeness-label">{{ i18n.t(field.labelKey) }}</label>
                 <input
                   type="number" min="0" max="100" step="1"
                   [ngModel]="completenessPoints()[field.key]"
                   (ngModelChange)="onCompletenessPointChange(field.key, $event)"
                   class="completeness-input"
                 />
-                <span class="completeness-unit">pts</span>
+                <span class="completeness-unit">{{ i18n.t('aiEval.pts') }}</span>
               </div>
             </div>
 
             <div class="completeness-total">
-              Total: <strong>{{ completenessPointsTotal() }}</strong> points
-              <span class="completeness-warn" *ngIf="completenessPointsTotal() !== 100">(will be normalized to 100%)</span>
+              {{ i18n.t('aiEval.total') }}: <strong>{{ completenessPointsTotal() }}</strong> {{ i18n.t('aiEval.points') }}
+              <span class="completeness-warn" *ngIf="completenessPointsTotal() !== 100">{{ i18n.t('aiEval.normalizedNote') }}</span>
             </div>
           </div>
         </section>
@@ -264,50 +275,52 @@ const DEFAULTS: FullEvaluationConfig = {
         <section class="config-section card">
           <button class="section-header" (click)="toggleSection('custom')">
             <lucide-angular [img]="icons.sparkles" [size]="20"></lucide-angular>
-            <span class="section-title">Custom Criteria</span>
-            <span class="section-badge">{{ customCriteria().length }} rule{{ customCriteria().length === 1 ? '' : 's' }}</span>
+            <span class="section-title">{{ i18n.t('aiEval.customCriteria') }}</span>
+            <span class="section-badge">
+              {{ customCriteria().length }} {{ customCriteria().length === 1 ? i18n.t('aiEval.rule') : i18n.t('aiEval.rules') }}
+            </span>
             <lucide-angular [img]="icons.chevron" [size]="18" [class.rotated]="isExpanded('custom')"></lucide-angular>
           </button>
 
           <div class="section-body" *ngIf="isExpanded('custom')">
             <p class="section-desc">
-              Add bonus or penalty rules that trigger when specific keywords are found in the candidate's CV.
+              {{ i18n.t('aiEval.customDesc') }}
             </p>
 
             <div class="criterion-card" *ngFor="let criterion of customCriteria(); let i = index; trackBy: trackCriterion">
               <div class="criterion-header">
                 <span class="criterion-label">#{{ i + 1 }}</span>
-                <button class="btn-icon btn-icon--danger" (click)="removeCriterion(i)" title="Remove">
+                <button class="btn-icon btn-icon--danger" (click)="removeCriterion(i)" [title]="i18n.t('aiEval.remove')">
                   <lucide-angular [img]="icons.trash" [size]="16"></lucide-angular>
                 </button>
               </div>
 
               <div class="criterion-fields">
                 <div class="criterion-field">
-                  <label>Name</label>
+                  <label>{{ i18n.t('aiEval.name') }}</label>
                   <input
                     type="text"
                     [ngModel]="criterion.name"
                     (ngModelChange)="updateCriterion(i, { name: $event })"
-                    placeholder="e.g. Docker experience"
+                    [placeholder]="i18n.t('aiEval.namePlaceholder')"
                     class="criterion-input"
                   />
                 </div>
 
                 <div class="criterion-field criterion-field--row">
                   <div class="criterion-field">
-                    <label>Type</label>
+                    <label>{{ i18n.t('aiEval.type') }}</label>
                     <select
                       class="criterion-select"
                       [ngModel]="criterion.type"
                       (ngModelChange)="updateCriterion(i, { type: $event })"
                     >
-                      <option value="bonus">Bonus (+)</option>
-                      <option value="penalty">Penalty (-)</option>
+                      <option value="bonus">{{ i18n.t('aiEval.bonus') }}</option>
+                      <option value="penalty">{{ i18n.t('aiEval.penalty') }}</option>
                     </select>
                   </div>
                   <div class="criterion-field">
-                    <label>Points</label>
+                    <label>{{ i18n.t('aiEval.pointsLabel') }}</label>
                     <input
                       type="number" min="0" max="50" step="1"
                       [ngModel]="criterion.points"
@@ -316,33 +329,33 @@ const DEFAULTS: FullEvaluationConfig = {
                     />
                   </div>
                   <div class="criterion-field">
-                    <label>Match Mode</label>
+                    <label>{{ i18n.t('aiEval.matchMode') }}</label>
                     <select
                       class="criterion-select"
                       [ngModel]="criterion.requireAll"
                       (ngModelChange)="updateCriterion(i, { requireAll: $event })"
                     >
-                      <option [ngValue]="false">Any keyword</option>
-                      <option [ngValue]="true">All keywords</option>
+                      <option [ngValue]="false">{{ i18n.t('aiEval.anyKeyword') }}</option>
+                      <option [ngValue]="true">{{ i18n.t('aiEval.allKeywords') }}</option>
                     </select>
                   </div>
                 </div>
 
                 <div class="criterion-field">
-                  <label>Keywords</label>
+                  <label>{{ i18n.t('aiEval.keywords') }}</label>
                   <div class="keyword-list">
                     <div class="keyword-row" *ngFor="let kw of criterion.keywords; let ki = index; trackBy: trackKeyword">
                       <input
                         type="text"
                         [ngModel]="kw"
                         (ngModelChange)="updateKeyword(i, ki, $event)"
-                        placeholder="keyword..."
+                        [placeholder]="i18n.t('aiEval.keywordPlaceholder')"
                         class="criterion-input"
                       />
                       <button
                         class="btn-icon btn-icon--subtle"
                         (click)="removeKeyword(i, ki)"
-                        title="Remove keyword"
+                        [title]="i18n.t('aiEval.remove')"
                         *ngIf="criterion.keywords.length > 1"
                       >
                         <lucide-angular [img]="icons.close" [size]="14"></lucide-angular>
@@ -350,7 +363,7 @@ const DEFAULTS: FullEvaluationConfig = {
                     </div>
                     <button class="btn btn--ghost btn--sm" (click)="addKeyword(i)">
                       <lucide-angular [img]="icons.plus" [size]="14"></lucide-angular>
-                      Add Keyword
+                      {{ i18n.t('aiEval.addKeyword') }}
                     </button>
                   </div>
                 </div>
@@ -359,7 +372,7 @@ const DEFAULTS: FullEvaluationConfig = {
 
             <button class="btn btn--outline btn--add-criterion" (click)="addCriterion()">
               <lucide-angular [img]="icons.plus" [size]="16"></lucide-angular>
-              Add Custom Criterion
+              {{ i18n.t('aiEval.addCriterion') }}
             </button>
           </div>
         </section>
@@ -367,20 +380,20 @@ const DEFAULTS: FullEvaluationConfig = {
         <section class="config-section card">
           <button class="section-header" (click)="toggleSection('thresholds')">
             <lucide-angular [img]="icons.gauge" [size]="20"></lucide-angular>
-            <span class="section-title">Quality Thresholds</span>
-            <span class="section-badge">{{ qualityThresholds().excellent }}+ Excellent</span>
+            <span class="section-title">{{ i18n.t('aiEval.thresholds') }}</span>
+            <span class="section-badge">{{ qualityThresholds().excellent }}+ {{ i18n.t('aiEval.excellent') }}</span>
             <lucide-angular [img]="icons.chevron" [size]="18" [class.rotated]="isExpanded('thresholds')"></lucide-angular>
           </button>
 
           <div class="section-body" *ngIf="isExpanded('thresholds')">
             <p class="section-desc">
-              Defines the score ranges for quality labels shown on the candidate detail page.
+              {{ i18n.t('aiEval.thresholdsDesc') }}
             </p>
 
             <div class="threshold-grid">
               <div class="threshold-row">
-                <span class="threshold-badge threshold-badge--excellent">Excellent</span>
-                <label>Score >=</label>
+                <span class="threshold-badge threshold-badge--excellent">{{ i18n.t('aiEval.excellent') }}</span>
+                <label>{{ i18n.t('aiEval.scoreGte') }}</label>
                 <input
                   type="number" min="0" max="100" step="1"
                   [ngModel]="qualityThresholds().excellent"
@@ -389,8 +402,8 @@ const DEFAULTS: FullEvaluationConfig = {
                 />
               </div>
               <div class="threshold-row">
-                <span class="threshold-badge threshold-badge--good">Good</span>
-                <label>Score >=</label>
+                <span class="threshold-badge threshold-badge--good">{{ i18n.t('aiEval.good') }}</span>
+                <label>{{ i18n.t('aiEval.scoreGte') }}</label>
                 <input
                   type="number" min="0" max="100" step="1"
                   [ngModel]="qualityThresholds().good"
@@ -399,8 +412,8 @@ const DEFAULTS: FullEvaluationConfig = {
                 />
               </div>
               <div class="threshold-row">
-                <span class="threshold-badge threshold-badge--fair">Fair</span>
-                <label>Score >=</label>
+                <span class="threshold-badge threshold-badge--fair">{{ i18n.t('aiEval.fair') }}</span>
+                <label>{{ i18n.t('aiEval.scoreGte') }}</label>
                 <input
                   type="number" min="0" max="100" step="1"
                   [ngModel]="qualityThresholds().fair"
@@ -409,8 +422,8 @@ const DEFAULTS: FullEvaluationConfig = {
                 />
               </div>
               <div class="threshold-row">
-                <span class="threshold-badge threshold-badge--poor">Poor</span>
-                <label>Score &lt;</label>
+                <span class="threshold-badge threshold-badge--poor">{{ i18n.t('aiEval.poor') }}</span>
+                <label>{{ i18n.t('aiEval.scoreLt') }}</label>
                 <span class="threshold-fixed">{{ qualityThresholds().fair }}</span>
               </div>
             </div>
@@ -975,22 +988,22 @@ export class AiEvaluationComponent implements OnInit {
     thresholds: false,
   });
 
-  readonly completenessFieldLabels: { key: keyof FullCompletenessPointsConfig; label: string }[] = [
-    { key: 'fullName', label: 'Full Name' },
-    { key: 'email', label: 'Email' },
-    { key: 'phone', label: 'Phone' },
-    { key: 'location', label: 'Location' },
-    { key: 'links', label: 'Links (CV)' },
-    { key: 'linkedin', label: 'LinkedIn' },
-    { key: 'portfolio', label: 'Portfolio / GitHub' },
-    { key: 'summary', label: 'Summary' },
-    { key: 'experience', label: 'Work Experience' },
-    { key: 'experienceDates', label: 'Experience Dates' },
-    { key: 'education', label: 'Education' },
-    { key: 'competencies', label: 'Competencies' },
+  readonly completenessFieldLabels: { key: keyof FullCompletenessPointsConfig; labelKey: string }[] = [
+    { key: 'fullName', labelKey: 'aiEval.field.fullName' },
+    { key: 'email', labelKey: 'aiEval.field.email' },
+    { key: 'phone', labelKey: 'aiEval.field.phone' },
+    { key: 'location', labelKey: 'aiEval.field.location' },
+    { key: 'links', labelKey: 'aiEval.field.links' },
+    { key: 'linkedin', labelKey: 'aiEval.field.linkedin' },
+    { key: 'portfolio', labelKey: 'aiEval.field.portfolio' },
+    { key: 'summary', labelKey: 'aiEval.field.summary' },
+    { key: 'experience', labelKey: 'aiEval.field.experience' },
+    { key: 'experienceDates', labelKey: 'aiEval.field.experienceDates' },
+    { key: 'education', labelKey: 'aiEval.field.education' },
+    { key: 'competencies', labelKey: 'aiEval.field.competencies' },
   ];
 
-  constructor(private jobPostingService: JobPostingService) {}
+  constructor(private jobPostingService: JobPostingService, public i18n: I18nService) {}
 
   async ngOnInit() {
     try {
@@ -1010,7 +1023,7 @@ export class AiEvaluationComponent implements OnInit {
     return '';
   }
 
-  trackField(_index: number, field: { key: keyof FullCompletenessPointsConfig; label: string }): string {
+  trackField(_index: number, field: { key: keyof FullCompletenessPointsConfig; labelKey: string }): string {
     return field.key;
   }
 
@@ -1204,7 +1217,7 @@ export class AiEvaluationComponent implements OnInit {
       this.serverConfig = this.normalizeConfig(saved.evaluationConfig);
       this.applyConfig(this.serverConfig);
       this.dirty.set(false);
-      this.success.set('Evaluation configuration saved. Reprocess candidates to apply the new scoring.');
+      this.success.set(this.i18n.t('aiEval.saveSuccess'));
     } catch (e) {
       this.error.set(this.toErrorMessage(e));
     } finally {

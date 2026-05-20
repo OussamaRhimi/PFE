@@ -4,6 +4,7 @@ import { RouterModule, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CandidateService, CandidateListItem } from '../../services/candidate.service';
 import { JobPostingService, JobPosting } from '../../services/job-posting.service';
+import { I18nService } from '../../services/i18n.service';
 
 @Component({
   selector: 'app-candidates-list',
@@ -17,16 +18,16 @@ import { JobPostingService, JobPosting } from '../../services/job-posting.servic
             <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>
             <path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
           </svg>
-          Candidates
+          {{ i18n.t('candidateList.title') }}
         </h1>
-        <span class="count-badge" *ngIf="!loading && totalCount > 0">{{ totalCount }} applicants</span>
+        <span class="count-badge" *ngIf="!loading && totalCount > 0">{{ totalCount }} {{ i18n.t('candidateList.applicants') }}</span>
       </div>
 
       <!-- Filters row -->
       <div class="filters-row">
         <div class="search-box">
           <select class="search-field-filter" [(ngModel)]="searchField" (change)="applyFilters()">
-            <option *ngFor="let option of searchFieldOptions" [value]="option.value">{{ option.label }}</option>
+            <option *ngFor="let option of searchFieldOptions" [value]="option.value">{{ i18n.t(option.labelKey) }}</option>
           </select>
           <div class="search-divider" aria-hidden="true"></div>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -40,17 +41,17 @@ import { JobPostingService, JobPosting } from '../../services/job-posting.servic
           />
         </div>
         <select class="status-filter" [(ngModel)]="statusFilter" (change)="applyFilters()">
-          <option value="">All statuses</option>
-          <option *ngFor="let s of statusOptions" [value]="s">{{ s }}</option>
+          <option value="">{{ i18n.t('candidateList.allStatuses') }}</option>
+          <option *ngFor="let s of statusOptions" [value]="s">{{ getStatusShortLabel(s) }}</option>
         </select>
         <select class="job-filter" [(ngModel)]="jobPostingFilter" (change)="applyFilters()">
-          <option value="">All job postings</option>
+          <option value="">{{ i18n.t('candidateList.allJobs') }}</option>
           <option *ngFor="let job of jobPostings" [value]="job.documentId">{{ job.title }}</option>
         </select>
         <div class="score-filter">
           <label class="score-toggle">
             <input type="checkbox" [(ngModel)]="scoreFilterEnabled" (change)="applyFilters()" />
-            <span>Score</span>
+            <span>{{ i18n.t('candidateList.score') }}</span>
           </label>
           <select
             class="score-operator"
@@ -58,8 +59,8 @@ import { JobPostingService, JobPosting } from '../../services/job-posting.servic
             (change)="applyFilters()"
             [disabled]="!scoreFilterEnabled"
           >
-            <option value="gt">Above</option>
-            <option value="lt">Below</option>
+            <option value="gt">{{ i18n.t('candidateList.above') }}</option>
+            <option value="lt">{{ i18n.t('candidateList.below') }}</option>
           </select>
           <input
             type="range"
@@ -76,13 +77,13 @@ import { JobPostingService, JobPosting } from '../../services/job-posting.servic
       </div>
 
       <div class="bulk-toolbar" *ngIf="candidates.length > 0">
-        <div class="bulk-info">{{ selectedCandidateIds.length }} selected</div>
+        <div class="bulk-info">{{ selectedCandidateIds.length }} {{ i18n.t('candidateList.selected') }}</div>
         <div class="bulk-actions">
-          <button class="bulk-btn" type="button" (click)="selectAllCurrent()" [disabled]="loading">Select page</button>
-          <button class="bulk-btn" type="button" (click)="clearSelection()" [disabled]="loading || selectedCandidateIds.length === 0">Clear</button>
+          <button class="bulk-btn" type="button" (click)="selectAllCurrent()" [disabled]="loading">{{ i18n.t('candidateList.selectPage') }}</button>
+          <button class="bulk-btn" type="button" (click)="clearSelection()" [disabled]="loading || selectedCandidateIds.length === 0">{{ i18n.t('candidateList.clear') }}</button>
           <select class="bulk-select" [(ngModel)]="bulkStatus" [disabled]="loading || selectedCandidateIds.length === 0">
-            <option value="">Set status...</option>
-            <option *ngFor="let s of statusOptions" [value]="s">{{ s }}</option>
+            <option value="">{{ i18n.t('candidateList.setStatus') }}</option>
+            <option *ngFor="let s of statusOptions" [value]="s">{{ getStatusShortLabel(s) }}</option>
           </select>
           <button
             class="bulk-btn bulk-btn-primary"
@@ -90,7 +91,7 @@ import { JobPostingService, JobPosting } from '../../services/job-posting.servic
             (click)="applyBulkStatus()"
             [disabled]="loading || selectedCandidateIds.length === 0 || !bulkStatus"
           >
-            Apply
+            {{ i18n.t('candidateList.apply') }}
           </button>
         </div>
       </div>
@@ -107,7 +108,7 @@ import { JobPostingService, JobPosting } from '../../services/job-posting.servic
         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#cbd0dc" stroke-width="1.5">
           <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>
         </svg>
-        <p>No candidates yet.</p>
+        <p>{{ i18n.t('candidateList.empty') }}</p>
       </div>
 
       <div class="table-wrap" *ngIf="!loading && candidates.length > 0">
@@ -119,35 +120,35 @@ import { JobPostingService, JobPosting } from '../../services/job-posting.servic
                   type="checkbox"
                   [checked]="allCurrentSelected()"
                   (change)="toggleSelectAllCurrent($any($event.target).checked)"
-                  aria-label="Select all on page"
+                  [attr.aria-label]="i18n.t('candidateList.aria.selectAllPage')"
                 />
               </th>
               <th class="sortable" (click)="toggleSort('fullName')">
-                Candidate
+                {{ i18n.t('candidateList.column.candidate') }}
                 <span class="sort-icon" *ngIf="sortField === 'fullName'">
                   {{ sortOrder === 'asc' ? '▲' : '▼' }}
                 </span>
               </th>
               <th class="sortable" (click)="toggleSort('status')">
-                Status
+                {{ i18n.t('candidateList.column.status') }}
                 <span class="sort-icon" *ngIf="sortField === 'status'">
                   {{ sortOrder === 'asc' ? '▲' : '▼' }}
                 </span>
               </th>
               <th class="sortable" (click)="toggleSort('score')">
-                Score
+                {{ i18n.t('candidateList.column.score') }}
                 <span class="sort-icon" *ngIf="sortField === 'score'">
                   {{ sortOrder === 'asc' ? '▲' : '▼' }}
                 </span>
               </th>
-              <th>Job Posting</th>
+              <th>{{ i18n.t('candidateList.column.jobPosting') }}</th>
               <th class="sortable" (click)="toggleSort('createdAt')">
-                Applied
+                {{ i18n.t('candidateList.column.applied') }}
                 <span class="sort-icon" *ngIf="sortField === 'createdAt'">
                   {{ sortOrder === 'asc' ? '▲' : '▼' }}
                 </span>
               </th>
-              <th>Actions</th>
+              <th>{{ i18n.t('candidateList.column.actions') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -157,7 +158,7 @@ import { JobPostingService, JobPosting } from '../../services/job-posting.servic
                   type="checkbox"
                   [checked]="isSelected(c.id)"
                   (change)="toggleCandidateSelection(c.id, $any($event.target).checked)"
-                  aria-label="Select candidate"
+                  [attr.aria-label]="i18n.t('candidateList.aria.selectCandidate')"
                 />
               </td>
               <td>
@@ -170,7 +171,7 @@ import { JobPostingService, JobPosting } from '../../services/job-posting.servic
                 </div>
               </td>
               <td>
-                <span class="badge" [ngClass]="'badge-' + c.status">{{ c.status }}</span>
+                <span class="badge" [ngClass]="'badge-' + c.status">{{ getStatusShortLabel(c.status) }}</span>
               </td>
               <td>
                 <div class="score-wrap">
@@ -184,7 +185,7 @@ import { JobPostingService, JobPosting } from '../../services/job-posting.servic
               <td class="date-cell">{{ c.createdAt | date:'dd MMM yyyy' }}</td>
               <td class="actions-cell">
                 <a [routerLink]="['/candidates', c.documentId]" class="btn-view" (click)="$event.stopPropagation()">
-                  View →
+                  {{ i18n.t('candidateList.view') }} →
                 </a>
               </td>
             </tr>
@@ -199,7 +200,7 @@ import { JobPostingService, JobPosting } from '../../services/job-posting.servic
             <polyline points="15 18 9 12 15 6"/>
           </svg>
         </button>
-        <span class="page-info">Page {{ currentPage }} of {{ totalPages }}</span>
+        <span class="page-info">{{ i18n.t('candidateList.page') }} {{ currentPage }} {{ i18n.t('candidateList.of') }} {{ totalPages }}</span>
         <button class="page-btn" [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="9 18 15 12 9 6"/>
@@ -612,11 +613,11 @@ export class CandidatesListComponent implements OnInit {
   scoreOperator: 'gt' | 'lt' = 'gt';
   scoreThreshold = 70;
   searchFieldOptions = [
-    { value: 'all' as const, label: 'All fields' },
-    { value: 'name' as const, label: 'Name' },
-    { value: 'email' as const, label: 'Email' },
-    { value: 'status' as const, label: 'Status' },
-    { value: 'job' as const, label: 'Job title' },
+    { value: 'all' as const, labelKey: 'candidateList.searchField.all' },
+    { value: 'name' as const, labelKey: 'candidateList.searchField.name' },
+    { value: 'email' as const, labelKey: 'candidateList.searchField.email' },
+    { value: 'status' as const, labelKey: 'candidateList.searchField.status' },
+    { value: 'job' as const, labelKey: 'candidateList.searchField.job' },
   ];
   statusOptions = ['new', 'processing', 'processed', 'reviewing', 'shortlisted', 'rejected', 'hired', 'error'];
 
@@ -632,7 +633,8 @@ export class CandidatesListComponent implements OnInit {
   constructor(
     private candidateService: CandidateService,
     private jobPostingService: JobPostingService,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    public i18n: I18nService
   ) {}
 
   ngOnInit(): void {
@@ -703,7 +705,7 @@ export class CandidatesListComponent implements OnInit {
         this.loading = false;
       },
       error: () => {
-        this.error = 'Failed to load candidates.';
+        this.error = this.i18n.t('candidateList.error.load');
         this.loading = false;
       }
     });
@@ -712,16 +714,22 @@ export class CandidatesListComponent implements OnInit {
   getSearchPlaceholder(): string {
     switch (this.searchField) {
       case 'name':
-        return 'Search candidate name...';
+        return this.i18n.t('candidateList.searchPlaceholder.name');
       case 'email':
-        return 'Search email...';
+        return this.i18n.t('candidateList.searchPlaceholder.email');
       case 'status':
-        return 'Search status...';
+        return this.i18n.t('candidateList.searchPlaceholder.status');
       case 'job':
-        return 'Search job title...';
+        return this.i18n.t('candidateList.searchPlaceholder.job');
       default:
-        return 'Search by name, email, status, or job...';
+        return this.i18n.t('candidateList.searchPlaceholder.all');
     }
+  }
+
+  getStatusShortLabel(status: string): string {
+    const key = `candidateDetail.status.${status}`;
+    const label = this.i18n.t(key);
+    return label === key ? status : label;
   }
 
   toggleSort(field: string): void {
@@ -800,7 +808,7 @@ export class CandidatesListComponent implements OnInit {
         this.loading = false;
       },
       error: () => {
-        this.error = 'Failed to update candidate statuses.';
+        this.error = this.i18n.t('candidateList.error.bulkStatus');
         this.loading = false;
       }
     });

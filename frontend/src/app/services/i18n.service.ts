@@ -2,6 +2,13 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 
 export type Lang = 'fr' | 'en';
+export type LangScope = 'public' | 'hr';
+
+const LEGACY_LANG_KEY = 'iohire_lang';
+const LANG_KEYS: Record<LangScope, string> = {
+  public: 'iohire_lang_public',
+  hr: 'iohire_lang_hr',
+};
 
 const TRANSLATIONS: Record<string, Record<Lang, string>> = {
   // ── App Shell ──
@@ -278,6 +285,89 @@ const TRANSLATIONS: Record<string, Record<Lang, string>> = {
   'form.loadError':           { fr: 'Erreur lors du chargement de l\'offre.', en: 'Failed to load job posting.' },
   'form.saveError':           { fr: 'Erreur lors de l\'enregistrement.', en: 'Failed to save job posting.' },
   'form.list':       { fr: 'Voir les candidats',          en: 'View Candidates' },
+
+  // ── AI Evaluation ──
+  'aiEval.title':            { fr: 'Configuration de l\'evaluation IA', en: 'AI Evaluation Configuration' },
+  'aiEval.subtitle':         { fr: 'Personnalisez la notation des candidats pour chaque offre', en: 'Customize how candidates are scored for each job posting' },
+  'aiEval.selectJob':         { fr: 'Selectionner une offre', en: 'Select Job Posting' },
+  'aiEval.chooseJob':         { fr: '- Choisir une offre -', en: '- Choose a job posting -' },
+  'aiEval.untitled':          { fr: 'Sans titre', en: 'Untitled' },
+  'aiEval.loadingJobs':       { fr: 'Chargement des offres...', en: 'Loading job postings...' },
+  'aiEval.configuring':       { fr: 'Configuration :', en: 'Configuring:' },
+  'aiEval.resetDefaults':     { fr: 'Reinitialiser', en: 'Reset Defaults' },
+  'aiEval.saveConfig':        { fr: 'Enregistrer la configuration', en: 'Save Configuration' },
+  'aiEval.saving':            { fr: 'Enregistrement...', en: 'Saving...' },
+
+  'aiEval.scoreWeights':      { fr: 'Poids du score', en: 'Score Weights' },
+  'aiEval.fit':               { fr: 'Adequation', en: 'Fit' },
+  'aiEval.completeness':      { fr: 'Completude', en: 'Completeness' },
+  'aiEval.compShort':         { fr: 'Compl.', en: 'Comp.' },
+  'aiEval.fitScore':          { fr: 'Score d\'adequation', en: 'Fit Score' },
+  'aiEval.completenessScore': { fr: 'Score de completude', en: 'Completeness Score' },
+  'aiEval.weightsDescStart':  { fr: 'Le score final est une moyenne ponderee du ', en: 'The final score is a weighted average of ' },
+  'aiEval.weightsDescMiddle': { fr: ' (correspondance au poste) et du ', en: ' (how well the candidate matches the job) and ' },
+  'aiEval.weightsDescEnd':    { fr: ' (qualite du CV). Ces deux poids doivent totaliser 100.', en: ' (how complete the CV is). These two weights must sum to 100.' },
+  'aiEval.fitScoreWeight':    { fr: 'Poids du score d\'adequation', en: 'Fit Score Weight' },
+  'aiEval.completenessWeight': { fr: 'Poids de completude', en: 'Completeness Weight' },
+  'aiEval.finalScore':        { fr: 'Score final', en: 'Final Score' },
+
+  'aiEval.fitScoreBreakdown': { fr: 'Detail du score d\'adequation', en: 'Fit Score Breakdown' },
+  'aiEval.skillsBadge':       { fr: 'Competences', en: 'Skills' },
+  'aiEval.niceBadge':         { fr: 'Souh.', en: 'Nice' },
+  'aiEval.expBadge':          { fr: 'Exp', en: 'Exp' },
+  'aiEval.fitSubDesc':         { fr: 'La composition du score d\'adequation en trois sous-facteurs. Les valeurs sont normalisees pour totaliser 100%.', en: 'How the Fit Score is composed from three sub-factors. Values are normalized to sum to 100%.' },
+  'aiEval.requiredSkills':     { fr: 'Competences requises', en: 'Required Skills' },
+  'aiEval.niceSkills':         { fr: 'Competences souhaitees', en: 'Nice-to-Have Skills' },
+  'aiEval.experience':         { fr: 'Experience', en: 'Experience' },
+
+  'aiEval.completenessPoints': { fr: 'Points de completude', en: 'Completeness Points' },
+  'aiEval.total':              { fr: 'Total', en: 'Total' },
+  'aiEval.pts':                { fr: 'pts', en: 'pts' },
+  'aiEval.points':             { fr: 'points', en: 'points' },
+  'aiEval.completenessDesc':   { fr: 'Points attribues a chaque champ present. Le score est normalise entre 0 et 100 quel que soit le total, mais un bon equilibre aide a garder des scores pertinents.', en: 'Points awarded for each present field. The score is normalized to 0-100 regardless of total, but keeping them balanced helps maintain meaningful scores.' },
+  'aiEval.normalizedNote':     { fr: '(sera normalise a 100%)', en: '(will be normalized to 100%)' },
+
+  'aiEval.customCriteria':     { fr: 'Criteres personnalises', en: 'Custom Criteria' },
+  'aiEval.rule':               { fr: 'regle', en: 'rule' },
+  'aiEval.rules':              { fr: 'regles', en: 'rules' },
+  'aiEval.customDesc':         { fr: 'Ajoutez des bonus ou penalites lorsqu\'un mot-cle est detecte dans le CV.', en: "Add bonus or penalty rules that trigger when specific keywords are found in the candidate's CV." },
+  'aiEval.remove':             { fr: 'Supprimer', en: 'Remove' },
+  'aiEval.name':               { fr: 'Nom', en: 'Name' },
+  'aiEval.type':               { fr: 'Type', en: 'Type' },
+  'aiEval.pointsLabel':        { fr: 'Points', en: 'Points' },
+  'aiEval.matchMode':          { fr: 'Mode de correspondance', en: 'Match Mode' },
+  'aiEval.keywords':           { fr: 'Mots-cles', en: 'Keywords' },
+  'aiEval.namePlaceholder':    { fr: 'ex. Experience Docker', en: 'e.g. Docker experience' },
+  'aiEval.bonus':              { fr: 'Bonus (+)', en: 'Bonus (+)' },
+  'aiEval.penalty':            { fr: 'Penalite (-)', en: 'Penalty (-)' },
+  'aiEval.anyKeyword':         { fr: 'Au moins un mot-cle', en: 'Any keyword' },
+  'aiEval.allKeywords':        { fr: 'Tous les mots-cles', en: 'All keywords' },
+  'aiEval.keywordPlaceholder': { fr: 'mot-cle...', en: 'keyword...' },
+  'aiEval.addKeyword':         { fr: 'Ajouter un mot-cle', en: 'Add Keyword' },
+  'aiEval.addCriterion':       { fr: 'Ajouter un critere', en: 'Add Custom Criterion' },
+
+  'aiEval.thresholds':         { fr: 'Seuils de qualite', en: 'Quality Thresholds' },
+  'aiEval.thresholdsDesc':     { fr: 'Definit les plages de score pour les labels de qualite affiches sur la fiche candidat.', en: 'Defines the score ranges for quality labels shown on the candidate detail page.' },
+  'aiEval.excellent':          { fr: 'Excellent', en: 'Excellent' },
+  'aiEval.good':               { fr: 'Bon', en: 'Good' },
+  'aiEval.fair':               { fr: 'Moyen', en: 'Fair' },
+  'aiEval.poor':               { fr: 'Faible', en: 'Poor' },
+  'aiEval.scoreGte':           { fr: 'Score >=', en: 'Score >=' },
+  'aiEval.scoreLt':            { fr: 'Score <', en: 'Score <' },
+  'aiEval.saveSuccess':        { fr: 'Configuration enregistree. Relancez l\'analyse des candidats pour appliquer le nouveau scoring.', en: 'Evaluation configuration saved. Reprocess candidates to apply the new scoring.' },
+
+  'aiEval.field.fullName':       { fr: 'Nom complet', en: 'Full Name' },
+  'aiEval.field.email':          { fr: 'Email', en: 'Email' },
+  'aiEval.field.phone':          { fr: 'Telephone', en: 'Phone' },
+  'aiEval.field.location':       { fr: 'Localisation', en: 'Location' },
+  'aiEval.field.links':          { fr: 'Liens (CV)', en: 'Links (CV)' },
+  'aiEval.field.linkedin':       { fr: 'LinkedIn', en: 'LinkedIn' },
+  'aiEval.field.portfolio':      { fr: 'Portfolio / GitHub', en: 'Portfolio / GitHub' },
+  'aiEval.field.summary':        { fr: 'Resume', en: 'Summary' },
+  'aiEval.field.experience':     { fr: 'Experience pro', en: 'Work Experience' },
+  'aiEval.field.experienceDates': { fr: 'Dates d\'experience', en: 'Experience Dates' },
+  'aiEval.field.education':      { fr: 'Formation', en: 'Education' },
+  'aiEval.field.competencies':   { fr: 'Competences', en: 'Competencies' },
   // ── Public Job Listing ──
   'public.login':             { fr: 'Se connecter',            en: 'Sign in' },
   'public.navJobs':           { fr: 'Offres d\'emploi',        en: 'Job Openings' },
@@ -437,16 +527,271 @@ const TRANSLATIONS: Record<string, Record<Lang, string>> = {
   'candidate.btnback':          { fr: 'Précédent',                 en: 'Previous' },
   'candidate.btnnext':          { fr: 'Suivant',                   en: 'Next' },
 
+  // ── Candidates List ──
+  'candidateList.title':            { fr: 'Candidats', en: 'Candidates' },
+  'candidateList.applicants':       { fr: 'candidats', en: 'applicants' },
+  'candidateList.searchField.all':  { fr: 'Tous les champs', en: 'All fields' },
+  'candidateList.searchField.name': { fr: 'Nom', en: 'Name' },
+  'candidateList.searchField.email': { fr: 'Email', en: 'Email' },
+  'candidateList.searchField.status': { fr: 'Statut', en: 'Status' },
+  'candidateList.searchField.job':  { fr: 'Intitule du poste', en: 'Job title' },
+  'candidateList.searchPlaceholder.all': { fr: 'Rechercher par nom, email, statut ou poste...', en: 'Search by name, email, status, or job...' },
+  'candidateList.searchPlaceholder.name': { fr: 'Rechercher le nom du candidat...', en: 'Search candidate name...' },
+  'candidateList.searchPlaceholder.email': { fr: 'Rechercher l\'email...', en: 'Search email...' },
+  'candidateList.searchPlaceholder.status': { fr: 'Rechercher le statut...', en: 'Search status...' },
+  'candidateList.searchPlaceholder.job': { fr: 'Rechercher l\'intitule du poste...', en: 'Search job title...' },
+  'candidateList.allStatuses':      { fr: 'Tous les statuts', en: 'All statuses' },
+  'candidateList.allJobs':          { fr: 'Toutes les offres', en: 'All job postings' },
+  'candidateList.score':            { fr: 'Score', en: 'Score' },
+  'candidateList.above':            { fr: 'Au-dessus', en: 'Above' },
+  'candidateList.below':            { fr: 'En dessous', en: 'Below' },
+  'candidateList.selected':         { fr: 'selectionnes', en: 'selected' },
+  'candidateList.selectPage':       { fr: 'Selectionner la page', en: 'Select page' },
+  'candidateList.clear':            { fr: 'Effacer', en: 'Clear' },
+  'candidateList.setStatus':        { fr: 'Definir le statut...', en: 'Set status...' },
+  'candidateList.apply':            { fr: 'Appliquer', en: 'Apply' },
+  'candidateList.empty':            { fr: 'Aucun candidat pour l\'instant.', en: 'No candidates yet.' },
+  'candidateList.column.candidate': { fr: 'Candidat', en: 'Candidate' },
+  'candidateList.column.status':    { fr: 'Statut', en: 'Status' },
+  'candidateList.column.score':     { fr: 'Score', en: 'Score' },
+  'candidateList.column.jobPosting': { fr: 'Offre', en: 'Job Posting' },
+  'candidateList.column.applied':   { fr: 'Candidature', en: 'Applied' },
+  'candidateList.column.actions':   { fr: 'Actions', en: 'Actions' },
+  'candidateList.view':             { fr: 'Voir', en: 'View' },
+  'candidateList.page':             { fr: 'Page', en: 'Page' },
+  'candidateList.of':               { fr: 'sur', en: 'of' },
+  'candidateList.aria.selectAllPage': { fr: 'Selectionner toute la page', en: 'Select all on page' },
+  'candidateList.aria.selectCandidate': { fr: 'Selectionner le candidat', en: 'Select candidate' },
+  'candidateList.error.load':       { fr: 'Echec du chargement des candidats.', en: 'Failed to load candidates.' },
+  'candidateList.error.bulkStatus': { fr: 'Echec de la mise a jour des statuts candidats.', en: 'Failed to update candidate statuses.' },
+
+  // ── Analytics ──
+  'analytics.title':                { fr: 'Analytique', en: 'Analytics' },
+  'analytics.subtitle':             { fr: 'Indicateurs clairs et tendances pour la sante du pipeline de recrutement.', en: 'Clear metrics and trends for hiring pipeline health.' },
+  'analytics.refresh':              { fr: 'Actualiser', en: 'Refresh' },
+  'analytics.kpi.title':            { fr: 'KPI', en: 'KPIs' },
+  'analytics.kpi.lastRefreshed':    { fr: 'Derniere maj:', en: 'Last refreshed:' },
+  'analytics.kpi.openJobs':         { fr: 'Offres ouvertes', en: 'Open jobs' },
+  'analytics.kpi.of':               { fr: 'sur', en: 'of' },
+  'analytics.kpi.total':            { fr: 'au total', en: 'total' },
+  'analytics.kpi.candidates':       { fr: 'Candidats', en: 'Candidates' },
+  'analytics.kpi.inPipeline':       { fr: 'dans le pipeline', en: 'in pipeline' },
+  'analytics.kpi.processed':        { fr: 'Traites', en: 'Processed' },
+  'analytics.kpi.processing':       { fr: 'En cours:', en: 'Processing:' },
+  'analytics.kpi.errors':           { fr: 'Erreurs:', en: 'Errors:' },
+  'analytics.kpi.avgScore':         { fr: 'Score moyen', en: 'Avg score' },
+  'analytics.kpi.outOf100':         { fr: 'sur 100', en: 'out of 100' },
+  'analytics.kpi.avgProcessing':    { fr: 'Traitement moyen', en: 'Avg processing' },
+  'analytics.kpi.minutesApprox':    { fr: 'minutes (approx.)', en: 'minutes (approx.)' },
+  'analytics.chart.submitted14Days': { fr: 'Candidats soumis (14 derniers jours)', en: 'Candidates submitted (last 14 days)' },
+  'analytics.chart.trendLine':      { fr: 'Courbe', en: 'Trend line' },
+  'analytics.chart.candidatesByStatus': { fr: 'Candidats par statut', en: 'Candidates by status' },
+  'analytics.chart.doughnut':       { fr: 'Anneau', en: 'Doughnut' },
+  'analytics.chart.jobsByStatus':   { fr: 'Offres par statut', en: 'Jobs by status' },
+  'analytics.chart.pie':            { fr: 'Camembert', en: 'Pie' },
+  'analytics.chart.scoreDistribution': { fr: 'Distribution des scores', en: 'Score distribution' },
+  'analytics.chart.histogram':      { fr: 'Histogramme', en: 'Histogram' },
+  'analytics.chart.candidatesPerJob': { fr: 'Candidats par offre (top)', en: 'Candidates per job (top)' },
+  'analytics.chart.bar':            { fr: 'Barres', en: 'Bar' },
+  'analytics.chart.topMissingFields': { fr: 'Champs manquants (top)', en: 'Top missing fields' },
+  'analytics.chart.topMissingHint': { fr: 'Ce que les candidats oublient le plus', en: 'What candidates most often forget' },
+  'analytics.chart.candidates':     { fr: 'Candidats', en: 'Candidates' },
+  'analytics.chart.jobPostings':    { fr: "Offres d'emploi", en: 'Job postings' },
+  'analytics.chart.missing':        { fr: 'Manquants', en: 'Missing' },
+  'analytics.untitled':             { fr: 'Sans titre', en: 'Untitled' },
+  'analytics.unknownJob':           { fr: 'Inconnu', en: 'Unknown' },
+  'analytics.compare.title':        { fr: 'Comparer les offres', en: 'Compare Job Postings' },
+  'analytics.compare.subtitle':     { fr: 'Selectionnez deux offres pour comparer la qualite des candidats cote a cote.', en: 'Select two job postings to compare candidate quality side-by-side.' },
+  'analytics.compare.jobA':         { fr: 'Offre A', en: 'Job A' },
+  'analytics.compare.jobB':         { fr: 'Offre B', en: 'Job B' },
+  'analytics.compare.selectJob':    { fr: '- Selectionner une offre -', en: '- Select a job posting -' },
+  'analytics.compare.vs':           { fr: 'vs', en: 'vs' },
+  'analytics.compare.kpi.candidates': { fr: 'Candidats', en: 'Candidates' },
+  'analytics.compare.kpi.avgScore': { fr: 'Score moyen', en: 'Avg Score' },
+  'analytics.compare.kpi.median':   { fr: 'Mediane', en: 'Median' },
+  'analytics.compare.kpi.gte60':    { fr: '>= 60', en: '>= 60' },
+  'analytics.compare.kpi.gte80':    { fr: '>= 80', en: '>= 80' },
+  'analytics.compare.kpi.shortlisted': { fr: 'Preselectionnes', en: 'Shortlisted' },
+  'analytics.compare.scoreDistributionOverlay': { fr: 'Distribution des scores (superposition)', en: 'Score distribution (overlay)' },
+  'analytics.compare.histogramComparison': { fr: "Comparaison d'histogrammes", en: 'Histogram comparison' },
+  'analytics.compare.scoreMetrics': { fr: 'Metriques de score', en: 'Score metrics' },
+  'analytics.compare.scoreMetricsHint': { fr: 'Moyenne, mediane et pourcentages', en: 'Average, median and percentages' },
+  'analytics.compare.statusBreakdown': { fr: 'Repartition par statut', en: 'Status breakdown' },
+  'analytics.compare.candidatesPerStatus': { fr: 'Candidats par statut', en: 'Candidates per status' },
+  'analytics.compare.qualityRadar': { fr: 'Radar de qualite', en: 'Quality radar' },
+  'analytics.compare.qualityRadarHint': { fr: 'Comparaison multi-dimensionnelle de qualite', en: 'Multi-dimensional quality comparison' },
+  'analytics.compare.missingFieldsComparison': { fr: 'Comparaison des champs manquants', en: 'Missing fields comparison' },
+  'analytics.compare.missingFieldsHint': { fr: 'Champs les plus manquants chez les candidats', en: 'Top fields candidates are missing' },
+  'analytics.compare.placeholder': { fr: 'Selectionnez deux offres differentes ci-dessus pour voir les graphiques comparatifs.', en: 'Select two different job postings above to see comparative charts.' },
+  'analytics.compare.radar.avgScore': { fr: 'Score moyen', en: 'Avg Score' },
+  'analytics.compare.radar.medianScore': { fr: 'Score median', en: 'Median Score' },
+  'analytics.compare.radar.pctGte60': { fr: '% >= 60', en: '% >= 60' },
+  'analytics.compare.radar.pctGte80': { fr: '% >= 80', en: '% >= 80' },
+  'analytics.compare.radar.shortlistedPct': { fr: '% Preselectionnes', en: 'Shortlisted %' },
+  'analytics.compare.radar.completeness': { fr: 'Completude', en: 'Completeness' },
+  'analytics.compare.scoreBox.avgScore': { fr: 'Score moyen', en: 'Avg Score' },
+  'analytics.compare.scoreBox.medianScore': { fr: 'Score median', en: 'Median Score' },
+  'analytics.compare.scoreBox.pctGte60': { fr: '% Score >= 60', en: '% Score >= 60' },
+  'analytics.compare.scoreBox.pctGte80': { fr: '% Score >= 80', en: '% Score >= 80' },
+  'analytics.error.unexpected':     { fr: 'Erreur inattendue.', en: 'Unexpected error.' },
+
+  // ── Candidate Detail ──
+  'candidateDetail.back':            { fr: 'Tous les candidats', en: 'All Candidates' },
+  'candidateDetail.yearExp':         { fr: 'an d\'exp.', en: 'yr exp.' },
+  'candidateDetail.yearsExp':        { fr: 'ans d\'exp.', en: 'yrs exp.' },
+  'candidateDetail.aiScore':         { fr: 'Score IA', en: 'AI Score' },
+  'candidateDetail.outOf100':        { fr: 'sur 100', en: 'out of 100' },
+  'candidateDetail.applicationStatus': { fr: 'Statut de candidature', en: 'Application Status' },
+  'candidateDetail.editStatus':      { fr: 'Modifier le statut', en: 'Edit status' },
+  'candidateDetail.saving':          { fr: 'Enregistrement...', en: 'Saving...' },
+  'candidateDetail.save':            { fr: 'Sauvegarder', en: 'Save' },
+  'candidateDetail.cancel':          { fr: 'Annuler', en: 'Cancel' },
+  'candidateDetail.applied':         { fr: 'Candidature du', en: 'Applied' },
+  'candidateDetail.updated':         { fr: 'Mis a jour', en: 'Updated' },
+  'candidateDetail.gdprConsent':     { fr: 'RGPD / Consentement', en: 'GDPR / Consent' },
+  'candidateDetail.consentGiven':    { fr: 'Consentement donne', en: 'Consent given' },
+  'candidateDetail.consentYes':      { fr: '✓ Oui', en: '✓ Yes' },
+  'candidateDetail.consentNo':       { fr: '✗ Non', en: '✗ No' },
+  'candidateDetail.consentDate':     { fr: 'Date de consentement', en: 'Consent date' },
+  'candidateDetail.retainUntil':     { fr: 'Conserver jusqu\'au', en: 'Retain until' },
+  'candidateDetail.links':           { fr: 'Liens', en: 'Links' },
+  'candidateDetail.linkedinProfile': { fr: 'Profil LinkedIn', en: 'LinkedIn Profile' },
+  'candidateDetail.portfolioWebsite': { fr: 'Portfolio / Site web', en: 'Portfolio / Website' },
+  'candidateDetail.location':        { fr: 'Localisation', en: 'Location' },
+  'candidateDetail.locationNotAvailable': { fr: 'Localisation non disponible', en: 'Location not available' },
+  'candidateDetail.candidateNote':   { fr: 'Note du candidat', en: "Candidate's Note" },
+  'candidateDetail.hrNotes':         { fr: 'Notes RH', en: 'HR Notes' },
+  'candidateDetail.editNotes':       { fr: 'Modifier les notes', en: 'Edit notes' },
+  'candidateDetail.addNotes':        { fr: 'Ajouter des notes', en: 'Add notes' },
+  'candidateDetail.hrNotesEditing':  { fr: 'Notes RH (edition)', en: 'HR Notes (Editing)' },
+  'candidateDetail.hrNotesPlaceholder': { fr: 'Ajouter ou modifier les notes RH...', en: 'Add or update HR notes...' },
+  'candidateDetail.saveNotes':       { fr: 'Sauvegarder les notes', en: 'Save Notes' },
+  'candidateDetail.noHrNotes':       { fr: 'Pas encore de notes RH. Cliquez sur + pour en ajouter.', en: 'No HR notes yet. Click the + button to add one.' },
+  'candidateDetail.resume':          { fr: 'CV', en: 'Resume' },
+  'candidateDetail.downloadResume':  { fr: 'Telecharger le CV', en: 'Download Resume' },
+  'candidateDetail.noResume':        { fr: 'Aucun CV joint', en: 'No resume attached' },
+  'candidateDetail.aiProcessing':    { fr: 'Traitement IA', en: 'AI Processing' },
+  'candidateDetail.starting':        { fr: 'Demarrage...', en: 'Starting...' },
+  'candidateDetail.processCv':       { fr: 'Traiter le CV', en: 'Process CV' },
+  'candidateDetail.reprocessing':    { fr: 'Retraitement...', en: 'Reprocessing...' },
+  'candidateDetail.reprocess':       { fr: 'Retraiter', en: 'Reprocess' },
+  'candidateDetail.downloadCvPdf':   { fr: 'Telecharger le CV (PDF)', en: 'Download CV (PDF)' },
+  'candidateDetail.reprocessTitle':  { fr: 'Retraiter le CV ?', en: 'Reprocess CV?' },
+  'candidateDetail.reprocessDesc':   { fr: 'Cela relancera l\'analyse du CV et recalculera le score. Les donnees extraites et le CV genere seront ecrases.', en: 'This will re-parse the CV and recalculate the score. The current extracted data and generated CV will be overwritten.' },
+  'candidateDetail.confirmReprocess': { fr: 'Oui, retraiter', en: 'Yes, Reprocess' },
+  'candidateDetail.cvTemplateOverride': { fr: 'Override du modele de CV', en: 'CV Template Override' },
+  'candidateDetail.templateApplyDifferent': { fr: 'Appliquer un modele different pour ce candidat', en: 'Apply a different template for this candidate' },
+  'candidateDetail.templateGlobalDefault': { fr: 'Par defaut global :', en: 'Global default:' },
+  'candidateDetail.templateUsingGlobal': { fr: 'Utilise le modele global', en: 'Using global default' },
+  'candidateDetail.standardizedPreview': { fr: 'Apercu du CV standardise', en: 'Standardized CV Preview' },
+  'candidateDetail.cvNotGenerated':  { fr: 'CV pas encore genere. Cliquez sur "Traiter le CV" pour commencer.', en: 'CV not yet generated. Click "Process CV" to start.' },
+  'candidateDetail.parsedDetails':   { fr: 'Details du CV extrait', en: 'Parsed CV Details' },
+  'candidateDetail.parsedSubtitle':  { fr: 'Ces informations sont extraites automatiquement du CV. Verifiez et modifiez si besoin.', en: 'This information is extracted automatically from the resume. Review and edit if something looks off.' },
+  'candidateDetail.personalDetails': { fr: 'Informations personnelles', en: 'Personal details' },
+  'candidateDetail.fullName':        { fr: 'Nom complet', en: 'Full name' },
+  'candidateDetail.email':           { fr: 'Email', en: 'Email' },
+  'candidateDetail.phone':           { fr: 'Telephone', en: 'Phone' },
+  'candidateDetail.summary':         { fr: 'Resume professionnel', en: 'Professional summary' },
+  'candidateDetail.linksProfiles':   { fr: 'Liens et profils', en: 'Links and profiles' },
+  'candidateDetail.noLinks':         { fr: 'Aucun lien extrait pour l\'instant.', en: 'No links extracted yet.' },
+  'candidateDetail.skillsCompetencies': { fr: 'Competences et savoir-faire', en: 'Skills and competencies' },
+  'candidateDetail.noSkills':        { fr: 'Aucune competence extraite pour l\'instant.', en: 'No skills extracted yet.' },
+  'candidateDetail.competencies':    { fr: 'Competences', en: 'Competencies' },
+  'candidateDetail.scoreExplanation': { fr: 'Explication du score', en: 'Score explanation' },
+  'candidateDetail.scoreFormula':    { fr: 'Le score final combine adequation et completude pour un signal rapide et fiable.', en: 'Final score blends fit and completeness for a quick, reliable screening signal.' },
+  'candidateDetail.finalScore':      { fr: 'Score final', en: 'Final score' },
+  'candidateDetail.fitScore':        { fr: 'Score d\'adequation', en: 'Fit score' },
+  'candidateDetail.completeness':    { fr: 'Completude', en: 'Completeness' },
+  'candidateDetail.whyScore':        { fr: 'Pourquoi ce score', en: 'Why this score' },
+  'candidateDetail.requiredSkillsMatched': { fr: 'Competences requises correspondantes :', en: 'Required skills matched:' },
+  'candidateDetail.niceToHaveMatched': { fr: 'Competences souhaitees correspondantes :', en: 'Nice-to-have matched:' },
+  'candidateDetail.experienceDetected': { fr: 'Experience detectee :', en: 'Experience detected:' },
+  'candidateDetail.years':           { fr: 'ans', en: 'years' },
+  'candidateDetail.completenessScore': { fr: 'Completude :', en: 'Completeness:' },
+  'candidateDetail.missingData':     { fr: 'Donnees manquantes', en: 'Missing data' },
+  'candidateDetail.requiredSkills':  { fr: 'Competences requises', en: 'Required skills' },
+  'candidateDetail.noRequiredSkills': { fr: 'Aucune competence requise indiquee.', en: 'No required skills listed.' },
+  'candidateDetail.niceToHaveSkills': { fr: 'Competences souhaitees', en: 'Nice to have skills' },
+  'candidateDetail.noNiceToHave':    { fr: 'Aucune competence souhaitee correspondante.', en: 'No nice to have skills matched.' },
+  'candidateDetail.experience':      { fr: 'Experience', en: 'Experience' },
+  'candidateDetail.detected':        { fr: 'Detecte :', en: 'Detected:' },
+  'candidateDetail.requirement':     { fr: 'Exigence :', en: 'Requirement:' },
+  'candidateDetail.requirementMet':  { fr: 'Respectee', en: 'Met' },
+  'candidateDetail.requirementNotMet': { fr: 'Non respectee', en: 'Not met' },
+  'candidateDetail.workExperience':  { fr: 'Experience professionnelle', en: 'Work experience' },
+  'candidateDetail.rolePlaceholder': { fr: 'Poste', en: 'Role' },
+  'candidateDetail.companyPlaceholder': { fr: 'Entreprise', en: 'Company' },
+  'candidateDetail.noExperience':    { fr: 'Aucune experience extraite pour l\'instant.', en: 'No experience extracted yet.' },
+  'candidateDetail.education':       { fr: 'Formation', en: 'Education' },
+  'candidateDetail.educationPlaceholder': { fr: 'Formation', en: 'Education' },
+  'candidateDetail.schoolPlaceholder': { fr: 'Etablissement', en: 'School' },
+  'candidateDetail.noEducation':     { fr: 'Aucune formation extraite pour l\'instant.', en: 'No education extracted yet.' },
+  'candidateDetail.projects':        { fr: 'Projets', en: 'Projects' },
+  'candidateDetail.projectPlaceholder': { fr: 'Projet', en: 'Project' },
+  'candidateDetail.noProjectDescription': { fr: 'Aucune description fournie.', en: 'No description provided.' },
+  'candidateDetail.noProjects':      { fr: 'Aucun projet extrait pour l\'instant.', en: 'No projects extracted yet.' },
+  'candidateDetail.additionalInfo':  { fr: 'Infos supplementaires', en: 'Additional info' },
+  'candidateDetail.certifications':  { fr: 'Certifications', en: 'Certifications' },
+  'candidateDetail.noCertifications': { fr: 'Aucune certification extraite pour l\'instant.', en: 'No certifications extracted yet.' },
+  'candidateDetail.languages':       { fr: 'Langues', en: 'Languages' },
+  'candidateDetail.noLanguages':     { fr: 'Aucune langue extraite pour l\'instant.', en: 'No languages extracted yet.' },
+  'candidateDetail.qualities':       { fr: 'Qualites', en: 'Qualities' },
+  'candidateDetail.noQualities':     { fr: 'Aucune qualite extraite pour l\'instant.', en: 'No qualities extracted yet.' },
+  'candidateDetail.interests':       { fr: 'Interets', en: 'Interests' },
+  'candidateDetail.noInterests':     { fr: 'Aucun interet extrait pour l\'instant.', en: 'No interests extracted yet.' },
+  'candidateDetail.present':         { fr: 'Present', en: 'Present' },
+  'candidateDetail.datesNotProvided': { fr: 'Dates non renseignees', en: 'Dates not provided' },
+  'candidateDetail.noSummary':       { fr: 'Aucun resume extrait pour l\'instant.', en: 'No summary extracted yet.' },
+  'candidateDetail.scoreLabel':      { fr: 'Score', en: 'Score' },
+  'candidateDetail.requirementNotSpecified': { fr: 'exigence non specifiee', en: 'requirement not specified' },
+  'candidateDetail.link.linkedin':   { fr: 'LinkedIn', en: 'LinkedIn' },
+  'candidateDetail.link.portfolio':  { fr: 'Portfolio', en: 'Portfolio' },
+  'candidateDetail.link.generic':    { fr: 'Lien', en: 'Link' },
+  'candidateDetail.error.invalidId': { fr: 'ID candidat invalide.', en: 'Invalid candidate ID.' },
+  'candidateDetail.error.loadFailed': { fr: 'Echec du chargement des details du candidat.', en: 'Failed to load candidate details.' },
+  'candidateDetail.error.statusUpdate': { fr: 'Echec de la mise a jour du statut.', en: 'Failed to update status.' },
+  'candidateDetail.error.notesUpdate': { fr: 'Echec de la mise a jour des notes.', en: 'Failed to update notes.' },
+  'candidateDetail.error.processStart': { fr: 'Echec du demarrage du traitement.', en: 'Failed to start processing.' },
+  'candidateDetail.error.reprocess': { fr: 'Echec du retraitement.', en: 'Failed to reprocess.' },
+  'candidateDetail.error.templateUpdate': { fr: 'Echec de la mise a jour du modele.', en: 'Failed to update template.' },
+  'candidateDetail.status.new':      { fr: 'Nouveau', en: 'New' },
+  'candidateDetail.status.processing': { fr: 'En cours', en: 'Processing' },
+  'candidateDetail.status.processed': { fr: 'Traite', en: 'Processed' },
+  'candidateDetail.status.reviewing': { fr: 'En revision', en: 'Reviewing' },
+  'candidateDetail.status.shortlisted': { fr: 'Presellectionne', en: 'Shortlisted' },
+  'candidateDetail.status.rejected': { fr: 'Rejete', en: 'Rejected' },
+  'candidateDetail.status.hired':    { fr: 'Embauche', en: 'Hired' },
+  'candidateDetail.status.error':    { fr: 'Erreur', en: 'Error' },
+  'candidateDetail.statusDetail.new': { fr: 'Nouveau - pret a traiter', en: 'New - Ready to Process' },
+  'candidateDetail.statusDetail.processing': { fr: 'Traitement du CV...', en: 'Processing CV...' },
+  'candidateDetail.statusDetail.processed': { fr: 'CV traite', en: 'CV Processed' },
+  'candidateDetail.statusDetail.reviewing': { fr: 'En revision', en: 'Under Review' },
+  'candidateDetail.statusDetail.shortlisted': { fr: 'Presellectionne', en: 'Shortlisted' },
+  'candidateDetail.statusDetail.rejected': { fr: 'Rejete', en: 'Rejected' },
+  'candidateDetail.statusDetail.hired': { fr: 'Embauche', en: 'Hired' },
+  'candidateDetail.statusDetail.error': { fr: 'Erreur de traitement', en: 'Processing Error' },
+  'candidateDetail.quality.excellent': { fr: 'Excellent', en: 'Excellent' },
+  'candidateDetail.quality.good':     { fr: 'Bon', en: 'Good' },
+  'candidateDetail.quality.fair':     { fr: 'Moyen', en: 'Fair' },
+  'candidateDetail.quality.poor':     { fr: 'Faible', en: 'Poor' },
+
 
 };
 
 @Injectable({ providedIn: 'root' })
 export class I18nService {
-  private langSubject = new BehaviorSubject<Lang>(this.getStoredLang());
+  private activeScope: LangScope = 'public';
+  private langSubject = new BehaviorSubject<Lang>(this.getStoredLang(this.activeScope));
   lang$ = this.langSubject.asObservable();
 
   get lang(): Lang {
     return this.langSubject.value;
+  }
+
+  setScope(scope: LangScope): void {
+    if (this.activeScope === scope) return;
+    this.activeScope = scope;
+    this.langSubject.next(this.getStoredLang(scope));
   }
 
   t(key: string): string {
@@ -457,18 +802,24 @@ export class I18nService {
 
   toggle(): void {
     const next: Lang = this.lang === 'fr' ? 'en' : 'fr';
-    this.langSubject.next(next);
-    localStorage.setItem('iohire_lang', next);
+    this.setLang(next);
   }
 
-  setLang(lang: Lang): void {
-    this.langSubject.next(lang);
-    localStorage.setItem('iohire_lang', lang);
+  setLang(lang: Lang, scope: LangScope = this.activeScope): void {
+    if (scope === this.activeScope) {
+      this.langSubject.next(lang);
+    }
+    localStorage.setItem(LANG_KEYS[scope], lang);
   }
 
-  private getStoredLang(): Lang {
-    const stored = localStorage.getItem('iohire_lang');
+  private getStoredLang(scope: LangScope): Lang {
+    const stored = localStorage.getItem(LANG_KEYS[scope]);
     if (stored === 'en' || stored === 'fr') return stored;
+    const legacy = localStorage.getItem(LEGACY_LANG_KEY);
+    if (legacy === 'en' || legacy === 'fr') {
+      localStorage.setItem(LANG_KEYS[scope], legacy);
+      return legacy;
+    }
     return 'fr'; // default French
   }
 }
