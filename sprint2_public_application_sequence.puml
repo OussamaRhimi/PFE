@@ -8,7 +8,7 @@ skinparam roundcorner 10
 skinparam maxMessageSize 200
 skinparam padding 10
 
-title Sprint 2: Create Job Posting - MVC Sequence\nAuthenticated HR User
+title Sprint 1: Create Job Posting - MVC Sequence\nAuthenticated HR User
 
 actor "HR User" as HR
 participant "JobPostingsComponent\n(View)" as View
