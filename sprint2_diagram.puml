@@ -1,18 +1,19 @@
-@startuml "IOhire - Sprint 2: Candidature publique + GDPR + RH candidates"
-!define DOMAIN_COLOR #E1F5FF
-!define VALUE_OBJECT_COLOR #F3E5F5
-!define ENUM_COLOR #E8F5E9
-!define SERVICE_COLOR #FFF3E0
-!define ACTOR_COLOR #FFEBEE
+@startuml
+title IOhire - Sprint 2: Candidature publique + GDPR + RH candidates
 
-skinparam backgroundColor #FAFAFA
-skinparam classAttributeIconSize 0
+' Cache absolument tous les cercles (Classes, Enums, etc.)
+hide circle
+
+' Paramètres pour un rendu pur Noir et Blanc
+skinparam monochrome true
 skinparam shadowing false
-skinparam linetype ortho
+skinparam classAttributeIconSize 0
+skinparam backgroundColor white
+
 skinparam class {
-    BackgroundColor DOMAIN_COLOR
-    BorderColor #0277BD
-    ArrowColor #01579B
+    BackgroundColor white
+    BorderColor black
+    ArrowColor black
 }
 
 left to right direction
@@ -20,7 +21,7 @@ left to right direction
 '======================
 ' Enums
 '======================
-enum ApplicationStatus <<ENUM>> #E8F5E9 {
+enum ApplicationStatus {
     NEW
     PROCESSING
     PROCESSED
@@ -31,7 +32,7 @@ enum ApplicationStatus <<ENUM>> #E8F5E9 {
     ERROR
 }
 
-enum JobPostingStatus <<ENUM>> #E8F5E9 {
+enum JobPostingStatus {
     DRAFT
     OPEN
     CLOSED
@@ -40,85 +41,85 @@ enum JobPostingStatus <<ENUM>> #E8F5E9 {
 '======================
 ' Actors
 '======================
-class Visitor <<ACTOR>> #FFEBEE {
+class Visitor {
 }
 
-class HRUser <<ACTOR>> #FFEBEE {
-    -email: String
-    -password: String
-    -role: String
-    +viewCandidates(filters: Object): Candidate[*]
-    +viewCandidateDetail(id: Integer): Candidate
-    +updateCandidateStatus(id: Integer, status: ApplicationStatus): Candidate
-    +updateHRNotes(id: Integer, notes: String): Candidate
-    +downloadResume(id: Integer): String
+class HRUser {
+    email: String
+    password: String
+    role: String
+    viewCandidates(filters: Object): Candidate[*]
+    viewCandidateDetail(id: Integer): Candidate
+    updateCandidateStatus(id: Integer, status: ApplicationStatus): Candidate
+    updateHRNotes(id: Integer, notes: String): Candidate
+    downloadResume(id: Integer): String
 }
 
 '======================
 ' Domain Entities
 '======================
-class Candidate #E1F5FF {
-    -id: Integer
-    -fullName: String
-    -email: String
-    -linkedIn: String
-    -portfolio: String
-    -country: String
-    -city: String
-    -resume: String
-    -status: ApplicationStatus
-    -publicToken: String
-    -trackingCodeHash: String
-    -trackingCodeExpiresAt: String
-    -consent: Boolean
-    -consentAt: String
-    -retentionUntil: String
-    -hrNotes: String
-    -candidateNotes: String
-    -selfReportedYearsExperience: Integer
-    +submitApplication(data: Object): void
-    +withdrawApplication(token: String): void
-    +requestTrackingCode(email: String): void
-    +verifyTrackingCode(email: String, code: String): Candidate[*]
-    +updateProfile(data: Object): void
-    +transitionStatus(newStatus: ApplicationStatus): Boolean
+class Candidate {
+    id: Integer
+    fullName: String
+    email: String
+    linkedIn: String
+    portfolio: String
+    country: String
+    city: String
+    resume: String
+    status: ApplicationStatus
+    publicToken: String
+    trackingCodeHash: String
+    trackingCodeExpiresAt: String
+    consent: Boolean
+    consentAt: String
+    retentionUntil: String
+    hrNotes: String
+    candidateNotes: String
+    selfReportedYearsExperience: Integer
+    submitApplication(data: Object): void
+    withdrawApplication(token: String): void
+    requestTrackingCode(email: String): void
+    verifyTrackingCode(email: String, code: String): Candidate[*]
+    updateProfile(data: Object): void
+    transitionStatus(newStatus: ApplicationStatus): Boolean
 }
 
-class JobPosting #E1F5FF {
-    -id: Integer
-    -title: String
-    -description: String
-    -status: JobPostingStatus
-    +getCandidates(): Candidate[*]
-    +getCandidateCount(): Integer
+class JobPosting {
+    id: Integer
+    title: String
+    description: String
+    status: JobPostingStatus
+    getCandidates(): Candidate[*]
+    getCandidateCount(): Integer
 }
 
 '======================
 ' Value Objects
 '======================
-class Requirements <<VALUE_OBJECT>> #F3E5F5 {
-    -skillsRequired: String[*]
-    -skillsNiceToHave: String[*]
-    -departments: String[*]
-    -minYearsExperience: Integer
-    -notes: String
+class Requirements {
+    skillsRequired: String[*]
+    skillsNiceToHave: String[*]
+    departments: String[*]
+    minYearsExperience: Integer
+    notes: String
 }
 
 '======================
 ' Services
 '======================
-class VerificationStore <<SERVICE>> #FFF3E0 {
-    +generateCode(email: String): Object
-    +verifyCode(email: String, code: String): Object
-    +cleanupExpiredCodes(): void
-    +isCodeValid(email: String, code: String): Boolean
+class VerificationStore {
+    generateCode(email: String): Object
+    verifyCode(email: String, code: String): Object
+    cleanupExpiredCodes(): void
+    isCodeValid(email: String, code: String): Boolean
 }
 
-class EmailService <<SERVICE>> #FFF3E0 {
-    +sendVerificationCode(to: String, code: String): void
-    +sendApplicationConfirmation(to: String, jobTitle: String): void
-    +sendWithdrawalConfirmation(to: String): void
-    +sendStatusUpdate(to: String, status: ApplicationStatus): void
+class EmailService {
+    sendVerificationCode(to: String, code: String): void
+    sendApplicationConfirmation(to: String, jobTitle: String): void
+    sendWithdrawalConfirmation(to: String): void
+    sendStatusUpdate(to: String, status: ApplicationStatus): void
 }
 
 '======================
@@ -126,17 +127,15 @@ class EmailService <<SERVICE>> #FFF3E0 {
 '======================
 Candidate "*" --> "1" JobPosting : applies_to
 JobPosting "1" *-- "1" Requirements : contains
-Requirements "0..*" --> "0..*" JobPosting : specifies
+Requirements --> "0..*" JobPosting : specifies
 
-HRUser "1" --> "0..*" Candidate : reviews
-HRUser "1" --> "0..*" JobPosting : manages
+HRUser --> "0..*" Candidate : reviews
+HRUser --> "0..*" JobPosting : manages
 
 Visitor ..> JobPosting : browses_open
-Visitor ..> Candidate : submits_application
-Visitor ..> Candidate : withdraws_application
-Visitor ..> VerificationStore : requests_tracking_code
+Visitor ..> Candidate : submits/withdraws
+Visitor ..> VerificationStore : requests_code
 
-VerificationStore ..> EmailService : sends_code_via
+VerificationStore ..> EmailService : sends_via
 VerificationStore "1" --> "0..*" Candidate : verifies
-
 @enduml
