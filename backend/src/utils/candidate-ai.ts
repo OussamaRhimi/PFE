@@ -2240,6 +2240,21 @@ function hasSkillMatch(requiredSkill: string, evidence: { textNormalized: string
   return false;
 }
 
+function hasStrictSkillMatch(requiredSkill: string, candidateSkills: string[]): boolean {
+  const candidateKeys = new Set<string>();
+  for (const skill of candidateSkills) {
+    const normalized = normalizeSkillKey(skill);
+    const compact = compactSkillKey(skill);
+    if (normalized) candidateKeys.add(normalized);
+    if (compact) candidateKeys.add(compact);
+  }
+
+  for (const variant of buildSkillVariants(requiredSkill)) {
+    if (variant && candidateKeys.has(variant)) return true;
+  }
+  return false;
+}
+
 function parseLooseDate(input: unknown): Date | null {
   const normalized = normalizeDateText(input);
   if (!normalized) return null;
@@ -2615,24 +2630,22 @@ export function deterministicEvaluate(
 
   const evidence = buildEvidence(parsed);
   const candidateSkills = asStringArray(parsed.skills);
-  const skillsMatchedBase = requiredSkills.filter((skill) => hasSkillMatch(skill, evidence));
-  const skillsMissingBase = requiredSkills.filter((skill) => !hasSkillMatch(skill, evidence));
+  const skillsMatchedBase = requiredSkills.filter((skill) => hasStrictSkillMatch(skill, candidateSkills));
   const niceToHaveMatched = niceToHaveSkills.filter((skill) => hasSkillMatch(skill, evidence));
-  
-  // Check for ecosystem matches on missing skills (partial credit)
-  // Increased from 30% to 60% - if you know Next.js, you likely know React well
-  const ecosystemMatches = skillsMissingBase.filter(skill => checkEcosystemMatch(skill, candidateSkills));
-  const ecosystemBonus = ecosystemMatches.length * 0.6; // 60% credit for ecosystem match
 
-  const skillsMatched = uniqStrings([...skillsMatchedBase, ...ecosystemMatches]);
+  const niceToHaveMissingBase = niceToHaveSkills.filter((skill) => !hasSkillMatch(skill, evidence));
+  const niceToHaveEcosystemMatches = niceToHaveMissingBase.filter(skill => checkEcosystemMatch(skill, candidateSkills));
+  const niceToHaveEcosystemBonus = niceToHaveEcosystemMatches.length * 0.6;
+
+  const skillsMatched = uniqStrings(skillsMatchedBase);
   const matchedSet = new Set(skillsMatched.map((skill) => skill.toLowerCase()));
   const skillsMissing = requiredSkills.filter((skill) => !matchedSet.has(skill.toLowerCase()));
 
   const requiredCoverage = requiredSkills.length > 0
-    ? ((skillsMatchedBase.length + ecosystemBonus) / requiredSkills.length) * 100
+    ? (skillsMatchedBase.length / requiredSkills.length) * 100
     : 100;
   const niceToHaveCoverage = niceToHaveSkills.length > 0
-    ? (niceToHaveMatched.length / niceToHaveSkills.length) * 100
+    ? ((niceToHaveMatched.length + niceToHaveEcosystemBonus) / niceToHaveSkills.length) * 100
     : 0;
 
   const minYearsRaw = typeof (requirementsObj as any).minYearsExperience === 'number'
