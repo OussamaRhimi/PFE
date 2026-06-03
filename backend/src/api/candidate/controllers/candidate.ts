@@ -760,6 +760,11 @@ export default factories.createCoreController('api::candidate.candidate', ({ str
         retentionUntil: (candidate as any).retentionUntil || null,
         jobTitle: (candidate as any).job_posting?.title || null,
         jobPostingId: (candidate as any).job_posting?.documentId || null,
+        jobMinYearsExperience: (() => {
+          const raw = (candidate as any).job_posting?.requirements?.minYearsExperience;
+          const n = typeof raw === 'number' ? raw : Number(raw);
+          return Number.isFinite(n) && n > 0 ? n : null;
+        })(),
         resume: resume
           ? {
               id: resume.id,
