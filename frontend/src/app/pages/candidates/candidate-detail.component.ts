@@ -559,10 +559,26 @@ import { I18nService } from '../../services/i18n.service';
 
                   <div class="score-block">
                     <div class="score-subtitle">{{ i18n.t('candidateDetail.experience') }}</div>
+                    <div class="score-metric">
+                      {{ i18n.t('candidateDetail.experienceInputed') }}
+                      <span *ngIf="scoreExp.inputedYears !== null">{{ scoreExp.inputedYears | number:'1.0-1' }} {{ i18n.t('candidateDetail.years') }}</span>
+                      <span class="text-muted" *ngIf="scoreExp.inputedYears === null">{{ i18n.t('candidateDetail.notProvided') }}</span>
+                    </div>
+                    <div class="score-metric">
+                      {{ i18n.t('candidateDetail.experienceRequired') }}
+                      <span *ngIf="scoreExp.requiredYears !== null">{{ scoreExp.requiredYears | number:'1.0-1' }} {{ i18n.t('candidateDetail.years') }}</span>
+                      <span class="text-muted" *ngIf="scoreExp.requiredYears === null">{{ i18n.t('candidateDetail.notSpecified') }}</span>
+                    </div>
                     <div class="score-metric">{{ i18n.t('candidateDetail.detected') }} {{ scoreExp.experienceYears | number:'1.0-1' }} {{ i18n.t('candidateDetail.years') }}</div>
-                    <div class="score-metric" *ngIf="scoreExp.experienceMatch !== null">
-                      {{ i18n.t('candidateDetail.requirement') }} <span [class.score-ok]="scoreExp.experienceMatch" [class.score-warn]="scoreExp.experienceMatch === false">
-                        {{ scoreExp.experienceMatch ? i18n.t('candidateDetail.requirementMet') : i18n.t('candidateDetail.requirementNotMet') }}
+                    <div class="score-metric" *ngIf="scoreExp.experienceMet === null">
+                      {{ i18n.t('candidateDetail.requirement') }} <span class="text-muted">{{ i18n.t('candidateDetail.experienceNoRequirement') }}</span>
+                    </div>
+                    <div class="score-metric" *ngIf="scoreExp.experienceMet !== null">
+                      {{ i18n.t('candidateDetail.requirement') }} <span [class.score-ok]="scoreExp.experienceMet" [class.score-warn]="scoreExp.experienceMet === false">
+                        <ng-container *ngIf="scoreExp.experienceMet === false">{{ i18n.t('candidateDetail.requirementNotMet') }}</ng-container>
+                        <ng-container *ngIf="scoreExp.experienceMet && scoreExp.experienceMetSource === 'both'">{{ i18n.t('candidateDetail.experienceMetBoth') }}</ng-container>
+                        <ng-container *ngIf="scoreExp.experienceMet && scoreExp.experienceMetSource === 'ai'">{{ i18n.t('candidateDetail.experienceMetAi') }}</ng-container>
+                        <ng-container *ngIf="scoreExp.experienceMet && scoreExp.experienceMetSource === 'input'">{{ i18n.t('candidateDetail.experienceMetInput') }}</ng-container>
                       </span>
                     </div>
                   </div>
@@ -2345,6 +2361,10 @@ export class CandidateDetailComponent implements OnInit {
     niceToHaveMatched: string[];
     experienceYears: number;
     experienceMatch: boolean | null;
+    inputedYears: number | null;
+    requiredYears: number | null;
+    experienceMet: boolean | null;
+    experienceMetSource: 'both' | 'ai' | 'input' | 'none';
     qualityLabel: string;
     qualityTone: string;
   } | null {
@@ -2373,6 +2393,24 @@ export class CandidateDetailComponent implements OnInit {
         ? evaluation.experienceMatch
         : null;
 
+    const inputedYears = this.toNumber(this.candidate?.selfReportedYearsExperience);
+    const requiredRaw = this.toNumber(breakdown?.minYearsExperience ?? evaluation?.minYearsExperience);
+    const requiredYears = requiredRaw !== null && requiredRaw > 0 ? requiredRaw : null;
+
+    let experienceMet: boolean | null;
+    let experienceMetSource: 'both' | 'ai' | 'input' | 'none';
+    if (requiredYears === null) {
+      experienceMet = null;
+      experienceMetSource = 'none';
+    } else {
+      const metByAi = experienceYears >= requiredYears;
+      const metByInput = inputedYears !== null && inputedYears >= requiredYears;
+      experienceMet = metByAi || metByInput;
+      experienceMetSource = experienceMet
+        ? (metByAi && metByInput ? 'both' : metByAi ? 'ai' : 'input')
+        : 'none';
+    }
+
     const qualityRaw = typeof evaluation?.qualityLabel === 'string'
       ? evaluation.qualityLabel.trim().toLowerCase()
       : '';
@@ -2392,6 +2430,10 @@ export class CandidateDetailComponent implements OnInit {
       niceToHaveMatched,
       experienceYears,
       experienceMatch,
+      inputedYears,
+      requiredYears,
+      experienceMet,
+      experienceMetSource,
       qualityLabel,
       qualityTone,
     };

@@ -167,6 +167,7 @@ export interface EvaluationResult {
     niceToHaveMatched: string[];
     experienceYears: number;
     experienceMatch: boolean;
+    minYearsExperience: number;
   };
   qualityLabel: 'excellent' | 'good' | 'fair' | 'poor';
   parseConfidence?: number;

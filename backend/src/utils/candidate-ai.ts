@@ -2748,6 +2748,7 @@ export function deterministicEvaluate(
       niceToHaveMatched,
       experienceYears: Math.round(experienceYears * 10) / 10,
       experienceMatch,
+      minYearsExperience: minYears,
     },
     qualityLabel,
     parseConfidence,
