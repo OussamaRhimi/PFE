@@ -83,6 +83,7 @@ export interface CandidateDetail {
   retentionUntil: string | null;
   jobTitle: string | null;
   jobPostingId: string | null;
+  jobMinYearsExperience?: number | null;
   resume: CandidateResume | null;
   createdAt: string;
   updatedAt: string;

@@ -2394,7 +2394,11 @@ export class CandidateDetailComponent implements OnInit {
         : null;
 
     const inputedYears = this.toNumber(this.candidate?.selfReportedYearsExperience);
-    const requiredRaw = this.toNumber(breakdown?.minYearsExperience ?? evaluation?.minYearsExperience);
+    const requiredRaw = this.toNumber(
+      breakdown?.minYearsExperience
+        ?? evaluation?.minYearsExperience
+        ?? this.candidate?.jobMinYearsExperience
+    );
     const requiredYears = requiredRaw !== null && requiredRaw > 0 ? requiredRaw : null;
 
     let experienceMet: boolean | null;
