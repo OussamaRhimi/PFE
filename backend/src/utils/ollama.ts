@@ -46,7 +46,7 @@ NOTE: If the CV text appears incomplete, jumbled, or has missing sections:
 CRITICAL FOR CV3 AND COMPRESSED PDFs:
 - CV text may be fragmented if extracted from compressed PDFs (ASCII85/FlateDecode)
 - Date-based anchoring: Look for dates (YYYY-YYYY or MM/YYYY) as primary markers of work experience or education
-- Context clues: Job titles like "DevOps", "Engineer", "Developer" often appear WITH dates in work experience
+- Context clues: Job titles like "Engineer", "Developer" often appear WITH dates in work experience
 - Company names: Look for business-like names (with keywords: "Cloud", "Services", "Tech", "Labs", etc.) as company names
 - Always prefer text evidence over format - if a job title appears with a date, it's likely work experience even if section header is missing
 IMPORTANT - DATE FORMATS:
@@ -559,18 +559,18 @@ export async function parseResumeWithOllama(resumeText: string): Promise<Extract
     // Check if this looks like a work experience entry
     const schoolName = (edu.school || '').toLowerCase().trim();
     const degreeName = (edu.degree || '').toLowerCase().trim();
-    
+
     // If school name looks like a company (has company keywords, no university keywords)
     const looksLikeCompany = companyKeywords.test(schoolName) && !universityKeywords.test(schoolName);
-    
+
     // If degree name looks like a job title (has job title keywords, no degree keywords)
     const looksLikeJobTitle = jobTitles.test(degreeName) && !degreeKeywords.test(degreeName);
-    
+
     // Additional heuristic: if dates exist and no degree keyword found, likely work experience
     const hasDateRange = edu.startDate && edu.endDate;
     const noDegreeKeyword = !degreeKeywords.test(degreeName);
     const isPlausibleWorkEntry = hasDateRange && noDegreeKeyword && (looksLikeJobTitle || looksLikeCompany);
-    
+
     return looksLikeCompany || looksLikeJobTitle || isPlausibleWorkEntry;
   });
 
@@ -586,7 +586,7 @@ export async function parseResumeWithOllama(resumeText: string): Promise<Extract
         highlights: [],
       });
     });
-    
+
     // Remove misclassified entries from education
     education = education.filter(edu => !mislassifiedEntries.includes(edu));
   }

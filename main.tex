@@ -1,0 +1,2591 @@
+\documentclass[12pt,a4paper,oneside]{report}
+
+% --- Packages de base ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{graphicx} % Pour les figures 
+
+\usepackage{setspace}
+\onehalfspacing % Interligne 1.5
+\usepackage{booktabs}
+\usepackage{hyperref} % Pour les liens webographie [cite: 91]
+
+\usepackage{titlesec}
+\usepackage{multirow}
+\usepackage{rotating}
+\usepackage{colortbl}
+\usepackage{xcolor}
+\usepackage{ragged2e}
+\usepackage{pdflscape} 
+\usepackage{enumitem}
+
+
+\usepackage{array}
+
+\usepackage[margin=2.5cm, headheight=15pt, includefoot]{geometry}
+
+\usepackage{xltabular}
+
+\usepackage{float}
+\usepackage{longtable} % Indispensable pour utiliser l'environnement longtable
+
+\usepackage{tabularx}
+\usepackage{minitoc}  
+\setcounter{minitocdepth}{2} % Profondeur du sommaire (Sections et Sous-sections)
+\nomtcrule % Enlever la ligne horizontale si vous préférez un style épuré
+\nomtcpagenumbers % Optionnel : enlever les numéros de page dans les minis-sommaires
+\hypersetup{
+    colorlinks=true,  % Active la coloration des liens (enlève les cadres)
+    linkcolor=black,  % Couleur des liens internes (Sommaire, numéros de pages)
+    citecolor=black,  % Couleur des citations (bibliographie)
+    filecolor=black,  % Couleur des liens vers des fichiers
+    urlcolor=blue     % Couleur des liens vers le web (optionnel, peut être mis en black)
+}
+% --- 1. Configuration pour les CHAPITRES NUMÉROTÉS (Pages de garde isolées) ---
+\titleformat{\chapter}[display]
+  {\centering\normalfont\huge\bfseries}
+  {\vspace*{\fill}\chaptertitlename\ \thechapter}
+  {20pt}
+  {\Huge}
+  [\vspace*{\fill}\clearpage]
+
+% --- 2. Configuration pour les CHAPITRES ÉTOILÉS (Intro, Conclusion, Remerciements) ---
+% On enlève les \vspace*{\fill} pour que le titre reste en haut avec le texte
+\titleformat{name=\chapter,numberless}[display]
+  {\normalfont\huge\bfseries} % Aligné à gauche par défaut, ou ajoutez \centering
+  {} 
+  {0pt}
+  {\Huge}
+  [\vspace{1cm}] % Un petit espace de 1cm avant de commencer le texte
+
+% --- Pages de garde et préliminaires ---
+\pagenumbering{roman}
+% Marges standardisées
+
+\usepackage{minitoc} % INDISPENSABLE
+\usepackage{fancyhdr}
+
+% --- STYLE 1 : AVEC EN-TÊTE (Pour les chapitres) ---
+\fancypagestyle{avecEntete}{
+  \fancyhf{}
+  \renewcommand{\chaptermark}[1]{\markboth{Chapitre \thechapter. \ ##1}{}}
+  \fancyhead[L]{\leftmark} 
+  \renewcommand{\headrulewidth}{0.5pt} % La ligne apparaît
+  \fancyfoot[C]{\thepage}
+}
+
+% --- STYLE 2 : SANS EN-TÊTE (Pour Intro, Listes, Conclusion) ---
+\fancypagestyle{sansEntete}{
+  \fancyhf{}
+  \renewcommand{\headrulewidth}{0pt}    % La ligne disparaît
+  \fancyfoot[C]{\thepage}               % On garde juste le numéro de page
+}
+
+\begin{document}
+
+
+\tableofcontents
+\listoffigures % 
+\listoftables % [cite: 5]
+\newpage
+
+\pagenumbering{arabic}
+
+% --- Introduction Générale ---
+\chapter*{Introduction Générale}
+\addcontentsline{toc}{chapter}{Introduction Générale}
+
+Dans un environnement où le volume des candidatures peut dépasser plusieurs centaines par offre, l'optimisation des processus de recrutement est devenue incontournable. La gestion manuelle actuelle génère des inefficacités opérationnelles, une charge importante pour les recruteurs et des difficultés à identifier objectivement les meilleurs profils.
+
+Cette absence d'automatisation pénalise doublement les acteurs. D'une part, les recruteurs, submergés, voient leur efficacité diminuée : l'analyse manuelle des CV est chronophage, la création d'offres structurées est fastidieuse, et ils ne disposent d'aucun outil de filtrage par statut, score ou offre. Ils ne peuvent pas orienter l'IA sur les critères d'évaluation. D'autre part, les candidats restent sans visibilité, multiplient les dépôts sans centralisation, et ne disposent d'aucun espace dédié pour suivre leurs candidatures ou comprendre les décisions.
+
+Pour répondre à ces défis, notre projet de fin d'études, réalisé au sein d'\textbf{IOVISION} (développement de logiciels sur mesure et solutions IA), porte sur la conception d'une plateforme intelligente de \textbf{Parsing et d'Évaluation de CV} nommée \textbf{« IOhire »}. Cette solution automatise l'intégralité du cycle de recrutement, de l'ouverture d'une session jusqu'à la comparaison structurée des candidats, en s'appuyant sur l'IA, le NLP et des modèles de langage locaux.
+
+La solution se distingue par une approche modulaire : structuration du flux RH (sessions, postes, compétences, critères), expérience candidat fluide (soumission multi-format, suivi email, conformité GDPR), pipeline IA (extraction, parsing JSON via Ollama), scoring et matching intelligent, standardisation des CV (Markdown puis PDF), et outils décisionnels avancés (KPIs, filtrage, recommandations, chatbot).
+
+\vspace{0.5cm}
+Ce rapport de stage est organisé en sept chapitres , suivant une approche agile (Sprints 0 à 4) :
+
+\begin{itemize}
+    \item \textbf{Le premier chapitre} présente le contexte général du 
+    projet, la problématique RH et la solution globale envisagée.
+
+    \item \textbf{Le deuxième chapitre} est consacré à l'analyse et à 
+    la spécification des besoins fonctionnels et techniques du système.
+
+    \item \textbf{Le troisième chapitre (Sprint 0)} expose l'architecture 
+    logicielle et l'environnement technique retenu : \textbf{Angular}, 
+    \textbf{Strapi}, \textbf{PostgreSQL}, \textbf{Docker} et 
+    \textbf{Ollama}.
+    \item \textbf{Le quatrième chapitre (Sprint 1)} détaille la réalisation 
+    de l'espace RH : authentification, gestion des compétences, des 
+    départements, des offres d'emploi et de la suppression en cascade.
+     \item \textbf{Le cinquième chapitre (Sprint 2)} porte sur le développement du portail candidat : soumission multi-format, suivi 
+    par email, conformité GDPR et outils de revue initiale pour les recruteurs.
+
+    \item \textbf{Le sixième chapitre (Sprint 3)} décrit le c\oe{}ur 
+    technologique de la plateforme : le pipeline IA orchestré 
+    (extraction, parsing via Ollama, scoring déterministe, génération 
+    de CV standardisé via Playwright).
+
+    \item \textbf{Le septième chapitre (Sprint 4)} présente les 
+    fonctionnalités d'aide à la décision : filtrage multicritères, 
+    actions groupées, tableau de bord analytique, configuration 
+    d'évaluation, moteur de recommandation par matching de compétences 
+    et chatbot conversationnel intégré.
+\end{itemize}
+
+
+% --- Chapitre 1 ---
+\chapter{Contexte général et analyse des besoins}
+\pagestyle{avecEntete}
+\section*{Introduction}
+\addcontentsline{toc}{section}{Introduction}
+Ce premier chapitre présente l'organisme d'accueil IOVISION, analyse les solutions existantes de recrutement, et expose les verrous identifiés. Il formule ensuite la problématique, les objectifs du projet, ainsi que la solution proposée. Une analyse détaillée des besoins fonctionnels et non-fonctionnels est également réalisée, incluant l'identification des acteurs, la modélisation UML et la planification agile du projet.  
+
+\section{Organisme d'accueil}
+
+\subsection{Présentation}
+IOVISION \cite{iovision_site} est une société de développement logiciel qui évolue depuis plus de 10 ans dans le secteur des technologies de l'information. Animée par l'innovation, elle accompagne les entreprises et les particuliers dans la transformation de leurs idées en solutions concrètes et performantes. Spécialisée dans le développement de solutions basées sur l'IA, ainsi que la création d'applications web et mobiles, IOVISION met son expertise au service de ses clients pour améliorer leurs opérations et favoriser leur croissance, comme l'illustre la Figure 1.1.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.3\linewidth]{iovision.png}
+    \caption{Logo d'IOVision}
+    \label{fig:placeholder}
+\end{figure}
+
+\subsection{Domaines d'activité et expertise}
+IOVISION est une entreprise innovante offrant une gamme complète de services technologiques pour répondre aux divers besoins de ses clients. Les principaux services de l'entreprise comprennent :
+
+\begin{itemize}
+    \item \textbf{Développement Web, Mobile et E-Commerce :}
+    Fourniture de solutions de bout en bout basées sur les technologies Angular, Ionic et Spring Boot, incluant la maintenance, le support et l'assurance qualité (tests).
+
+    \item \textbf{Intelligence Artificielle :}
+   Conception de solutions sur mesure à travers le conseil en IA/ML, la visualisation de données, ainsi que les modules de prédiction et d'aide à la décision.
+
+    \item \textbf{Analyse Big Data :}
+   Services d'accompagnement stratégique comprenant le conseil, l'analyse générale des données et le support Big Data.
+
+
+
+\section{Problématique}
+
+Le département RH d’IOVISION fait face à une complexité croissante dans la gestion
+des recrutements. Les candidatures arrivent sous des formats hétérogènes (PDF, DOCX,
+TXT ou CV graphiques), ce qui rend leur lecture, leur comparaison et leur traitement
+automatique difficiles. Cette absence de standardisation oblige les recruteurs à consacrer
+un temps important à des tâches répétitives : extraction d’informations, analyse manuelle
+des CV, présélection et suivi des candidats.
+Par ailleurs, les outils existants ne permettent pas toujours un filtrage avancé des
+candidatures selon des critères précis tels que le statut, le score de compatibilité ou l’offre
+concernée. Les recruteurs disposent également de peu de moyens pour personnaliser les
+critères d’évaluation selon les exigences de chaque poste, notamment les compétences clés,
+l’expérience attendue ou les seuils d’acceptation.
+Du côté des candidats, le processus reste souvent peu transparent. Après le dépôt d’un
+CV, ils disposent rarement d’un espace centralisé pour consulter les offres, suivre l’état
+de leurs candidatures ou comprendre les raisons d’une acceptation ou d’un refus. Cette
+opacité peut générer de l’incertitude, de la frustration et un sentiment d’injustice. De plus,
+l’absence de recommandation personnalisée limite leur capacité à identifier les offres les
+plus adaptées à leur profil.
+Ainsi, la problématique principale de ce projet peut être formulée comme suit :
+
+
+\begin{center}
+\fbox{\parbox{0.85\textwidth}{\centering
+\textbf{Comment concevoir une plateforme intelligente capable de centraliser, analyser et évaluer automatiquement les candidatures, tout en offrant aux recruteurs des outils paramétrables de filtrage et de scoring, et aux candidats une transparence totale sur le suivi, l'évaluation et la recommandation personnalisée de leur profil ?}
+}}
+\end{center}
+
+\section{Étude de l'existant}
+\subsection{Analyse de l'existant}
+
+Afin d'identifier les limites des approches actuelles et de justifier la solution proposée, nous avons étudié plusieurs méthodes et plateformes de recrutement couramment utilisées.
+
+
+
+\item \textbf{Le processus manuel} : Le recrutement manuel repose sur la réception des CV par courrier électronique, leur tri manuel ainsi que leur archivage dans des dossiers locaux. Bien que simple à mettre en œuvre, cette approche devient rapidement inefficace lorsque le nombre de candidatures augmente. Elle ne permet ni une comparaison objective des profils ni une recherche avancée des candidats et dépend fortement de l'intervention humaine.
+
+\item \textbf{LinkedIn Talent Solutions} : LinkedIn \cite{linkedIn} est l'une des plateformes professionnelles les plus utilisées dans le monde. Elle permet aux recruteurs de publier des offres d'emploi, de rechercher des profils et de contacter directement les candidats. Toutefois, son coût d'abonnement demeure élevé, les mécanismes de scoring sont peu personnalisables et les données sont hébergées sur des serveurs externes, ce qui peut soulever des préoccupations en matière de confidentialité.
+
+
+
+\item \textbf{Lever ATS} : Lever \cite{lever} est un système ATS (Applicant Tracking System) offrant une gestion complète du processus de recrutement. Il facilite le suivi des candidatures et l'organisation du pipeline de recrutement. Cependant, son coût élevé, l'absence de standardisation automatique des CV et les possibilités limitées de personnalisation de l'algorithme d'évaluation constituent des inconvénients notables.
+
+
+
+\item \textbf{TanitJob} : TanitJob \cite{tanitjob} est l'une des principales plateformes de recrutement en Tunisie. Elle permet aux entreprises de publier des offres d'emploi et de recevoir des candidatures. Néanmoins, elle ne propose ni analyse sémantique des CV, ni système de scoring automatique, ni mécanisme de standardisation des profils. L'évaluation des candidatures reste donc entièrement à la charge du recruteur.
+
+
+
+\subsection{Critique de l'existant}
+Afin de synthétiser les forces et les faiblesses des approches actuelles, une analyse comparative a été menée. Le \textbf{Tableau 1.1} présente une critique détaillée de l'existant, mettant en évidence les avantages et les inconvénients du processus manuel ainsi que des principales plateformes du marché (LinkedIn, TanitJob et Lever ATS), afin de justifier la nécessité de notre solution.
+
+\renewcommand{\arraystretch}{1.8}
+\begin{longtable}{|p{2.2cm}|p{5.1cm}|p{6cm}|}
+\caption{Critique de l'existant} \label{tab:analyse_solutions} \\
+\hline
+\textbf{Solution} & \textbf{Avantages} & \textbf{Inconvénients} \\
+\hline
+\endfirsthead
+
+% En-tête qui se répète sur les pages suivantes
+\hline
+\textbf{Solution} & \textbf{Avantages} & \textbf{Inconvénients} \\
+\hline
+\endhead
+
+% Pied de page pour les pages intermédiaires
+\hline
+\endfoot
+
+% Pied de page final
+\hline
+\endlastfoot
+
+\textbf{Processus manuel} &  
+\begin{itemize}[leftmargin=*,noitemsep,topsep=0pt,partopsep=0pt,parsep=0pt]
+    \item Simple à mettre en place
+    \item Aucun coût logiciel
+    \item Flexible
+\end{itemize} &  
+\begin{itemize}[leftmargin=*,noitemsep,topsep=0pt,partopsep=0pt,parsep=0pt]
+    \item Tri subjectif et biaisé
+    \item Chronophage et non scalable
+    \item Aucun archivage structuré
+    \item Décisions incohérentes entre recruteurs
+\end{itemize} \\
+\hline
+
+\textbf{LinkedIn Talent Solutions} &  
+\begin{itemize}[leftmargin=*,noitemsep,topsep=0pt,partopsep=0pt,parsep=0pt]
+    \item Grande visibilité internationale
+    \item Large base de talents
+    \item Suggestions de profils automatiques
+\end{itemize} &  
+\begin{itemize}[leftmargin=*,noitemsep,topsep=0pt,partopsep=0pt,parsep=0pt]
+    \item Coût d'abonnement très élevé
+    \item Scoring propriétaire non personnalisable
+    \item Données hébergées en externe
+    \item Conformité RGPD non garantie
+\end{itemize} \\
+\hline
+
+\textbf{TanitJob} &  
+\begin{itemize}[leftmargin=*,noitemsep,topsep=0pt,partopsep=0pt,parsep=0pt]
+    \item Adapté au marché tunisien
+    \item Simple d'utilisation
+    \item Coût accessible
+\end{itemize} &  
+\begin{itemize}[leftmargin=*,noitemsep,topsep=0pt,partopsep=0pt,parsep=0pt]
+    \item Aucune analyse automatique des CV
+    \item Scoring absent
+    \item CV reçus en formats hétérogènes
+    \item Aucune conformité RGPD
+\end{itemize} \\
+\hline
+
+\textbf{Lever ATS} &  
+\begin{itemize}[leftmargin=*,noitemsep,topsep=0pt,partopsep=0pt,parsep=0pt]
+    \item Pipeline de recrutement complet
+    \item Collaboration entre recruteurs
+    \item Analyse des CV avancée
+\end{itemize} &  
+\begin{itemize}[leftmargin=*,noitemsep,topsep=0pt,partopsep=0pt,parsep=0pt]
+    \item Coût très élevé
+    \item Scoring générique non configurable
+    \item Aucune standardisation personnalisée
+    \item Conformité RGPD partielle
+\end{itemize} \\
+\hline
+
+\end{longtable}
+
+
+
+
+
+\section{Objectifs du projet}
+Le projet vise à créer IOhire, une plateforme web intelligente pour automatiser le traitement des CV, améliorer la présélection et rendre le recrutement plus rapide, objectif et transparent.
+Pour répondre à ces besoins, la plateforme offre les fonctionnalités suivantes :
+
+\renewcommand{\labelitemi}{—}
+\begin{itemize}
+  \item l’extraction automatique du contenu des CV aux formats PDF, DOCX et TXT ;
+  \item le parsing intelligent des informations clés à l’aide d’un modèle IA local basé sur Ollama ;
+  \item le calcul automatique d’un score de compatibilité entre le profil candidat et les exigences du poste ;
+  \item le filtrage des candidatures par statut, score, offre ou recherche textuelle ;
+  \item la personnalisation des critères d’évaluation par offre ;
+  \item la visualisation d’indicateurs de suivi à travers un tableau de bord analytique ;
+  \item la gestion des offres d’emploi, des compétences et des départements ;
+  \item le choix d’un modèle de CV pour la génération des documents standardisés ;
+  \item la consultation des offres d’emploi ouvertes par les candidats ;
+  \item la soumission simplifiée d’un CV en ligne ;
+  \item le suivi en temps réel du statut de chaque candidature ;
+  \item l’accès au score de compatibilité et aux éléments explicatifs de l’évaluation ;
+  \item la recommandation d’offres adaptées au profil ;
+  \item la gestion des droits liés à la protection des données personnelles ;
+  \item la possibilité de discuter avec un chatbot intelligent pour obtenir une assistance personnalisée.
+  \item Planification des entretiens avec synchronisation des calendriers.
+    \item une version mobile native (React Native ou Flutter) sera proposée.
+
+  
+\end{itemize}
+
+\section{Solution proposée : La plateforme IOhire}
+
+\noindent
+IOhire est une plateforme web intelligente qui centralise et automatise la gestion des candidatures, développée avec un frontend Angular, un backend Strapi et une base de données PostgreSQL.
+
+\paragraph{Gestion des offres et candidatures}
+\begin{itemize}
+    \item Les recruteurs configurent les offres (compétences requises/souhaitées, expérience), tandis que les candidats postulent via un portail public en déposant leur CV (PDF, DOCX, TXT).
+\end{itemize}
+
+\paragraph{Pipeline IA et Scoring}
+\begin{itemize}
+    \item Le système extrait le texte (pdf-parse, mammoth), puis Ollama structure les données (contact, compétences, expériences, etc.). Un algorithme calcule ensuite un score de compatibilité selon les critères du recruteur, la complétude du profil et l'expérience, tout en générant un CV standardisé.
+\end{itemize}
+
+\paragraph{Espace Candidat}
+\begin{itemize}
+    \item Offre un suivi transparent des statuts, l'accès au score obtenu et des recommandations d'offres personnalisées.
+\end{itemize}
+
+\paragraph{Espace Recruteur}
+\begin{itemize}
+    \item Intègre des outils de filtrage multicritères, un tableau de bord analytique (Chart.js) et un chatbot d'assistance.
+\end{itemize}
+
+\paragraph{Sécurité et RGPD}
+\begin{itemize}
+    \item Assure l'authentification, le contrôle d'accès, le consentement explicite et la suppression des données personnelles.
+\end{itemize}
+
+
+
+
+\section{Langage de modélisation}
+Pour la modélisation des besoins et des interactions du système, nous avons utilisé UML (Unified Modeling Language) ~\cite{uml} \textbf{(voir Figure~\ref{fig:logo_uml})}. Ce langage graphique standardisé nous a permis d'exploiter trois types de diagrammes complémentaires : les diagrammes de cas d'utilisation, les diagrammes de classes et les diagrammes de séquence. UML a ainsi favorisé la communication au sein de l'équipe et garanti une vision partagée des objectifs du projet.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.2\linewidth]{uml.png}
+    \caption{Logo d'UML}
+    \label{fig:logo_uml}
+\end{figure}
+ 
+
+\section{Identification des acteurs}
+Le fonctionnement de la plateforme repose sur l'interaction entre trois acteurs clés. Chaque intervenant possède des droits et des outils spécifiques pour mener à bien le processus de recrutement, conformément aux objectifs définis dans le backlog du projet.
+\begin{itemize}
+    \item \textbf{Recruteur (UtilisateurRH) :} C'est l'acteur principal qui gère le cycle de recrutement depuis son espace de travail sécurisé
+    \item \textbf{Candidat :} Il représente l'utilisateur externe qui interagit avec l'interface publique de la plateforme .
+    \item \textbf{Système IA :} C'est le moteur technologique qui exécute automatiquement les tâches intelligentes .
+\end{itemize}
+
+\subsection{Identification des besoins}
+
+L'identification des besoins permet de définir précisément les attentes vis-à-vis du système. Nous distinguons les besoins fonctionnels des besoins non fonctionnels .
+
+\subsubsection{Besoins fonctionnels}
+
+Les besoins fonctionnels décrivent les fonctionnalités que le système doit offrir aux utilisateurs. Ils sont organisés par flux opérationnels :
+
+\paragraph{A. Flux Recruteur }
+Le système doit permettre au recruteur, après une authentification sécurisée, de :
+\begin{itemize}
+    \item \textbf{Gérer le référentiel :} Administrer les compétences techniques et les départements de l'entreprise.
+    \item \textbf{Gérer les offres :} Créer, modifier, publier ou supprimer des annonces. La suppression d'une offre doit entraîner la suppression automatique des candidats liés.
+    \item \textbf{Suivre les candidatures :} Consulter la liste des postulants, visualiser les détails de chaque profil et mettre à jour leur statut (Accepté, Refusé, En attente).
+    \item \textbf{Piloter l'IA :} Configurer les critères de scoring et sélectionner le modèle de CV standardisé pour l'export.
+    \item \textbf{Analyser :} Filtrer les candidats et consulter les statistiques de recrutement via des indicateurs graphiques KPIs.
+\end{itemize}
+
+\paragraph{B. Flux Candidat :Interface Publique}
+Le système doit permettre au candidat de :
+\begin{itemize}
+    \item \textbf{Candidater :} Consulter les offres actives et soumettre un formulaire avec dépôt de CV.
+    \item \textbf{Suivi sécurisé :} Saisir son e-mail pour recevoir un code de vérification unique à chaque consultation du statut de son dossier.
+    \item \textbf{Assistance :} Interagir avec le chatbot pour  comprendre le fonctionnement du portail.
+    \item \textbf{Recommander un poste:}  le système identifie et propose les offres d'emploi les plus compatibles avec le CV du candidat.
+\end{itemize}
+
+\paragraph{C. Services du Système (Automatisation IA)}
+En arrière-plan, le système doit assurer :
+\begin{itemize}
+    \item \textbf{Le Parsing :} Extraction automatique des données des CV (PDF, DOCX, TXT) vers un format JSON.
+    \item \textbf{Le Scoring :} Calcul d'un score de compatibilité sémantique entre le candidat et l'offre.
+    \item \textbf{La Standardisation :} Génération automatique de CV uniformisés en format PDF.
+\end{itemize}
+
+\subsubsection{Besoins non fonctionnels}
+
+Les besoins non fonctionnels définissent les exigences de performance, de sécurité et de maintenance du système :
+
+\begin{itemize}
+    \item \textbf{Sécurité :} L'accès au tableau de bord RH doit être protégé par une authentification JWT. Les données des candidats doivent être protégées et accessibles uniquement via un code temporaire .
+    \item \textbf{Ergonomie :} L'interface utilisateur, développée sous Angular, doit être intuitive, réactive et offrir une navigation fluide pour les deux types d'utilisateurs.
+    \item \textbf{Performance de l'IA :} Le traitement des CV par le modèle Llama 3.2 via Ollama doit être précis et le temps de réponse pour le scoring doit être optimisé.
+    \item \textbf{Disponibilité et Scalabilité :} Le système doit être déployé dans une architecture conteneurisée à l'aide de Docker, facilitant ainsi sa maintenance, sa stabilité et ses évolutions futures.
+    \item \textbf{Intégrité des données :} Le système doit garantir la cohérence des informations, notamment lors des suppressions d'offres en cascade.
+\end{itemize}
+
+\section{Diagramme des cas d’utilisation général}
+Le diagramme ci-dessous \textbf{(Figure~\ref{fig:use_case_diagram})} illustre les interactions entre les acteurs (Candidat, RH et Module IA) et les fonctionnalités du système \textbf{IOhire}. Il met en évidence la centralisation de l'authentification pour le flux RH et l'automatisation du parsing via le module IA.
+
+\clearpage
+\newgeometry{paper=a3paper, margin=1cm}
+\begin{landscape}
+    \begin{figure}[p]
+        \centering
+        \includegraphics[width=1.1\textwidth]{UseCaseDiagramGéneral.jpg}
+        \caption{Diagramme de cas d'utilisation général (format A3)}
+        \label{fig:use_case_diagram}
+    \end{figure}
+\end{landscape}
+\restoregeometry
+\clearpage
+
+\section{Diagramme de classes général}
+
+Comme illustré dans le diagramme de classes ci-dessous \textbf{Figure~\ref{fig:class_diagram}} représente la structure statique du système. Il présente les entités principales, leurs attributs, leurs relations ainsi que les services associés.
+\vspace{1cm}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.1\textwidth, height=6\textheight, keepaspectratio]{ClassDiagram-app.jpg}
+    \caption{Diagramme de classe général}
+    \label{fig:class_diagram}
+\end{figure}
+
+\subsection*{Principales classes}
+
+\renewcommand{\arraystretch}{1.5}
+\begin{longtable}{|p{0.25\textwidth}|p{0.7\textwidth}|}
+\caption{\textbf Principales classes du système} \label{tab:principales_classes} \\
+
+\hline
+\multicolumn{1}{|c|}{\textbf{Classe}} & \multicolumn{1}{c|}{\textbf{Description}} \\
+\hline
+\endhead
+\textbf{UtilisateurRH} & Représente le recruteur. Il possède un email, un mot de passe et un rôle. Selon le diagramme, il interagit directement avec les classes suivantes : \begin{itemize} \item Il gére un ou plusieurs \textbf{Candidat(s)} et \textbf{OffreEmploi} 
+. \item Il émet des requêtes de type \textbf{CommandeStatutGroupé} pour modifier massivement les statuts de candidature. \item Il consulte l'\textbf{AperçuAnalytique} pour suivre les indicateurs globaux du recrutement. \end{itemize} \\
+\hline
+\textbf{Candidat} & La classe génerale, centralisant le profil et le parcours d'un postulant. Elle stocke l'identité : nomComplet, email, pays, ville, les liens :linkedInet portfolio, le CV ainsi que les données extraites et formatées comme donnéesExtraites et cvMarkdownStandardise. Elle intègre la gestion réglementaire :consentement et dates associées et le suivi sécurisé : jetonPublic, hashCodeSuivi. Le candidat est lié à : \begin{itemize} \item \textbf{ModèleCV} : Le modèle de mise en page utilisé pour son CV. \item \textbf{OffreEmploi} : Les offres auxquelles il postule . \item \textbf{UtilisateurRH} (1) : Le recruteur qui révise son dossier. \item \textbf{RésultatEvaluation} : L'évaluation générée suite à l'analyse de son profil. \end{itemize} \\
+\hline
+\textbf{OffreEmploi} & Représente une opportunité de recrutement publiée par l'entreprise (id, titre, description). Son cycle de vie est défini par l'énumération \textbf{StatutOffreEmploi} (BROUILLON, OUVERT, FERMÉ). Elle regroupe et structure les éléments suivants : \begin{itemize} \item Elle contient exactement une configuration d'\textbf{Exigences}  qui définit les compétences requises/souhaitées, les départements et l'expérience minimale. \item Elle reçoit les candidatures de plusieurs \textbf{Candidat(s)} . \item Elle est agrégée au sein de l'\textbf{AperçuAnalytique} pour l'établissement des rapports de performance. \end{itemize} \\
+\hline
+\textbf{ProcesseurIA} & Composant d'intelligence artificielle chargé d'automatiser l'analyse et l'évaluation des dossiers. Il prend en entrée les interactions de la \textbf{SessionChat}  et génère ou traite de manière autonome : \begin{itemize} \item Le \textbf{RésultatEvaluation} : Calcul du score de compatibilité, statut suggéré, feedback et identification des compétences correspondantes ou manquantes . \item Le \textbf{ModèleCV} : Génération du format de CV standardisé depuis les informations extraites de la classe candidat. \item La \textbf{RecommandationEmploi} : Production de suggestions d'opportunités  adaptées au profil traité. \end{itemize} \\
+\hline
+\end{longtable}
+
+\section{Méthodologie utilisée}
+
+\subsection{Cadre de travail agile Scrum}
+Dans le cadre de notre projet, nous avons choisi d’adopter Scrum, un cadre de travail agile 
+qui nous permet de répondre efficacement à des problèmes 
+complexes et changeants. Comme ci présenté dans la \textbf{figure~\ref{fig:scrum_cycle}}. Scrum ~\cite{scrum} favorise une collaboration étroite entre les membres de 
+l’équipe, encourageant la transparence, la communication continue, l’inspection régulière 
+des progrès et l’adaptation aux changements
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{scrum.jpg}
+    \caption{Le cycle de vie du cadre de travail Scrum}
+   \label{fig:scrum_cycle}
+\end{figure}
+
+\subsection{Composition de l'équipe}
+
+\subsubsection{Les rôles Scrum}
+\begin{itemize}
+    \item \textbf{Propriétaire de produit :} Product Owner. 
+    \item \textbf{Responsable de l’équipe scrum :} Scrum Master. 
+    \item \textbf{Equipe scrum :} Développeurs, concepteurs, … 
+\end{itemize}
+
+\subsubsection{Les événements de Scrum }
+Le cadre de travail Scrum s'articule autour de cinq rituels structurants :
+\begin{itemize}
+    \item \textbf{Revue du Backlog :} Alignement et priorisation des besoins clients.
+    \item \textbf{Planification du Sprint :} Définition des objectifs et du travail à venir.
+    \item \textbf{Daily Scrum :} Coordination quotidienne et levée des obstacles.
+    \item \textbf{Revue de Sprint :} Présentation des incréments terminés aux parties prenantes.
+    \item \textbf{Rétrospective :} Analyse interne pour l'amélioration continue de l'équipe.
+\end{itemize}
+\section{Découpage du projet}
+
+
+\subsection{Equipe du projet}
+\begin{itemize}
+    \item \textbf{Product Owner :} M. Mohamed Kallel.
+    \item \textbf{Scrum Master :} M. Ilyes Bahloul.
+    \item \textbf{Équipe de développement :Moi meme Lina Ben Hamadou} 
+\end{itemize}
+\subsection{Backlog du produit}
+Le tableau suivant récapitule les User Stories (US) prioritaires identifiées pour le projet.
+
+
+
+\subsection{Backlog du produit}
+Le tableau suivant \textbf{Table~\ref{tab:backlog-prd}} récapitule les User Stories prioritaires identifiées pour le projet.
+
+\begin{small}
+\begin{xltabular}{\textwidth}{|>{\centering\arraybackslash}m{2cm}|>{\centering\arraybackslash}p{2.5cm}|c|X|c|}
+\caption{ \textbf{Backlog du produit}} \label{tab:backlog-prd} \\
+\hline
+\textbf{Module} & \textbf{Fonctionnalité} & \textbf{Id} & \textbf{User Story} & \textbf{Priorité} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Module} & \textbf{Fonctionnalité} & \textbf{Id} & \textbf{User Story} & \textbf{Priorité} \\
+\hline
+\endhead
+\hline
+\endfoot
+\hline
+\endlastfoot
+
+\multirow{4}{=}{\centering Module RH et offres d'emploi}
+& Authentification & 1 & En tant qu'utilisateur RH, je peux m'authentifier de manière sécurisée via JWT. & Élevée \\ \cline{2-5}
+& Gestion des compétences & 2 & En tant qu'utilisateur RH, je peux gérer les compétences (ajout, modification, suppression). & Moyenne \\ \cline{2-5}
+& Gestion des départements & 3 & En tant qu'utilisateur RH, je peux gérer les départements. & Moyenne \\ \cline{2-5}
+& Gestion des offres d'emploi & 4 & En tant qu'utilisateur RH, je peux créer et gérer les offres d'emploi avec leurs exigences. & Moyenne \\ \hline
+
+\multirow{5}{=}{\centering Module candidatures}
+& Consultation des offres & 5 & En tant que candidat, je peux consulter les offres d'emploi ouvertes. & Moyenne \\ \cline{2-5}
+& Soumission de candidature & 6 & En tant que candidat, je peux soumettre ma candidature avec mon CV (PDF, DOCX) et accepter le consentement RGPD. & Élevée \\ \cline{2-5}
+& Suivi de candidature & 7 & En tant que candidat, je peux suivre et supprimer ma candidature via un jeton sécurisé. & Moyenne \\ \cline{2-5}
+& Gestion des candidats & 8 & En tant qu'utilisateur RH, je peux consulter la liste des candidats, leurs détails, télécharger leur CV, supprimer un candidat. & Moyenne \\ \cline{2-5}
+& Gestion des statuts & 9 & En tant qu'utilisateur RH, je peux modifier le statut d'un candidat, ajouter des notes et appliquer des filtres. & Moyenne \\ \hline
+
+\multirow{6}{=}{\centering Module traitement IA et CV}
+& Extraction du texte & 10 & En tant que système, je peux extraire automatiquement le texte des CV (PDF, DOCX, TXT). & Élevée \\ \cline{2-5}
+& Analyse du CV & 11 & En tant que système, je peux analyser le CV via \textbf{Ollama} et produire un JSON structuré. & Élevée \\ \cline{2-5}
+& Scoring & 12 & En tant que système, je peux évaluer automatiquement le score d'adéquation entre le profil et le poste. & Élevée \\ \cline{2-5}
+& Statut du pipeline & 13 & En tant qu'utilisateur RH, je peux visualiser le statut de traitement du pipeline IA en temps réel. & Moyenne \\ \cline{2-5}
+& Génération du CV & 14 & En tant qu'utilisateur RH, je peux sélectionner un modèle de CV, générer un CV standardisé au format PDF et le télécharger. & Moyenne \\ \cline{2-5}
+& Retraitement & 15 & En tant qu'utilisateur RH, je peux retraiter le dossier d'un candidat en relançant le pipeline IA. & Moyenne \\ \hline
+
+\multirow{6}{=}{\centering Module aide à la décision}
+& Filtrage & 16 & En tant qu'utilisateur RH, je peux filtrer les candidats par score, statut, offre d'emploi, nom, email. & Moyenne \\ \cline{2-5}
+& Mise à jour et suppression groupée & 17 & En tant qu'utilisateur RH, je peux effectuer une mise à jour groupée des statuts et une suppression groupée de plusieurs candidats. & Moyenne \\ \cline{2-5}
+& Tableau de bord & 18 & En tant qu'utilisateur RH, je peux visualiser les statistiques et indicateurs clés via un tableau de bord analytique. & Élevée \\ \cline{2-5}
+& Configuration IA & 19 & En tant qu'utilisateur RH, je peux configurer les critères d'évaluation IA par offre d'emploi. & Moyenne \\ \cline{2-5}
+& Recomman- \newline -dations & 20 & En tant qu'utilisateur RH, je peux consulter des recommandations de candidats basées sur le matching de compétences. & Élevée \\ \cline{2-5}
+& Chatbot & 21 & En tant qu'utilisateur RH, je peux interagir avec un \textbf{chatbot} pour obtenir des recommandations de recrutement. & Élevée \\ \hline
+
+\end{xltabular}
+\
+\end{small}
+
+
+\section{Planification des sprints}
+Le projet est découpé en \textbf{5 Sprints} majeurs répartis selon le calendrier suivant :
+
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{2}
+\caption{\textbf{ Planning des sprints}} 
+\vspace{0.5cm}
+\begin{tabular}{|c|c|c|}
+
+\hline
+
+\textbf{Sprints} & \textbf{Module} & \textbf{Durée} \\
+\hline
+
+Sprint 0 & Architecture logicielle et
+framework de développement & 1.5 semaines \\
+\hline
+
+Sprint 1 & Module de gestion RH et des offres d'emploi & 3.5 semaines \\
+\hline
+
+Sprint 2 & Module de gestion des candidatures & 3.5 semaines \\
+\hline
+
+Sprint 3 & Module de traitement IA et génération des CV & 4 semaines \\
+\hline
+
+Sprint 4 & Module d'aide à la décision et analytique & 3.5 semaines \\
+\hline
+
+\end{tabular}
+\label{tab:planning_sprints}
+\end{table}
+
+\section*{Conclusion}
+Ce chapitre a posé les bases du projet IOhire : présentation du contexte, identification des acteurs, analyse des besoins fonctionnels et non-fonctionnels, modélisation UML et adoption de la méthodologie Scrum avec une planification en cinq sprints.
+
+% ------------------------------------------------------------------
+% CHAPITRE 3
+% ------------------------------------------------------------------
+
+\chapter{Sprint 0 : Architecture logicielle \& framework de développement}
+\pagestyle{avecEntete}
+\section*{Introduction}
+\addcontentsline{toc}{section}{Introduction}
+Ce sprint a pour objectif de comprendre l’architecture logicielle du projet et de l’implémenter en s’appuyant sur les frameworks de développement appropriés.
+
+\section{Backlog Sprint 0}
+Un Sprint est une courte période de temps pendant laquelle une équipe Scrum travaille pour terminer une quantité de travail définie. Les Sprints sont au cœur des méthodologies Scrum et Agile. Travailler sur les bons Sprints aidera une équipe Agile à livrer des livrables plus efficacement et de façon efficiente.
+
+Cela se fait à travers un tableau qui décrit les différentes tâches à réaliser, avec une estimation du temps nécessaire pour chacune (en nombre de jours). Dans ce cadre, nous avons donc préparé et défini notre Sprint 0, présenté dans le tableau ci-dessous \textbf{Table~\ref{tab: bl-sp0}} :
+
+\begin{table}[H]
+    \centering
+    \small
+    \caption{\textbf{Backlog du Sprint 0}} \label{tab: bl-sp0} 
+    \vspace{0.5cm}
+    \begin{tabular}{|p{7cm}|c|c|}
+        \hline
+        \textbf{Tâches} & \textbf{Période} & \textbf{Priorité} \\ \hline
+        Recherche sur les outils à utiliser & 2 jours & Élevée \\ \hline
+        Installation et configuration Visual Studio Code, Angular, Node.js, Docker, PostgreSQL & 1 jour & Élevée \\ \hline
+        Configuration de l'environnement de développement & 1 jour & Élevée \\ \hline
+        Mise en pratique et préparation sur le projet & 3 jours & Élevée \\ \hline
+        Analyse des besoins et conception & 3.5 jours & Élevée \\ \hline
+        \textbf{Total} & \textbf{10 jours (1.5 semaine) } & \\ \hline
+    \end{tabular}
+    
+\end{table}
+\section{Vue architecturale du système}
+
+\subsection{Architecture de l’application}
+
+
+Comme illustré dans la \textbf{Figure~\ref{fig:architecture_globale}}, l'architecture de la plateforme IOhire est une architecture micro‑services conteneurisée organisée en quatre couches logiques (présentation, métier, données) et enrichie d'un service d'IA dédié (Ollama). L'ensemble est orchestré par Docker Compose, garantissant reproductibilité et portabilité.
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\linewidth]{architecture (2).png}
+    \caption{Architecture globale d'IOhire}
+    \label{fig:architecture_globale}
+\end{figure}
+
+\subsubsection{Couche Frontend }
+
+Le frontend est développé avec \textbf{Angular} et communique avec le backend via des appels HTTP REST authentifiés par \textbf{JWT}. Il se divise en deux espaces distincts :
+
+\begin{itemize}
+    \item \textbf{Admin Shell} : espace sécurisé pour le recruteur (gestion des offres, gestion des candidats, analyses et configuration IA).
+    \item \textbf{Portail Candidat} : interface publique pour consulter les offres, déposer un CV (PDF, DOCX, TXT) et suivre sa candidature par email.
+\end{itemize}
+
+\subsubsection{Couche Backend}
+
+\textbf{Strapi} agit comme un CMS headless et expose une API REST. Il assure :
+
+\begin{itemize}
+    \item La définition des \textbf{Content Types} (Compétence, Département, OffreEmploi, Candidat).
+    \item L'authentification sécurisée via \textbf{JWT}.
+    \item L'interface d'administration  pour les opérations CRUD.
+    \item L'\textbf{orchestration des appels} vers le service IA (Ollama).
+\end{itemize}
+
+\subsubsection{Couche Base de données}
+
+\textbf{PostgreSQL} stocke toutes les données structurées  :
+
+\begin{itemize}
+    \item Référentiels (compétences, départements)
+    \item Offres d'emploi et exigences
+    \item Candidats, scores, statuts, jetons de suivi
+    \item Configuration des modèles de CV
+\end{itemize}
+
+\subsubsection{Couche Intelligence Artificielle }
+
+\textbf{Ollama} exécute localement le modèle \textbf{Llama 3.2}. Il est sollicité par Strapi pour :
+
+\begin{itemize}
+    \item Extraire le texte des CV (PDF, DOCX, TXT) via \textbf{pdf-parse} et \textbf{mammoth}
+    \item Parser le texte en \textbf{JSON structuré} (contact, compétences, expériences, formation,...)
+    \item Calculer le \textbf{score de compatibilité}
+    \item Générer le CV standardisé au format \textbf{Markdown}, puis convertir en \textbf{PDF} via \textbf{Playwright}
+\end{itemize}
+
+% ... (après la description des couches et le schéma)
+
+\subsubsection{Infrastructure et conteneurisation}
+\label{sec:docker}
+
+La conteneurisation est une approche DevOps qui consiste à encapsuler une application et ses dépendances dans un conteneur isolé, exécutable sur n’importe quel système disposant d’un moteur de conteneurs (Docker). Pour IOhire, ce choix apporte :
+
+\begin{itemize}
+    \item \textbf{Reproductibilité} : l’environnement de développement est identique à celui de production (mêmes versions des langages, bibliothèques et services), évitant les problèmes d’environnement .
+    \item \textbf{Portabilité} : l’application peut être déployée sur n’importe quel serveur (local, cloud) sans reconfiguration lourde.
+    \item \textbf{Isolement} : les services (frontend, backend, base de données, IA) sont séparés, limitant les conflits et améliorant la sécurité.
+    \item \textbf{Simplification du déploiement} : un seul fichier docker-compose.yml permet de lancer l’intégralité de la stack.
+\end{itemize}
+
+\paragraph{Composants conteneurisés}
+Quatre conteneurs sont définis, chacun correspondant à un service de la plateforme. Le \textbf{Tableau~\ref{tab:containers}} ci-dessous détaille ces services.
+
+\begin{table}[H]
+\centering
+\caption{ \textbf{Services conteneurisés d’IOhire} }\label{tab:containers} 
+\vspace{0.5cm}
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Conteneur} & \textbf{Technologie} & \textbf{Rôle} \\ \hline
+\texttt{frontend} & Angular (Node.js) & Sert l’application web sur le port 4200. \\ \hline
+\texttt{backend} & Strapi (Node.js) & Expose l’API REST sur le port 1337. \\ \hline
+\texttt{postgres} & PostgreSQL 16 & Stocke les données relationnelles sur le port 5432. \\ \hline
+\texttt{ollama} & Ollama (LLM) & Fournit le modèle d’IA local sur le port 11434. \\ \hline
+\end{tabular}
+
+\end{table}
+
+\paragraph{Dockerfile – construction des images}
+Chaque service possède son propre Dockerfile qui décrit la manière de construire son image:
+\begin{itemize}
+    \item \textbf{Backend (Strapi)} : basé surnode:20-alpine, copie des sources, \texttt{npm install}, expose le port 1337.
+    \item \textbf{Frontend (Angular)} : basé sur node:20-alpine, installation d’Angular CLI, copie du code, ng serve en mode développement.
+    \item \textbf{PostgreSQL} : utilisation de l’image officielle \texttt{postgres:16-alpine} avec des variables d’environnement.
+    \item \textbf{Ollama} : image officielle \texttt{ollama/ollama:latest} pré‑configurée pour exécuter le modèle \texttt{llama3.2:3b}.
+\end{itemize}
+
+\paragraph{Docker Compose – orchestration multi‑conteneurs}
+Le fichier docker-compose.yml à la racine du projet définit les services, les ports exposés, les volumes de données persistantes et les variables d’environnement. Il permet de lancer tous les conteneurs en une seule commande :
+
+\begin{verbatim}
+docker-compose up -d --build
+\end{verbatim}
+
+\paragraph{Rôle de Docker Compose dans le projet}
+\begin{itemize}
+    \item \textbf{Orchestration} : lance, arrête et redémarre les quatre conteneurs en respectant leurs dépendances (ex. le backend attend PostgreSQL).
+    \item \textbf{Réseau interne} : les conteneurs communiquent entre eux via leurs noms de service (postgres, ollama), simplifiant la configuration réseau.
+    \item \textbf{Persistance des données} : les volumes postgres\_data et ollama\_data conservent les données de la base et les modèles IA, même après l’arrêt des conteneurs.
+    \item \textbf{Développement facilité} : les volumes montés (./backend:/app, ./frontend:/app) permettent le hot‑reload (les modifications du code sont immédiatement prises en compte sans rebuild).
+\end{itemize}
+
+\paragraph{Avantages concrets pour IOhire}
+\begin{itemize}
+    \item Aucune installation manuelle de Angular, PostgreSQL ou Ollama sur le poste de développement.
+    \item L’environnement de production est rigoureusement identique à l’environnement de développement: mêmes images, mêmes versions.
+    \item L’intégration continue (CI) peut s’appuyer sur ces mêmes définitions Docker pour exécuter les tests.
+    \item Le déploiement final consiste simplement à exécuter \texttt{docker-compose up -d --build} sur le serveur cible.
+\end{itemize}
+
+Ainsi, l’infrastructure conteneurisée est au cœur de la stratégie DevOps du projet, garantissant la fiabilité, la reproductibilité et la maintenabilité d’IOhire.
+
+% Fin de la section - PAS de figure supplémentaire ici
+
+\section{Présentation des outils de développement}
+
+\subsection{Environnement matériel}
+Le développement de l’application est réalisé via un ordinateur portable ayant les caractéristiques decrites dans le \textbf{Tableau~\ref{tab: carac}} suivant:
+
+\begin{table}[H]
+    \centering
+    \caption{\textbf{ Caractéristiques d'ordinateur}} \label{tab: carac} 
+    \vspace{0.5cm}
+    \begin{tabular}{|l|p{8cm}|}
+        \hline
+        \textbf{Marque} &MSI \\ \hline
+        \textbf{Processeur} & NVIDIA GEOFORCE GTX i5-10TH GEN CPU @ 2.50GHz 2.50 GHz \\ \hline
+        \textbf{RAM} & 8,0 Go \\ \hline
+        \textbf{Système d'exploitation} & Windows 11 Professionnel \\ \hline
+    \end{tabular}
+    
+\end{table}
+
+\subsection{Environnement logiciel}
+
+{\small % Réduit légèrement la taille du texte pour tout le tableau
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{|p{2.5cm}|p{3.5cm}|p{8.5cm}|}
+\caption{\textbf{ Stack technologique utilisée}}\label{tab:tech_stack}\\
+\hline
+\textbf{Logo} & \textbf{Technologie} & \textbf{Rôle dans le projet} \\ \hline
+\endfirsthead
+
+% En-tête qui se répète sur les pages suivantes
+\hline
+
+\endhead
+
+% Pied de page pour les pages intermédiaires
+\hline
+\endfoot
+\endlastfoot
+
+\centering\includegraphics[width=0.09\textwidth]{vs cod.jpeg} & 
+Visual Studio Code \cite{VS-Code} & 
+Éditeur de code source et IDE cross-platform de Microsoft pour le développement. \\ \hline
+
+\centering\includegraphics[width=0.09\textwidth]{postman.png} & 
+Postman \cite{postman} & 
+Plateforme API tout-en-un pour la conception, le test, la livraison et la surveillance des API REST. \\ \hline
+
+\centering\includegraphics[width=0.09\textwidth]{github.png} & 
+GitHub \cite{github} & 
+Plateforme cloud de gestion de versions basée sur Git pour stocker, partager et collaborer sur le code. \\ \hline
+
+\centering\includegraphics[width=0.09\textwidth]{docker.png} & 
+Docker \cite{docker}  & 
+Plateforme de conteneurisation pour encapsuler l'application et ses dépendances dans des conteneurs légers. \\ \hline
+
+\centering\includegraphics[width=0.09\textwidth]{angular.png} & 
+Angular \cite{angular} & 
+Framework basé sur TypeScript et les composants pour la création d'applications web évolutives (Frontend). \\ \hline
+
+\centering\includegraphics[width=0.09\textwidth]{nodeJs.png} & 
+Node.js \cite{nodeJs} & 
+Environnement d'exécution JavaScript côté serveur, open-source et multiplateforme. \\ \hline
+
+\centering\includegraphics[width=0.09\textwidth]{strapi.jpg} & 
+Strapi \cite{strapi} & 
+CMS headless open-source basé sur Node.js avec une approche API-first pour la gestion du contenu. \\ \hline
+
+\centering\includegraphics[width=0.09\textwidth]{postgreSQL.png} & 
+PostgreSQL \cite{postGreSql}  & 
+Système de gestion de base de données relationnelle orienté objet (SGBDR) puissant et extensible. \\ \hline
+
+\centering\includegraphics[width=0.09\textwidth]{ollama-logo.png} & 
+Ollama \cite{ollama} & 
+Outil open-source conçu pour exécuter et gérer des modèles de langage de grande taille (LLM) localement. \\ \hline
+
+\centering\includegraphics[width=0.09\textwidth]{Staruml_logo.png} & 
+StarUML \cite{starUml} & 
+Logiciel de modélisation pour la conception de diagrammes UML2, SysML et ERD avec génération de code. \\ \hline
+
+\centering\includegraphics[width=0.15\textwidth]{logo_plantuml.png} & 
+PlantUML \cite{plantUml} & 
+Outil open-source permettant de créer des diagrammes UML à partir d'un langage textuel simple et programmable. \\ \hline
+
+\centering\includegraphics[width=0.15\textwidth]{Figma-logo.png} & 
+Figma \cite{figma}& 
+Outil de conception d'interfaces utilisateur (UI/UX) collaboratif basé sur le cloud pour le prototypage et le design des maquettes. \\ \hline
+
+\end{longtable}
+}
+
+
+\subsection{Justification des choix technologiques}
+
+Le choix des technologies a été guidé par les besoins spécifiques du projet, la productivité de l'équipe et la pérennité de la solution.
+
+\begin{itemize}
+    \item \textbf{Angular} : framework complet basé sur TypeScript, adapté à une équipe de 3 développeurs. Il offre une architecture modulaire (composants standalone, services, routing) et une courbe d’apprentissage maîtrisée.
+    
+    \item \textbf{Strapi} : CMS headless flexible qui génère automatiquement une API REST et une interface d’administration. Il permet de définir rapidement les modèles de données (compétences, départements, offres, candidats) et intègre nativement un système d’authentification JWT et de gestion des rôles (RBAC).
+    
+    \item \textbf{PostgreSQL} : système de gestion de base de données relationnelle robuste et conforme aux besoins de cohérence des données, notamment pour la suppression en cascade des offres d’emploi et des candidatures associées.
+    
+    \item \textbf{Docker} : plateforme de conteneurisation dont les bénéfices sont détaillés dans la section~\ref{sec:docker}. garantissant un environnement de développement identique pour toute l’équipe. Elle simplifie le déploiement, évite les conflits de dépendances et assure la reproductibilité de l’application en production.
+    
+    \item \textbf{Ollama} : outil permettant l’exécution locale de modèles de langage (LLM) comme Llama 3.2. Son utilisation évite le recours à des API externes, garantissant ainsi la confidentialité des données des candidats et le respect des normes GDPR.
+    
+    \item \textbf{StarUML} : outil de modélisation basé sur les standards UML 2.x, facilitant la conception logicielle. Il permet de structurer visuellement l'architecture (diagrammes de classes, de composants) et supporte l'extension par plugins, assurant une transition fluide entre la conception et le développement.
+\end{itemize}
+
+\subsection{Livrables du Sprint 0}
+
+À l’issue de ce sprint, l’équipe dispose des éléments suivants :
+
+\begin{itemize}
+    \item Une stack technique opérationnelle : \textbf{Angular} + \textbf{Strapi} + \textbf{PostgreSQL} + \textbf{Ollama}.
+    \item Un environnement \textbf{Docker} partagé et reproductible prêt à accueillir le développement des sprints suivants.
+    \item Un dépôt \textbf{GitHub} structuré avec une organisation en branches .
+    
+\end{itemize}
+
+
+\section*{Conclusion}
+\addcontentsline{toc}{section}{Conclusion}
+En résumé, la mise en place de cet environnement de travail garantit le bon fonctionnement de l’application. Tandis que le matériel fournit la puissance de calcul nécessaire, l’écosystème logiciel, piloté par Docker, permet de standardiser le déploiement et d’éviter les conflits de configuration. Cette synergie entre infrastructure physique et virtualisation légère est essentielle pour mener à bien le cycle de vie du projet.
+% ------------------------------------------------------------------
+% CHAPITRE 4 : SPRINT 1 : AUTHENTIFICATION ET RÉFÉRENTIELS
+% ------------------------------------------------------------------
+\chapter{SPRINT 1 : AUTHENTIFICATION ET GESTION DES RÉFÉRENTIELS MÉTIERS}
+
+\section*{Introduction}
+
+Ce chapitre est consacré à l’étude du Sprint 1, qui couvre les thèmes suivants : authentification sécurisée des ressources humaines, gestion des compétences, départements, offres d’emploi et mise en place d’un interface d’administration
+unifiée.
+
+
+\section{Backlog du sprint}
+ Chaque Sprint Backlog est une liste des tâches que les développeurs prévoient d’ac-
+complir durant le Sprint pour atteindre l’objectif fixé. Il est mis à jour en temps réel tout
+au long du Sprint.
+Le tableau suivant \textbf{Table 3.1} représente le backlog du sprint 1 :
+\small
+\renewcommand{\arraystretch}{1.5}
+\begin{xltabular}{\textwidth}{|c|>{\RaggedRight}p{4cm}|X|c|}
+\caption{\textbf{Backlog du sprint 1}}\label{tab:BL1}\\
+
+    \hline
+    \textbf{ID} & \textbf{User story} & \textbf{Tâches} & \textbf{Estimation} \\ 
+    & & & \textbf{(Jours)} \\ \hline
+    \endfirsthead
+    \hline
+    \textbf{ID} & \textbf{User story} & \textbf{Tâches} & \textbf{Estimation} \\ \hline
+    \endhead
+    \endfoot
+    \hline
+    \endlastfoot
+
+    % --- ID 1 --- Total : 10 jours
+    \multirow[t]{3}{*}{\textbf{1}} & \multirow[t]{3}{=}{En tant que UtilisateurRH je peux m'authentifier} 
+    & $\bullet$ Développer l'interface de la connexion & 4 \\ \cline{3-4}
+    & & $\bullet$ Préparer la table User dans la base de données & 2 \\ \cline{3-4}
+    & & $\bullet$ Implémenter les services nécessaires de connexion & 4 \\ \hline
+        
+    % --- ID 2 --- Total : 6 jours
+    \multirow[t]{4}{*}{\textbf{2}} & \multirow[t]{4}{=}{En tant que utilisateurRH je peux gérer une compétence} 
+    & $\bullet$ Préparer la table Skill dans la base de données & 1 \\ \cline{3-4}
+    & & $\bullet$ Développer l'interface de liste des compétences & 2 \\ \cline{3-4} 
+    & & \raggedright \textbullet ~ Implémenter les services créer/modifier/supprimer une compétence & 2 \\ \cline{3-4}
+    & & \raggedright \textbullet ~ Développer l'endpoint de recherche/filtrage et du composant d'autocomplétion des compétences. & 1 \\ \hline
+ 
+    % --- ID 3 --- Total : 5 jours
+    \multirow[t]{4}{*}{\textbf{3}} & 
+    \multirow[t]{4}{=}{En tant que utilisateurRH je peux gérer un département} 
+    & $\bullet$ Préparer la table Departement dans la base de données & 1 \\ \cline{3-4}
+    & & $\bullet$ Développer l'interface de liste des départements & 2 \\ \cline{3-4} 
+    & & \raggedright \textbullet ~ Implémenter les services créer/modifier/supprimer un département & 1 \\ \cline{3-4}
+    & & \raggedright \textbullet ~ Développer l'endpoint de recherche/filtrage et du composant d'autocomplétion des départements. & 1 \\ \hline
+
+    % --- ID 4 --- Total : 4 jours
+    \multirow[t]{7}{*}{\textbf{4}} & \multirow[t]{7}{=}{En tant que utilisateurRH je peux gérer un offre d'emploi} 
+    & $\bullet$ Préparer la table JobPosting dans la base de données & 1 \\ \cline{3-4}
+    & & $\bullet$ Développer l'interface de liste des offres d'emploi & 1 \\ \cline{3-4} 
+    & & \raggedright \textbullet ~ Implémenter les services créer/modifier/supprimer un offre d'emploi & 1 \\ \cline{3-4}
+    & & $\bullet$ Créer une page de création d'un offre d'emploi & 1 \\ \cline{3-4}
+    & & $\bullet$ Développer la page d'édition d'un offre d'emploi & 1 \\ \cline{3-4}  
+    & & \raggedright \textbullet ~ Développer le système de gestion des statuts d'offres (brouillon/ouvert/fermé) avec interface de confirmation. & 4 \\ \cline{3-4}
+    & & \raggedright \textbullet ~ Développer la logique de suppression en cascade et du composant d'autocomplétion des offres d'emploi. & 3 \\ \hline
+
+    % --- Total Global à la fin ---
+    \multicolumn{3}{|r|}{\textbf{Total Sprint 1}} & \textbf{25 jours} \\ \hline
+     
+\end{xltabular}
+
+
+
+\section{Spécification des besoins}
+\subsection{Diagramme de cas d'utilisation}
+Le diagramme de cas d'utilisation du Sprint 1 ( \textbf{Figure 3.1} ) décrit les actions de l'utilisateur RH authentifié : gestion complète des offres d'emploi (CRUD, changement de statut, suppression en cascade), des compétences et des départements.
+
+\noindent
+\hspace{-2 cm}\includegraphics[width=1.29\textwidth, height=3\textheight, keepaspectratio]{use case sprint1.png}
+
+\begin{figure}[H]
+    \centering
+    \caption{Diagramme de cas d'utilisation - Sprint 1}
+\end{figure}
+
+
+\subsection{Description textuelle des principaux cas d'utilisation}
+
+Les cas d'utilisation identifiés pour le premier sprint sont décrits ci-dessous selon un format structuré incluant l'acteur, les préconditions, les postconditions et les scénarios nominal et alternatif.
+
+\subsubsection*{Cas d'utilisation 1 : S'authentifier}
+
+Ce cas permet à l'utilisateur RH de s'authentifier sur la plateforme via la saisie de ses identifiants, comme décrit dans le tableau \textbf{3.2} ci-dessous:
+
+\begin{longtable}{|p{3.5cm}|p{11cm}|}
+\caption{\textbf{Description textuelle du cas d'utilisation « S'authentifier »}}
+\label{tab:uc-auth}
+\hline
+\textbf{Acteur} & Utilisateur RH \\ \hline
+\textbf{Précondition} & L'utilisateur dispose d'un compte actif dans le système Strapi. \\ \hline
+\textbf{Postcondition} & L'utilisateur est authentifié et un token JWT valide est généré. \\ \hline
+
+\textbf{Scénario nominal} & 
+\begin{enumerate}[nosep, leftmargin=*, after=\vspace{-\baselineskip}, before=\vspace{0mm}]
+    \item L'utilisateur accède à la page de connexion.
+    \item Il saisit son adresse email et son mot de passe.
+    \item Le système vérifie les identifiants auprès de la base de données.
+    \item Un token JWT est généré et retourné au client.
+    \item Le token est stocké dans le localStorage du navigateur.
+    \item L'utilisateur est redirigé vers le tableau de bord.
+    \vspace{0.5cm}
+\end{enumerate} \\ \hline
+
+\textbf{Scénario alternatif} & 
+Si les identifiants sont incorrects, le système affiche un message d'erreur et reste sur la page de connexion. Aucun token n'est généré. \\ \hline
+
+\end{longtable}
+
+\subsubsection*{Cas d'utilisation 2 : Gérer les compétences}
+
+Ce cas regroupe les opérations d'ajout, de modification, de suppression et de consultation des compétences, comme décrit dans le tableau \textbf{3.3} ci-dessous:
+
+\begin{longtable}{|p{3.5cm}|p{11cm}|}
+\caption{\textbf{Description textuelle du cas d'utilisation « Gérer les compétences »}}
+\label{tab:uc-skills}
+\hline
+\textbf{Acteur} & Utilisateur RH \\ \hline
+\textbf{Précondition} & L'utilisateur est authentifié. \\ \hline
+\textbf{Postcondition} & Le référentiel des compétences est mis à jour selon l'opération effectuée. \\ \hline
+
+\textbf{Scénario nominal (Ajout)} & 
+\begin{enumerate}[nosep, leftmargin=*, after=\vspace{-\baselineskip}, before=\vspace{0mm}]
+    \item L'utilisateur accède à la page « Gestion des compétences ».
+    \item Il saisit le nom de la nouvelle compétence dans le champ prévu à cet effet.
+    \item Il clique sur le bouton « Ajouter ».
+    \item Le système vérifie l'unicité du nom.
+    \item La compétence est enregistrée dans la base de données et la liste des compétences est actualisée dynamiquement.
+    \vspace{0.5cm}
+\end{enumerate} \\ \hline
+
+\textbf{Scénario alternatif} & 
+Si une compétence avec le même nom existe déjà, le système affiche un message d'erreur et refuse l'ajout. \\ \hline
+
+\end{longtable}
+
+\subsubsection*{Cas d'utilisation 3 : Gérer les départements}
+
+Ce cas regroupe les opérations d'ajout, de modification, de suppression et de consultation des départements, comme décrit dans le tableau \textbf{3.4} ci-dessous:
+
+\begin{longtable}{|p{3.5cm}|p{11cm}|}
+\caption{\textbf{Description textuelle du cas d'utilisation « Gérer les départements »}}
+\label{tab:uc-departments}
+\hline
+\textbf{Acteur} & Utilisateur RH \\ \hline
+\textbf{Précondition} & L'utilisateur est authentifié. \\ \hline
+\textbf{Postcondition} & Le référentiel des départements est mis à jour selon l'opération effectuée. \\ \hline
+
+\textbf{Scénario nominal (Ajout)} & 
+\begin{enumerate}[nosep, leftmargin=*, after=\vspace{-\baselineskip}, before=\vspace{0mm}]
+    \item L'utilisateur accède à la page « Gestion des départements ».
+    \item Il saisit le nom du nouveau département.
+    \item Il clique sur le bouton « Ajouter ».
+    \item Le système vérifie l'unicité du nom.
+    \item Le département est enregistré dans la base de données.
+    \item La liste des départements est actualisée.
+    \vspace{0.5cm}
+\end{enumerate} \\ \hline
+
+\textbf{Scénario alternatif} & 
+Si un département avec le même nom existe déjà, le système affiche un message d'erreur. \\ \hline
+
+\end{longtable}
+
+\subsubsection*{Cas d'utilisation 4 : Gérer les offres d'emploi}
+
+Ce cas regroupe les opérations de création, modification, suppression, consultation et changement de statut des offres d'emploi, comme décrit dans le tableau \textbf{3.5} ci-dessous:
+\vspace{3cm}
+\begin{longtable}{|p{3.5cm}|p{11cm}|}
+\caption{\textbf{Description textuelle du cas d'utilisation « Gérer les offres d'emploi »}}
+\label{tab:uc-jobpostings}
+\hline
+\textbf{Acteur} & Utilisateur RH \\ \hline
+\textbf{Précondition} & L'utilisateur est authentifié. \\ \hline
+\textbf{Postcondition} & L'offre d'emploi est créée, modifiée, supprimée ou son statut est modifié. \\ \hline
+
+\textbf{Scénario nominal} & 
+\begin{enumerate}[nosep, leftmargin=*, after=\vspace{-\baselineskip}, before=\vspace{0mm}]
+    \item \textbf{Création :} L'utilisateur accède à la page « Créer une offre d'emploi », remplit le formulaire (titre, description, prérequis, département associé) et clique sur « Créer ». Le système enregistre l'offre avec le statut « brouillon » et redirige vers la liste des offres.
+    \item \textbf{Changement de statut :} L'utilisateur sélectionne une offre dans la liste, choisit un nouveau statut (ouvert ou fermé) dans le menu déroulant, confirme l'action, et le système met à jour le statut de l'offre.
+    \item \textbf{Suppression :} L'utilisateur sélectionne une offre à supprimer, clique sur l'icône de suppression, confirme la suppression, et le système supprime l'offre ainsi que tous les candidats associés (suppression en cascade).
+    \vspace{0.5cm}
+\end{enumerate} \\ \hline
+
+\textbf{Scénario alternatif} & 
+Si des champs obligatoires ne sont pas renseignés lors de la création, le système affiche un message d'erreur et refuse l'enregistrement. \\ \hline
+
+\end{longtable}
+
+% =====================================================================
+% 4.3 Conception
+% =====================================================================
+\subsection{Diagramme de classe}
+
+Le diagramme de classe comme ci illustré dans \textbf{la Figure~\ref{fig:class-sprint1}}  modélise les classes principales du sprint 1 et leurs relations. L’acteur UtilisateurRH est au centre du système. Il gère les référentiels Compétence et Département ainsi que les offres d’emploi. Une offre contient des Exigences et possède un statut défini par l’énumération \textbf{StatutOffreEmploi} (brouillon, ouvert, clôturé).
+
+\begin{figure}[H]
+    \hspace{-1.8 cm}\includegraphics[width=1.2\textwidth, height=8\textheight, keepaspectratio]{diag-class-s1.png}
+    \caption{Diagramme de classes – Sprint 1}
+    \label{fig:class-sprint1}
+\end{figure}
+
+\subsubsection{Diagrammes de séquences}
+\begin{center}
+Le diagramme de séquence d'authentification illustre le processus d’authentification d’un utilisateur RH. Le frontend Angular envoie les identifiants à l’endpoint /api/auth/local de Strapi. Strapi valide les informations, génère un jeton JWT et le retourne. Le jeton est ensuite stocké localement et automatiquement ajouté aux requêtes suivantes via un intercepteur HTTP.
+\end{center}
+
+\begin{figure}[H]
+    \hspace{0.5 cm}\includegraphics[width=0.9\textwidth, height=1\textheight, keepaspectratio]{diag-seq-auth-s1.png}
+    \caption{Diagramme de séquence – Authentification}
+    \label{fig:seq-auth-sprint1}
+\end{figure}
+\begin{center}
+
+La figure \textbf{(figure 3.4)} diagramme de séquence de la création d’une offre d’emploi décrit le flux d'interactions et de messages échangés entre l'utilisateur RH, l'interface graphique (Vue) et les composants du modèle MVC (Contrôleurs et Modèles) lors du processus de publication d'une nouvelle offre d'emploi.
+
+
+\end{center}
+\begin{figure}[H]
+    \hspace{-1 cm}\includegraphics[width=1.1\textwidth, height=7\textheight, keepaspectratio]{diag-seq-addjob-s1.png}
+    \caption{Diagramme de séquence – Gestion des offres d'emploi}
+    \label{fig:seq-skills-sprint1}
+\end{figure}
+
+
+
+% =====================================================================
+% Réalisation
+% =====================================================================
+\subsection{Réalisation}
+
+\subsubsection{Interface de connexion et sécurité}
+L’interface de connexion (\textbf{Figure~\ref{fig:login}}) a été développée avec Angular et repose sur les éléments suivants :
+\begin{itemize}
+    \item Un formulaire réactif avec validation (email, mot de passe).
+    \item Un service AuthService qui appelle l’API Strapi /api/auth/local.
+    \item Un intercepteur HTTP (TokenInterceptor) qui ajoute automatiquement le jeton JWT aux requêtes sortantes.
+    \item Un garde de route (AuthGuard) protégeant les pages internes.
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{login.png}
+    \caption{Interface de connexion}
+    \label{fig:login}
+\end{figure}
+
+\subsubsection{Gestion des référentiels (Compétences et Départements)}
+Les pages de gestion des compétences (\textbf{Figure~\ref{fig:skills}}) et des départements (\textbf{Figure~\ref{fig:departments}}) offrent les fonctionnalités suivantes~:
+\begin{itemize}
+    \item Liste dynamique sous forme de cartes modernes.
+    \item Ajout, modification en ligne et suppression avec confirmation.
+    \item Recherche et autocomplétion via des endpoints personnalisés .
+\end{itemize}
+
+\noindent \textbf{La figure~\ref{fig:departments}} présente l’interface de gestion des départements. .
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{add-departement.png}
+    \caption{Interface de gestion des départements}
+    \label{fig:departments}
+\end{figure}
+
+
+\noindent La figure~\ref{fig:skills} présente l’interface de recherche et autocomplétion des compétences. Elle montre l'écran associé à cette fonctionnalité et facilite la compréhension de son utilisation.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{interface-rechercheSkill.png}
+    \caption{Interface de recherche et autocomplétion des compétences}
+    \label{fig:skills}
+\end{figure}
+
+
+
+\subsubsection{Interface de gestion des offres d'emploi}
+
+L’interface de gestion des offres d’emploi (\textbf{Figure 3.8}) permet au recruteur de lister les postes sous forme de cartes dynamiques affichant leur statut, les compétences,les départements et l'expérience requises. Elle offre un contrôle CRUD complet, permettant notamment de modifier instantanément le statut d'une offre 
+
+\begin{figure}[H]
+    \centering
+   
+    \includegraphics[width=0.9\linewidth]{gestionDesOffres.png}
+    \caption{Interface de liste des offres d'emploi}
+    \label{fig:offre}
+\end{figure}
+
+
+
+\noindent La figure~\ref{fig:update_jobPostingstatus} présente l’interface de gestion du cycle de vie des offres d'emploi pour l'utilisateur RH. Depuis cette vue,il peut modifier le statut d’une offre à tout moment (par exemple passer d’ouvert à fermé, ou l’inverse) ou la laisser comme brouillon afin de contrôler sa visibilité auprès des candidats.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\linewidth]{interface-modifierOffreStatut.png}
+    \caption{Interface de modifier statut d'offre d'emploi }
+    \label{fig:update_jobPostingstatus}
+\end{figure}
+
+
+
+
+\noindent \textbf{La figure~\ref{fig:add_jobPosting}} présente l’interface d'ajout d'une offre d'emploi. Elle montre l'écran associé à cette fonctionnalité et facilite la compréhension de son utilisation.
+\begin{figure}[H]
+    \centering
+    \hspace*{-0.7cm}
+    \includegraphics[width=0.8\linewidth]{addOffre.png}
+    \caption{Interface d'ajout d'une offre d'emploi}
+    \label{fig:add_jobPosting}
+\end{figure}
+
+
+
+
+
+\subsubsection{Interface de l’Admin Shell}
+Comme illustré dans \textbf{la figure 3.11} l’interface présente le tableau de bord de la plateforme IoHire destiné au recruteur. Cet écran centralise les indicateurs clés du recrutement en affichant le nombre de candidats et d'offres, ainsi que des statistiques visuelles sur le statut, le score et l'évolution mensuelle des candidatures.
+
+\begin{figure}[H]
+    \centering
+    \hspace*{-0.7cm}
+    \includegraphics[width=1\linewidth]{adminShell.png}
+    \caption{Interface de l’Admin Shell}
+    \label{fig:admin-shell}
+\end{figure}
+% =====================================================================
+% 4.5 Test et Validation
+% =====================================================================
+\subsection{Test et Validation}
+
+Une série de tests fonctionnels a été menée pour valider chaque user story. Le tableau~\ref{tab:tests-sprint1} résume les principaux scénarios et leurs résultats.
+
+\begin{table}[H]
+\centering
+\caption{Matrice des tests fonctionnels – Sprint 1}
+\label{tab:tests-sprint1}
+\begin{tabular}{|c|p{8cm}|c|}
+\hline
+\textbf{ID} & \textbf{Scénario} & \textbf{Résultat} \\ \hline
+T1 & Connexion avec identifiants valides & ✅ Succès \\ \hline
+T2 & Connexion avec mot de passe erroné & ❌ Message d’erreur \\ \hline
+T3 & Accès à une route protégée sans jeton & �� Redirection vers login \\ \hline
+T4 & Ajout d’une compétence unique & ✅ Ajoutée à la liste \\ \hline
+T5 & Ajout d’une compétence déjà existante & ❌ Erreur d’unicité \\ \hline
+T6 & Recherche de compétences par fragment de texte & ✅ Filtrage correct \\ \hline
+T7 & Modification d’un département & ✅ Mise à jour immédiate \\ \hline
+T8 & Suppression d’une offre d’emploi & ✅ Suppression en cascade (offre + candidats) \\ \hline
+T9 & Changement de statut d’une offre (brouillon → ouvert) & ✅ Confirmation puis mise à jour \\ \hline
+\end{tabular}
+\end{table}
+
+Tous les cas de test critiques ont été validés, garantissant la fiabilité des fonctionnalités livrées.
+
+% =====================================================================
+% Conclusion du chapitre
+% =====================================================================
+\subsection*{Conclusion }
+\addcontentsline{toc}{subsection}{Conclusion du chapitre}
+
+Le sprint 1 a permis de mettre en place les briques essentielles de la plateforme IOhire~: l’authentification sécurisée, la gestion des référentiels (compétences, départements) et la gestion des offres d’emploi avec suppression en cascade. L’interface administrateur unifiée offre une expérience utilisateur cohérente. Les tests effectués confirment le bon fonctionnement de l’ensemble. Ce socle technique solide prépare le terrain pour le sprint 2, qui sera dédié au flux public de candidature.
+
+
+
+
+
+
+% ------------------------------------------------------------------
+% CHAPITRE 5 : SPRINT 2 : FLUX CANDIDAT ET REVUE RH
+% ------------------------------------------------------------------
+\chapter{SPRINT 2 : FLUX DE CANDIDATURE PUBLIQUE ET REVUE RH}
+\section*{Introduction}
+\addcontentsline{toc}{section}{Introduction}
+Ce sprint de 25
+jours porte sur l'expérience du candidat externe et le processus initial de tri des candidatures par les ressources humaines
+
+\section{Backlog du sprint}
+Le volume de travail est de 25 jours cumulés. Les priorités incluent le dépôt de CV avec validation de fichiers et le suivi des candidatures via des jetons publics .
+
+
+\small
+\renewcommand{\arraystretch}{1.5} % Améliore l'espacement vertical
+\begin{xltabular}{\textwidth}{|c|>{\RaggedRight}p{4cm}|X|c|}
+\caption{\textbf{Backlog du sprint 2}}
+    \hline
+    \textbf{ID} & \textbf{User story} & \textbf{Tâches} & \textbf{Estimation} \\ 
+    & & & \textbf{(Jours)} \\ \hline
+    \endfirsthead
+
+    \hline
+    \textbf{ID} & \textbf{User story} & \textbf{Tâches} & \textbf{Estimation} \\ \hline
+    \endhead
+
+    \hline
+    \endfoot
+
+    \hline
+    \endlastfoot
+
+    % --- ID 1 ---
+    \multirow[t]{2}{*}{\textbf{1}} 
+    & \multirow[t]{2}{=}{En tant que candidat, je peux consulter les offres d'emploi} 
+    & $\bullet$ Développer la route publique retournant uniquement les postes ouverts. & 2 \\ \cline{3-4}
+    & & $\bullet$ Concevoir l'interface utilisateur d'affichage des offres sous forme de cartes. & 1 \\ \hline
+        
+    % --- ID 2 ---
+    \multirow[t]{2}{*}{\textbf{2}} 
+    & \multirow[t]{2}{=}{En tant que candidat, je peux soumettre ma candidature} 
+    & $\bullet$ Créer l'endpoint de création de candidat avec gestion de l'upload et validation des fichiers. & 3 \\ \cline{3-4}
+    & & $\bullet$ Développer l'interface du formulaire de candidature avec champs de saisie et retours de validation. & 2 \\ \hline
+ 
+    % --- ID 3 ---
+    \multirow[t]{2}{*}{\textbf{3}} 
+    & \multirow[t]{2}{=}{En tant que candidat, je peux donner mon consentement RGPD} 
+    & $\bullet$ Implémenter les champs de consentement en base de données et le calcul automatique de la durée de rétention des données. & 2 \\ \cline{3-4}
+    & & $\bullet$ Ajouter la case à cocher de consentement et la notice légale dans le formulaire frontal. & 2 \\ \hline
+
+    % --- ID 4 ---
+    \multirow[t]{2}{*}{\textbf{4}} 
+    & \multirow[t]{2}{=}{En tant que candidat, je peux suivre l'état de ma candidature} 
+    & $\bullet$ Générer les codes de vérification et configurer l'envoi d'emails via SMTP. & 1 \\ \cline{3-4}
+    & & $\bullet$ Créer la page de suivi en 3 étapes (saisie email, code de validation, liste des candidatures). & 1 \\ \hline
+
+    % --- ID 5 ---
+    \multirow[t]{2}{*}{\textbf{5}} 
+    & \multirow[t]{2}{=}{En tant que candidat, je peux supprimer mes informations personnelles} 
+    & $\bullet$ Développer l'endpoint de suppression par jeton (self-service RGPD). & 1 \\ \cline{3-4}
+    & & $\bullet$ Concevoir la page de confirmation de suppression pour les candidats. & 1 \\ \hline
+
+    % --- ID 6 ---
+    \multirow[t]{2}{*}{\textbf{6}} 
+    & \multirow[t]{2}{=}{En tant qu'utilisateurRH, je peux visualiser la liste des candidats} 
+    & $\bullet$ Développer la route de listing des candidats avec support de la pagination. & 1 \\ \cline{3-4}
+    & & $\bullet$ Créer l'interface de la file d'attente RH avec tableau et fonctions de tri. & 2 \\ \hline
+
+    % --- ID 7 ---
+    \multirow[t]{2}{*}{\textbf{7}} 
+    & \multirow[t]{2}{=}{En tant qu'utilisateurRH, je peux consulter le dossier détaillé d'un profil} 
+    & $\bullet$ Créer l'endpoint de récupération des détails et du téléchargement de CV. & 1 \\ \cline{3-4}
+    & & $\bullet$ Concevoir la vue détaillée du candidat intégrant le bouton de téléchargement. & 1 \\ \hline
+
+    % --- ID 8 ---
+    \multirow[t]{2}{*}{\textbf{8}} 
+    & \multirow[t]{2}{=}{En tant que RH, je peux mettre à jour le statut d'une candidature} 
+    & $\bullet$ Développer la route de mise à jour des statuts avec gestion des transitions autorisées. & 1 \\ \cline{3-4}
+    & & $\bullet$ Intégrer le menu déroulant de changement de statut dans la vue candidat. & 1 \\ \hline
+
+    % --- ID 9 ---
+    \multirow[t]{2}{*}{\textbf{9}} 
+    & \multirow[t]{2}{=}{En tant que RH, je peux ajouter ou modifier des notes internes} 
+    & $\bullet$ Implémenter l'endpoint de mise à jour des notes RH. & 1 \\ \cline{3-4}
+    & & $\bullet$ Développer le composant d'édition de notes dans l'interface détaillée. & 1 \\ \hline
+
+    % --- Total ---
+    \multicolumn{3}{|r|}{\textbf{Total Sprint 2}} & \textbf{25 jours} \\ \hline
+     
+\end{xltabular}
+
+
+
+\section{Spécification des besoins}
+\subsection{Diagramme de cas d'utilisation}
+Le diagramme de cas d’utilisation du Sprint 2 comme présenté dans \textbf{la figure 4.1} distingue deux acteurs : le candidat et l’utilisateur RH. 
+
+Le candidat peut consulter les offres ouvertes, y postuler  et suivre ou supprimer sa candidature via une validation par code e-mail. De son côté, l'utilisateur RH, après s'être authentifié, accède à la liste et aux détails des candidats pour télécharger leur CV, modifier leur statut ou ajouter des notes d'évaluation.
+\vspace{1cm}
+
+\noindent
+\hspace{-2.25 cm}\includegraphics[width=1.29\textwidth, height=3\textheight, keepaspectratio]{use case sprint2.png}
+
+\begin{figure}[H]
+    \centering
+    \caption{Diagramme de cas d'utilisation - Sprint 2}
+\end{figure}
+
+\subsection{Description textuelle des principaux cas d'utilisation}
+
+% ─────────────────────────────────────────────
+\subsubsection{Cas d'utilisation : Postuler à une offre d'emploi}
+% ─────────────────────────────────────────────
+
+% Supprimer l'environnement \begin{table}[H] car xltabular ne doit pas être dans un flottant
+\renewcommand{\arraystretch}{1}
+
+\begin{xltabular}{\textwidth}{|l|X|}
+    \caption{\textbf{Postuler à une offre d'emploi}}
+    \hline
+    \textbf{Acteur } & Candidat \\ \hline
+   
+  
+
+
+    % --- Contenu du tableau ---
+    \textbf{Pré-conditions} & 
+    \begin{itemize}[leftmargin=*, nosep]
+        \item L'offre d'emploi doit être au statut \textit{Open}.
+        \item Le candidat dispose leur CV .
+    \end{itemize} \\ \hline
+    
+    \textbf{Post-conditions} & 
+    \begin{itemize}[leftmargin=*, nosep]
+        \item La candidature est enregistrée en base de données .
+        \item Le CV est stocké dans le service de stockage cloud.
+        \item Un token RGPD est généré et associé au candidat.
+    \end{itemize} \\ \hline
+    
+    \textbf{Scénario nominal} & 
+    \begin{enumerate}[leftmargin=*, nosep]
+        \item Le candidat consulte la liste des offres d'emploi ouvertes.
+        \item Il sélectionne une offre et accède au formulaire de candidature.
+        \item Il saisit ses informations personnelles (Nom, Email, ...).
+        \item Il télécharge son CV original .
+        \item Il accepte explicitement le consentement RGPD.
+        \item Le système valide les données saisies et le format du fichier.
+        \item Le système enregistre la candidature 
+        \item Le système affiche un message de confirmation de soumission.
+    \end{enumerate} \\ \hline
+    
+    \textbf{Scénarios alternatifs} & 
+    \begin{itemize}[leftmargin=*, nosep]
+        \item \textbf{ Champ obligatoire manquant} : Si un champ obligatoire est vide, le système met en évidence le champ concerné et bloque la soumission.
+        \item \textbf{Consentement RGPD non accepté} : Si le candidat ne coche pas la case de consentement, le système bloque la soumission et affiche un avertissement.
+    \end{itemize} \\ \hline
+    
+\end{xltabular}
+
+% ─────────────────────────────────────────────
+\subsubsection{Cas d'utilisation : Suivre candidature}
+% ─────────────────────────────────────────────
+% Prérequis : \usepackage{xltabular, enumitem}
+\renewcommand{\arraystretch}{1.5}
+
+\begin{xltabular}{\textwidth}{|l|X|}
+   \caption{\textbf{Suivre l'état d'avancement d'une candidature}}  
+    \label{tab:suivi_candidature} \\
+    \hline
+    \textbf{Acteur} & Candidat \\ \hline
+    
+
+
+    % --- Contenu du tableau ---
+    \textbf{Pré-conditions} & 
+    \begin{itemize}[leftmargin=*, nosep]
+        \item Le candidat a préalablement soumis au moins une candidature.
+        \item Le candidat dispose d'un accès à la boîte email fournie lors de la candidature.
+    \end{itemize} \\ \hline
+
+    \textbf{Post-conditions} & 
+    \begin{itemize}[leftmargin=*, nosep]
+        \item Le code de vérification est invalidé après utilisation.
+        \item Le candidat visualise l'état actualisé de ses candidatures.
+    \end{itemize} \\ \hline
+
+    \textbf{Scénario nominal} & 
+    \begin{enumerate}[leftmargin=*, nosep]
+        \item Le candidat accède à la page de suivi de candidature.
+        \item Il saisit son adresse email de contact.
+        \item Le système génère un code de vérification à usage unique et l'envoie par email via SMTP.
+        \item Le candidat saisit le code reçu dans le formulaire de validation.
+        \item Le système vérifie la validité du code.
+        \item Le système affiche la liste des postes postulés et leurs statuts respectifs.
+    \end{enumerate} \\ \hline
+    
+    \textbf{Scénarios alternatifs} & 
+    \begin{itemize}[leftmargin=*, nosep]
+        \item \textbf{Code de vérification expiré} : Si le candidat saisit le code après l'expiration du délai, le système l'invalide et propose de renvoyer un nouveau code.
+        \item \textbf{Code incorrect} : Si le candidat saisit un code erroné, le système affiche un message d'erreur et lui permet de réessayer.
+        \item \textbf{Suppression de candidature} : Depuis la page de suivi, le candidat peut déclencher la suppression de ses données personnelles.
+        \item \textbf{Email non reconnu} : Si l'adresse email n'est associée à aucune candidature, le système affiche un message neutre sans révéler l'absence du compte.
+    \end{itemize} \\ \hline
+\end{xltabular}
+
+% ─────────────────────────────────────────────
+\subsubsection{Cas d'utilisation : Consulter liste des candidats}
+% ─────────────────────────────────────────────
+% Prérequis : \usepackage{xltabular, enumitem}
+\renewcommand{\arraystretch}{1.5}
+
+\begin{xltabular}{\textwidth}{|l|X|}
+    \caption{\textbf{Visualiser la liste des candidatures}} \label{tab:visualisation_candidatures} \\
+    \hline
+    \textbf{Acteur} & Utilisateur RH \\ \hline
+    
+
+    % --- Contenu du tableau ---
+    \textbf{Pré-conditions} & 
+    \begin{itemize}[leftmargin=*, nosep]
+        \item L'utilisateur RH est authentifié dans le système.
+        \item Au moins une candidature existe en base de données.
+    \end{itemize} \\ \hline
+
+    \textbf{Post-conditions} & 
+    \begin{itemize}[leftmargin=*, nosep]
+        \item La liste des candidats est affichée avec pagination.
+    \end{itemize} \\ \hline
+    
+    \textbf{Scénario nominal} & 
+    \begin{enumerate}[leftmargin=*, nosep]
+        \item L'utilisateur RH accède à l'interface de gestion des candidatures.
+        \item Le système récupère et affiche la liste paginée des candidats.
+        \item L'utilisateur peut trier la liste par nom, date de candidature ou statut.
+        \item L'utilisateur RH sélectionne un candidat pour accéder à son dossier détaillé.
+        \item L'utilisateur RH peut télécharger le CV original du candidat.
+        \item L'utilisateur RH peut modifier le statut de la candidature via un menu déroulant, aussi il peut saisir ou modifier des notes internes 
+
+    \end{enumerate} \\ \hline
+    
+    \textbf{Scénarios altérnatifs} & 
+    \begin{itemize}[leftmargin=*, nosep]
+        \item \textbf{Erreur de chargement} : En cas d'erreur serveur, le système affiche un message d'erreur et propose de recharger la page.
+    \end{itemize} \\ \hline
+\end{xltabular}
+
+
+\subsection{Diagramme de classe}
+Comme illustré dans \textbf{la figure 4.2} ,le diagramme de classe du Sprint 2, met en relation les classes Candidat, OffreEmploi -associée à ses Criteres- et UtilisateurRH, tout en intégrant les services d'authentification par e-mail: ServiceVerification, ServiceEmail nécessaires à la sécurisation des accès .
+
+.\clearpage % Termine la page précédente
+\begin{landscape} % Commence le mode paysage
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\linewidth, height=1\textheight, keepaspectratio]{diag-class-s2.png}
+    \caption{Diagramme de classes – Sprint 2}
+    \label{fig:class_s2}
+\end{figure}
+
+\end{landscape} % Fin du mode paysage
+\clearpage % Force le retour au mode portrait pour la suite
+
+
+\subsection{Diagrammes de séquences}
+
+\subsubsection{Diagramme de séquence Vérification d'Email et suivi de Candidature}
+Ce diagramme (\textbf{figure4.3}) décrit le processus de suivi sécurisé d'une candidature . Il montre d'abord la génération et l'envoi par e-mail d'un code de vérification temporaire, puis sa validation par le contrôleur afin d'afficher au candidat la liste et le statut de ses postulations
+
+\begin{figure}[H]
+    \hspace{1.5 cm}\includegraphics[width=4\textwidth, height=0.9\textheight, keepaspectratio]{diag-seq-email-s2.png}
+    \caption{Diagramme de séquence : Vérification d'Email et suivi de Candidature}
+    \label{fig:seq-auth-sprint2}
+\end{figure}
+\subsubsection{Diagramme de séquence de retrait de Candidature}
+
+Ce diagramme de séquence comme montre \textbf{la figure 4.4} détaille le processus de retrait d'une candidature par un candidat. Lorsqu'il clique sur "Retirer ma candidature", la vue transmet un jeton public au contrôleur qui, après validation en base de données, met à jour le statut du candidat en 'withdrawn' et confirme le succès de l'action à l'interface. 
+\begin{figure}[H]
+    \hspace{0.5 cm}\includegraphics[width=0.9\textwidth, height=1\textheight, keepaspectratio]{diag-seq-retraitCandidature-s2.png}
+    \caption{Diagramme de séquence : Retrait de Candidature}
+    \label{fig:seq-auth-sprint-2}
+\end{figure}
+
+
+\section{Réalisation}
+\subsection{Page d’accueil publique}
+
+La page d’accueil présente les valeurs clés d’IOhire et donne accès aux deux portails : tableau de bord RH et espace candidat comme illustré dans \textbf{les figures 4.5, 4.6, 4.7 et 4.8} .
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{home-hero.png}
+    \caption{Page d’accueil – Section principale}
+    \label{fig:home-hero}
+\end{figure}
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{home-objectives.png}
+    \caption{Page d’accueil – Objectifs de la plateforme}
+    \label{fig:home-objectives}
+\end{figure}
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{home-about.png}
+    \caption{Page « À propos » – Expertise IOVISION}
+    \label{fig:home-about}
+\end{figure}
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{home-techstack.png}
+    \caption{Page d’accueil – Stack technique}
+    \label{fig:home-techstack}
+\end{figure}
+
+
+\subsection{Portail candidat – Offres et candidature}
+
+Les offres sont affichées sous forme de cartes avec le titre, le département, les compétences requises, l’expérience minimale, le statut « OPEN » et la date de publication, (\textbf{voir figure 4.9 }).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=15cm, height=5cm]{job-list.png}
+    \caption{Liste des offres d’emploi ouvertes}
+    \label{fig:job-list}
+\end{figure}
+
+\subsection{Postuler a un offre d'emploi }
+
+Le candidat remplit ses coordonnées (nom, email, LinkedIn, portfolio, localisation, années d’expérience), dépose son CV (PDF, DOCX, TXT) et accepte le consentement GDPR avant de soumettre (\textbf{voir figure 4.10}).
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=13cm, height=14cm]{postuler.png}
+    \caption{Formulaire de candidature}
+    \label{fig:apply-form}
+\end{figure}
+
+
+\subsection{Suivi de candidature}
+
+Cette interface (\textbf{voir figure 4.11})présente la première étape du suivi de candidature, permettant au candidat de saisir son adresse e-mail afin de recevoir un code de vérification à 6 chiffres.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{trackapp.png}
+    \caption{Demande du code de suivi}
+    \label{fig:track-email}
+\end{figure}
+Cette \textbf{figure 4.12} montre l'e-mail reçu par le candidat contenant le code de sécurité temporaire à 6 chiffres indispensable pour accéder au liste des candidatures.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{verifcode.png}
+    \caption{Saisie du code de vérification}
+    \label{fig:verify-code}
+\end{figure}
+Le candidat entre le code reçu. Le système vérifie sa validité et son expiration (\textbf{voir figure 4.13} ). 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{vérifierCode.png}
+    \caption{Saisie du code de suivi}
+    \label{fig:candidates-list-code}
+\end{figure}
+
+La figure 4.14 présente la liste des candidatures liée à un candidat. Elle montre l’écran associé à cette fonctionnalité .
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=13cm, height=11cm]{liste-des-candidatures1.png}
+    \caption{Liste des candidatures liée à un candidat (vue candidat) }
+    \label{fig:candidates-list-public}
+\end{figure}
+
+\subsection{Retrait de candidature}
+Cette \textbf{figure 4.15} présente l'interface de confirmation du retrait de candidature, qui avertit clairement le candidat de l'irréversibilité de l'action et de la suppression définitive de ses données personnelles avant validation.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{withdraw-application.png}
+    \caption{Confirmation de retrait de candidature}
+    \label{fig:withdraw}
+\end{figure}
+
+
+\subsection{Espace RH – Gestion des candidatures}
+
+Cette interface ci dessous \textbf{figure 4.16} liste toutes les candidatures avec des colonnes : candidat, statut, offre associée, date de candidature. Des filtres  et des actions groupées (changement de statut en masse) sont disponibles.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{candidates-list.png}
+    \caption{Liste des candidats}
+    \label{fig:candidates-list}
+\end{figure}
+
+\subsection{ Détail candidat}
+
+\textbf{La figure 4.17} ci-dessous affiche l’identité du candidat, son statut, les dates de candidature, les informations de consentement GDPR, ses liens (LinkedIn, portfolio) et sa localisation. 
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=16cm, height=8cm]{nouveauCandidat.png}
+    \caption{Fiche détaillée d’un candidat}
+    \label{fig:candidate-detail}
+\end{figure}
+
+cette figure 4.18 montre que l'e RH peut ajouter des notes spécifiques et accéder aux CV original du candidat .
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\linewidth]{detailCandidat2.png}
+    \caption{Fiche détaillée d’un candidat}
+    \label{fig:candidate-detail-notes}
+\end{figure}
+
+
+\subsection{Test et validation}
+Les tests ont porté sur la validation des formats de fichiers (PDF/DOCX/TXT), l'envoi correct des codes de suivi par email et l'assurance que les données supprimées par le candidat sont définitivement effacées de la base de données et du stockage cloud.
+
+\section*{Conclusion}
+En conclusion, ce sprint a permis d'enrichir la plateforme en y intégrant le flux complet de candidature publique (postulation, suivi par code e-mail et retrait de la candidature) ainsi que les outils de revue RH indispensables à la gestion des postulants, au téléchargement des CV originaux et au suivi des profils.
+
+
+\addcontentsline{toc}{section}{Conclusion}
+
+% ------------------------------------------------------------------
+% CHAPITRE 6 : SPRINT 3 : PIPELINE IA ET GÉNÉRATION DE CV
+% ------------------------------------------------------------------
+\chapter{SPRINT 3 : PIPELINE DE TRAITEMENT IA ET GÉNÉRATION DE DOCUMENTS}
+
+\section*{Introduction}
+\addcontentsline{toc}{section}{Introduction}
+Ce sprint technique est consacré au cœur intelligent de la plateforme \textbf{IOhire}. Il vise à automatiser le traitement des candidatures depuis le CV brut jusqu'à la génération d'un profil exploitable par les recruteurs. Les fonctionnalités développées couvrent l'extraction de texte depuis plusieurs formats de documents, le parsing intelligent via \textbf{Ollama}, le calcul déterministe du score de compatibilité, la génération d'un CV standardisé et le suivi du statut du pipeline .
+En complément, les candidats peuvent consulter leur score de compatibilité et télécharger leur CV standardisé directement depuis la page de suivi de leur candidature.
+
+\section{Backlog du sprint}
+Le backlog du Sprint 3, détaillé dans le  \textbf{tableau 5.1} , regroupe l'ensemble des tâches effectuées durant les 28 jours de ce sprint
+
+\small
+\renewcommand{\arraystretch}{1.5}
+\begin{xltabular}{\textwidth}{|c|>{\RaggedRight}p{4cm}|X|c|}
+\caption{ \textbf{Backlog du sprint 3}} \\
+\hline
+\textbf{ID} & \textbf{User story} & \textbf{Tâches} & \textbf{Estimation} \\
+ & & & \textbf{(Jours)} \\ \hline
+\endfirsthead
+
+\hline
+\textbf{ID} & \textbf{User story} & \textbf{Tâches} & \textbf{Estimation} \\ \hline
+\endhead
+
+\hline
+\endfoot
+
+\hline
+\endlastfoot
+
+\textbf{1} & En tant que \textbf{RH}, je veux que le pipeline IA orchestre automatiquement le traitement des candidatures \textbf{afin de réduire les interventions manuelles et d’accélérer le processus}.
+& $\bullet$ Déclencher automatiquement le traitement d'une candidature. \newline
+$\bullet$ Gérer les statuts : nouveau, traitement, traité, erreur. & 3 \\ \hline
+
+\textbf{2} & En tant que \textbf{RH}, je veux que le système extraie le texte des CV déposés \textbf{afin de pouvoir analyser leur contenu sans recopie manuelle}.
+& $\bullet$ Extraire le texte des fichiers PDF via \texttt{pdf-parse}. \newline
+$\bullet$ Extraire le texte des fichiers DOCX via \texttt{mammoth}. \newline
+$\bullet$ Lire directement les fichiers TXT. & 3 \\ \hline
+
+\textbf{3} & En tant que \textbf{RH}, je veux que le système analyse le CV via Ollama pour produire un JSON structuré \textbf{afin de normaliser les données et faciliter l’évaluation}.
+& $\bullet$ Envoyer le texte extrait au modèle local Ollama. \newline
+$\bullet$ Produire un JSON structuré : contact, compétences, expériences, formation, projets. \newline
+$\bullet$ Prévoir une récupération en cas de JSON incomplet ou mal formé. & 5 \\ \hline
+
+\textbf{4} & En tant que \textbf{RH}, je peux consulter un score de compatibilité \textbf{afin de comparer objectivement les candidats et d’évaluer leur adéquation avec le poste}.
+& $\bullet$ Comparer les compétences du candidat aux exigences de l'offre. \newline
+$\bullet$ Calculer la correspondance d'expérience. \newline
+$\bullet$ Calculer la complétude du profil. & 5 \\ \hline
+
+\textbf{5} & En tant que \textbf{RH}, je peux générer un CV standardisé au format PDF \textbf{afin de disposer d’une présentation homogène de tous les candidats}.
+& $\bullet$ Générer un contenu Markdown propre et homogène. \newline
+$\bullet$ Appliquer un modèle de CV choisi. \newline
+$\bullet$ Convertir le rendu HTML en PDF via Playwright. & 4 \\ \hline
+
+\textbf{6} & En tant que \textbf{RH}, je peux traiter ou retraiter un candidat \textbf{afin de mettre à jour l’analyse en cas d'erreur , de correction ou de nouvelle donnée}.
+& $\bullet$ Relancer le pipeline IA depuis la fiche candidat si il ya un erreur . \newline
+$\bullet$ Mettre à jour les données extraites, le score et le CV généré. & 3 \\ \hline
+
+\textbf{7} & En tant que \textbf{candidat}, je peux consulter mon score de compatibilité via le suivi de candidature \textbf{afin de comprendre le niveau d’adéquation de mon profil}.
+& $\bullet$ Afficher le score calculé par l’IA sur la page de suivi. \newline
+$\bullet$ Proposer une explication simple du résultat. & 3 \\ \hline
+
+\textbf{8} & En tant que \textbf{candidat}, je peux télécharger mon CV standardisé (PDF) depuis la page de suivi \textbf{afin de disposer d’une version formatée et professionnelle de mon CV}.
+& $\bullet$ Rendre disponible le lien de téléchargement du PDF généré. \newline
+$\bullet$ Permettre l’export en un clic. & 2 \\ \hline
+
+\multicolumn{3}{|r|}{\textbf{Total Sprint 3}} & \textbf{28 jours} \\ \hline
+\end{xltabular}
+
+
+
+\section{Spécification des besoins}
+
+\subsection{Diagramme de cas d'utilisation}
+Le diagramme de cas d'utilisation du Sprint 3 \textbf{(figure 5.1)} illustre les interactions des acteurs avec le module IA. Le recruteur peut piloter le pipeline de traitement, consulter les données extraites, analyser le score de compatibilité et télécharger le CV standardisé, tandis que le candidat peut suivre son état d'avancement et exporter son profil généré.
+
+\vspace{1cm}
+
+\noindent
+\hspace{-2.22 cm}\includegraphics[width=1.29\textwidth, height=3\textheight, keepaspectratio]{use case sprint3.png}
+
+\begin{figure}[H]
+    \centering
+     \caption{Diagramme de cas d'utilisation - Sprint 3}
+    \label{fig:usecase-sprint3}
+\end{figure}
+
+\subsection{Description textuelle des cas d'utilisation – Sprint 3}
+
+
+% =====================================================================
+% \subsection{Description textuelle des cas d'utilisation principaux – Sprint 3}
+% =====================================================================
+
+% ---------------------------------------------------------------------
+% Cas 1 : Postuler à une offre d'emploi
+% ---------------------------------------------------------------------
+\begin{table}[H]
+\centering
+\caption{\textbf{Description textuelle : Postuler à une offre d'emploi}} \\
+\vspace{0.3cm}
+\begin{tabular}{|p{3.5cm}|p{11cm}|}
+
+\hline
+\textbf{Acteur} & Candidat \\
+\hline
+\textbf{Précondition} & Le candidat a choisi une offre ouverte, rempli le formulaire et fourni ses informations de contact. \\
+\hline
+\textbf{Postcondition} & La candidature est enregistrée et le processus d'analyse automatisé par l'IA est initié. \\
+\hline
+\textbf{Scénario nominal} &
+\begin{minipage}[t]{10.5cm}
+\begin{enumerate}
+    \item Le candidat valide le formulaire et soumet son CV original (PDF, DOCX ou TXT).
+    \item Le système déclenche automatiquement le pipeline de traitement qui \textbf{inclut obligatoirement} les étapes suivantes :
+        \begin{itemize}
+            \item \textbf{Extraire le texte du CV} : Lecture technique brute du fichier selon son format.
+            \item \textbf{Analyser le CV (via Ollama)} : Extraction sémantique et production d'un JSON structuré.
+            \item \textbf{Évaluer le score d'adéquation} : Calcul algorithmique de la compatibilité avec l'offre.
+            \item \textbf{Générer le CV standardisé} : Production du document normalisé au format Markdown.
+        \end{itemize}
+    \item Le système enregistre les données en base et notifie le candidat du succès de son dépôt.
+\end{enumerate}
+\vspace{0.3cm}
+
+\end{minipage} \\
+\hline
+\textbf{Scénarios alternatifs} &
+\begin{minipage}[t]{10.5cm}
+\begin{itemize}
+    \item \textit{Fichier invalide ou corrompu} : Le système refuse la soumission et affiche une erreur.
+    \item \textit{Échec d'une étape incluse} : Le pipeline s'interrompt, le système bascule le statut de la candidature à « error ».
+\end{itemize}
+\vspace{0.3cm}
+\end{minipage} \\
+\hline
+\end{tabular}
+
+\end{table}
+
+% ---------------------------------------------------------------------
+% Cas 2 : Suivre sa candidature
+% ---------------------------------------------------------------------
+\begin{table}[H]
+\centering
+\caption{\textbf{Description textuelle : Suivre sa candidature}} \\
+\vspace{0.3cm}
+\begin{tabular}{|p{3.5cm}|p{11cm}|}
+\hline
+\textbf{Acteur principal} & Candidat \\
+\hline
+\textbf{Précondition} & Le candidat possède son adresse e-mail et le code de vérification à 6 chiffres reçu lors du dépôt. \\
+\hline
+\textbf{Postcondition} & Le candidat accède à l'état d'avancement de son dossier et aux résultats générés par l'IA. \\
+\hline
+\textbf{Scénario nominal} &
+\begin{minipage}[t]{10.5cm}
+\begin{enumerate}
+    \item Le candidat accède à l'espace de suivi en saisissant son e-mail et son code de vérification.
+    \item Le système charge l'interface et affiche le statut actuel de la candidature (new, processing, processed, error).
+    \item L'affichage des résultats sollicite l'exécution des cas métiers complémentaires :
+        \begin{itemize}
+            \item L'affichage de la note globale fait appel au cas \textbf{Évaluer le score d'adéquation} .
+            \item Le candidat peut cliquer sur un bouton pour \textbf{Télécharger le CV standardisé} , ce qui \textbf{inclut} automatiquement l'appel à la fonction de conversion HTML vers PDF via Playwright du cas \textbf{Générer le CV standardisé}.
+        \end{itemize}
+        \vspace{0.3cm}
+
+\end{enumerate}
+\end{minipage} \\
+\hline
+\textbf{Scénarios alternatifs} &
+\begin{minipage}[t]{10.5cm}
+\begin{itemize}
+    \item \textit{Pipeline non terminé} : Le score et le bouton d'export restent masqués ; un message « Analyse IA en cours » est affiché.
+    \item \textit{Code invalide} : Le système refuse l'accès et affiche un message d'erreur d'authentification.
+\end{itemize}
+\vspace{0.3cm}
+
+\end{minipage} \\
+\hline
+\end{tabular}
+
+\end{table}
+
+% ---------------------------------------------------------------------
+% Cas 3 : Voir le détail d’un candidat
+% ---------------------------------------------------------------------
+\begin{table}[H]
+\centering
+\caption{\textbf{Description textuelle : Voir le détail d’un candidat}} \\
+\vspace{0.3cm}
+\begin{tabular}{|p{3.5cm}|p{11cm}|}
+\hline
+\textbf{Acteur principal} & Utilisateur RH \\
+\hline
+\textbf{Précondition} & L'utilisateur RH est connecté à la plateforme et au moins un candidat a été enregistré en base de données. \\
+\hline
+\textbf{Postcondition} & Le RH accède à la fiche complète du candidat, aux résultats d'adéquation et aux outils de modification. \\
+\hline
+\textbf{Scénario nominal} &
+\begin{minipage}[t]{10.5cm}
+\begin{enumerate}
+    \item Depuis le tableau de bord de la liste des postulants, le RH sélectionne un profil, ce qui \textbf{inclut} obligatoirement la vérification du cas \textbf{S'authentifier}.
+    \item Le système affiche le dossier complet (profil extrait, variables JSON, score de compatibilité calculé).
+    \item À partir de cette vue, le RH peut choisir d'activer les cas d'utilisation complémentaires suivants (relations d'\textbf{extension}) :
+        \begin{itemize}
+            \item \textbf{Voir le CV standardisé} : Ouvre un aperçu dynamique de la mise en page normalisée.
+            \item \textbf{Traiter - Retraiter un candidat} : Relance manuellement l'intégralité du pipeline IA (extraction, parsing Ollama, recalcul du score) pour mettre à jour le dossier.
+        \end{itemize}
+    \item télechargé le cv standardisé de candidat
+\vspace{0.3cm}
+\end{enumerate}
+\end{minipage} \\
+\hline
+\textbf{Scénarios alternatifs} &
+\begin{minipage}[t]{10.5cm}
+\begin{itemize}
+    \item \textit{Session expirée} : Le système interrompt l'affichage du profil et redirige immédiatement l'utilisateur vers le cas \textbf{S'authentifier}.
+    \item \textit{Échec du retraitement} : Le statut du candidat bascule sur « error » et un message décrivant l'anomalie de l'IA s'affiche.
+\end{itemize}
+\vspace{0.3cm}
+
+\end{minipage} \\
+\hline
+\end{tabular}
+\end{table}
+
+% ---------------------------------------------------------------------
+% Cas 4 : Consulter les templates de CV
+% ---------------------------------------------------------------------
+\begin{table}[H]
+\centering
+\caption{\textbf{Description textuelle : Consulter les templates de CV}} \\
+\vspace{0.3cm}
+\begin{tabular}{|p{3.5cm}|p{11cm}|}
+\hline
+\textbf{Acteur principal} & Utilisateur RH \\
+\hline
+\textbf{Précondition} & Un catalogue de modèles graphiques de CV a été configuré au préalable au niveau du CMS Strapi. \\
+\hline
+\textbf{Postcondition} & Le RH consulte le catalogue visuel et configure la mise en page graphique globale du système. \\
+\hline
+\textbf{Scénario nominal} &
+\begin{minipage}[t]{10.5cm}
+\begin{enumerate}
+    \item L'utilisateur RH accède à l'espace de configuration des thèmes, ce qui \textbf{inclut} obligatoirement la vérification du cas \textbf{S'authentifier}.
+    \item Le système récupère et affiche une galerie visuelle contenant la liste des différents modèles disponibles.
+    \item Depuis cette interface de consultation, le RH peut décider de déclencher le cas \textbf{Choisir un modèle de CV globale} (via une relation d'\textbf{extension}) afin de modifier et sauvegarder le template par défaut de la plateforme.
+    \vspace{0.3cm}
+
+\end{enumerate}
+\end{minipage} \\
+\hline
+\textbf{Scénarios alternatifs} &
+\begin{minipage}[t]{10.5cm}
+\textit{Catalogue vide} : Un message d'avertissement indique qu'aucun template n'est actuellement détecté dans le CMS Strapi ; le système conserve la mise en page brute par défaut.
+\vspace{0.5cm}
+\end{minipage} \\
+\hline
+\end{tabular}
+\end{table}
+
+
+\section{Conception}
+
+\subsection{Diagramme de classe}
+Le diagramme de classe de Sprint 3 présenté dans \textbf{la figure 5.2} enrichit l'entité \textbf{Candidat} avec des attributs liés au pipeline IA : score, donneesextraites, CvStandardiseMarkdown et cleModeleCV. Le service \textbf{ProcesseurIA} devient responsable de l'extraction du texte, du parsing, de l'évaluation, de la génération Markdown et de l'export PDF.
+
+\begin{figure}[H]
+    \centering
+    % Utilise 1.5 ou plus pour dépasser les marges si le diagramme est très large
+    % Ou utilise \textwidth pour prendre toute la largeur disponible
+    \includegraphics[width=1.12\textwidth]{sprint3Class.png} 
+        \caption{Diagramme de classes - Sprint 3}
+    \label{fig:class-sprint3}
+\end{figure}
+\hspace{0.5}
+\subsection{Diagramme de séquences }
+\subsubsection{Diagramme de séquence de  Pipeline de Traitement des CV}
+Ce diagramme de séquence illustre le déclenchement du traitement par l'IA initié par l'utilisateur RH. Après validation du jeton JWT et du statut du candidat par le contrôleur, une tâche asynchrone est déléguée en arrière-plan au service "Pipeline IA" pour charger le modèle de CV par défaut, extraire le texte, puis requérir Ollama AI afin de générer le profil standardisé et mettre à jour les données.
+
+\begin{figure}[H]
+    \hspace{0.5 cm}\includegraphics[width=0.9\textwidth, height=1\textheight, keepaspectratio]{diag-seq-Pipeline-s3.png}
+    \caption{Diagramme de séquence : Pipeline de Traitement des CV}
+    \label{fig:PIline-sprint3}
+\end{figure}
+\hspace{0.5 cm}
+\subsection{Diagramme de séquence :  Aperçu CV et Téléchargement PDF }
+Ce diagramme de séquence \textbf{figure 5.4 }décrit la consultation de l'aperçu du CV et son téléchargement en PDF par l'utilisateur RH. Après authentification et récupération des données du candidat traité, le contrôleur associe le contenu Markdown au template par défaut pour renvoyer le rendu HTML à la vue, permettant ensuite au recruteur de déclencher optionnellement l'export PDF binaire généré par le service de rendu.
+
+\begin{figure}[H]
+    \hspace{0.5 cm}\includegraphics[width=0.9\textwidth, height=1\textheight, keepaspectratio]{diag-seq-téléchargementPdf-s3.png}
+    \caption{Diagramme de séquence – Aperçu CV et Téléchargement PDF }
+    \label{fig:seq-CVStand-sprint3}
+\end{figure}
+
+
+
+\subsection{Réalisation}
+
+\subsubsection{Portail candidat – Résultat du traitement IA Suivre : candidature}
+
+L’interface de suivi, illustrée par \textbf{la Figure 5.5} , permet au candidat de consulter le statut
+de ses postulations (Refusée, Présélectionnée, Traitée), la date de conservation de ses données,
+ainsi que son score global sous forme de jauge circulaire après traitement.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{liste-des-candidatures.png}
+    \caption{ Interface de résultat du traitement IA(Suivre candidature)}
+    \label{fig:score-explanation}
+\end{figure}
+
+
+
+
+\subsubsection{Portail RH - Interface de gestion des modèles de CV (templates))}
+
+La page « CV Templates »  illustrée par \textbf{la Figure 5.6}, présente une galerie des modèles disponibles (Standard, Modern, Two Column, Compact, Minimal,etc.). Chaque modèle est accompagné d’un aperçu visuel. Le recruteur peut sélectionner un modèle par défaut pour tous les CV générés.
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{cv-templates.png}
+    \caption{Interface de gestion des modèles de CV}
+    \label{fig:cv-templates}
+\end{figure}
+
+\subsubsection{Détail candidat-Interface de la fiche candidat}
+
+Dans l’espace RH, la fiche détaillée du candidat affiche le score IA, le statut (ici «Traité»), les dates de candidature et de dernière mise à jour, ainsi que les informations de consentement GDPR et des liens concernant ce candidatc comme présenté dans \textbf{la figure 5.7}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=16cm, height=4cm]{candidate-detail.png}
+    \caption{Fiche candidat – Score IA et statut «Traité»}
+    \label{fig:candidate-detail-rh}
+\end{figure}
+
+
+\subsubsection{Détail candidat-Application d’un modèle de CV spécifique à un candidat}
+
+Le RH peut appliquer un modèle de CV spécifique à un candidat via un menu déroulant listant les thèmes disponibles. Cette sélection remplace le modèle global et génère instantanément le CV standardisé personnalisé du candidat (\textbf{voir figure 5.8}).
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{download-original-cv.png}
+    \caption{Téléchargement du CV original}
+    \label{fig:download-original}
+\end{figure}
+
+
+\subsubsection{Déclenchement du pipeline IA (reprocess)}
+
+Le bouton « Reprocess » comme illustré dans \textbf{la figure 5.9} permet au RH de relancer le pipeline IA en cas de données incomplètes ou d'évolution des exigences du poste. Une confirmation est requise avant d'écraser les données existantes.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=15cm, height=3.3cm]{reprocess-confirmation.png}
+    \caption{Confirmation de reprocess du candidat}
+    \label{fig:reprocess}
+\end{figure}
+
+
+\subsubsection{Données extraite du CV}
+
+\textbf{La figure 5.10} présente les informations automatiquement extraites par l’IA : les informations personnelles, résumé professionnel, compétences et lien vers les  projets. Le RH peut vérifier et éventuellement analyser ces données.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{detail-detail.png}
+    \caption{Affichage des données extraites du CV}
+    \label{fig:parsed-details}
+\end{figure}
+
+\section{Test et validation}
+Les tests du Sprint 3 ont validé le pipeline IA, la gestion des statuts et les fonctionnalités utilisateurs (génération, suivi, téléchargement du CV standardisé et choix des modèles).
+
+\vspace{-0.6cm} % Réduit l'espace sous le paragraphe précédent
+\nopagebreak
+
+\section*{Conclusion}
+\phantomsection
+\addcontentsline{toc}{section}{Conclusion}
+Ce chapitre a présenté l'intégration du cœur intelligent de IOhire (pipeline IA, scoring et standardisation), optimisant le temps des recruteurs et le suivi des candidats. Cette structuration des données pose les bases des outils d'aide à la décision du Sprint 4.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+% ------------------------------------------------------------------
+% CHAPITRE 7 : SPRINT 4 : ANALYTICS, FILTRAGE AVANCÉ ET CHATBOT
+% ------------------------------------------------------------------
+\chapter{SPRINT 4 : AIDE À LA DÉCISION, ANALYTICS ET CHATBOT}
+
+\section*{Introduction}
+\addcontentsline{toc}{section}{Introduction}
+Le Sprint 4 finalise la plateforme \textbf{IOhire} en ajoutant les fonctionnalités d'aide à la décision. Il complète le pipeline IA par des outils de filtrage avancé, des actions groupées, un tableau de bord analytique, une configuration personnalisée de l'évaluation, un moteur de recommandation d'offres et un chatbot intelligent basé sur Ollama.
+
+\section{Backlog du sprint}
+Le backlog final couvre les fonctionnalités destinées à accélérer la décision RH et à améliorer
+l’expérience candidat
+\small
+\renewcommand{\arraystretch}{1.5}
+\begin{xltabular}{\textwidth}{|c|>{\RaggedRight}p{4cm}|X|c|}
+\caption{\textbf{Backlog du sprint 4}}
+\hline
+\textbf{ID} & \textbf{User story} & \textbf{Tâches} & \textbf{Estimation} \\
+& & & \textbf{(Jours)} \\ \hline
+\endfirsthead
+\hline
+\textbf{ID} & \textbf{User story} & \textbf{Tâches} & \textbf{Estimation} \\ \hline
+\endhead
+\hline
+\endfoot
+\hline
+\endlastfoot
+
+\textbf{1} & En tant que RH, je peux filtrer les candidats selon plusieurs critères (statut, score, offre, nom, email) afin d’affiner la sélection. & 
+$\bullet$ Implémenter les paramètres de recherche dans l’API (statut, score, jobPosting, nom, email). \newline
+$\bullet$ Créer une barre de filtres dynamique dans l’interface. & 4 \\ \hline
+
+\textbf{2} & En tant que RH, je peux filtrer les profils par seuil de score afin d’identifier rapidement les meilleurs candidats. & 
+$\bullet$ Ajouter les opérateurs (supérieur, inférieur, égal). \newline
+$\bullet$ Intégrer un champ de seuil dans la barre de filtres. & 2 \\ \hline
+
+\textbf{3} & En tant que RH, je peux modifier plusieurs candidats simultanément afin de gagner du temps sur les actions groupées. & 
+$\bullet$ Développer la sélection multiple dans la liste des candidats. \newline
+$\bullet$ Implémenter la mise à jour groupée des statuts (via une toolbar). & 3 \\ \hline
+
+\textbf{4} & En tant que RH, je peux visualiser les statistiques de recrutement afin de piloter la performance par les données. & 
+$\bullet$ Agrégation des KPIs (total candidats, score moyen, distribution des statuts). \newline
+$\bullet$ Afficher des graphiques (Chart.js) : histogramme des scores, évolution des candidatures. & 4 \\ \hline
+
+\textbf{5} & En tant que RH, je peux configurer les critères d’évaluation par poste afin d’adapter l’IA au contexte de chaque recrutement. & 
+$\bullet$ Ajouter un schéma de configuration dans l’offre (pondérations des compétences, seuils de qualité). \newline
+$\bullet$ Interface de personnalisation dans la page de l’offre. & 4 \\ \hline
+
+\textbf{6} & En tant que candidat, je peux recevoir des recommandations d’offres afin de découvrir des postes adaptés à mon profil. & 
+$\bullet$ Comparer le JSON extrait du CV avec les offres ouvertes. \newline
+$\bullet$ Classer les offres selon un score de compatibilité et les afficher. & 4 \\ \hline
+
+\textbf{7} & En tant qu’utilisateur (RH ou candidat), je peux interagir avec un assistant virtuel (chatbot) afin d’obtenir des réponses instantanées. & 
+$\bullet$ Développer un endpoint de chat basé sur Ollama. \newline
+$\bullet$ Gérer l’historique de conversation (sessions). \newline
+$\bullet$ Intégrer un widget flottant dans l’interface. & 3 \\ \hline
+
+\multicolumn{3}{|r|}{\textbf{Total Sprint 4}} & \textbf{24 jours} \\ \hline
+\end{xltabular}
+
+
+\section{Spécification des besoins}
+
+\subsection{Diagramme de cas d'utilisation}
+Le diagramme de cas d'utilisation(\textbf{figure 6.1}) du Sprint 4 présente les fonctions avancées : le recruteur gère le filtrage, les actions groupées, les statistiques, et les critères d'évaluation , tandis que le candidat accède aux recommandations de postes et à l'assistant virtuel.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=18cm , height=20cm]{use case sprint4.png}
+    \caption{Diagramme de cas d'utilisation - Sprint 4}
+    \label{fig:usecase-sprint4}
+\end{figure}
+
+\subsection{Description textuelle des principaux cas d'utilisation}
+
+
+
+
+% ---------------------------------------------------------------------
+% Cas principal 1 : Consulter la liste des candidats (inclut filtrage)
+% ---------------------------------------------------------------------
+\begin{table}[H]
+\centering
+\caption{\textbf{Consulter la liste des candidats - avec filtrage}}
+\vspace{0.3cm}
+\begin{tabular}{|p{3.5cm}|p{11cm}|}
+\hline
+\textbf{Acteur principal} & Utilisateur RH \\
+\hline
+\textbf{Précondition} & L’utilisateur est authentifié. \\
+\hline
+\textbf{Postcondition} & La liste des candidats est affichée, éventuellement filtrée selon les critères choisis. \\
+\hline
+\textbf{Scénario nominal} &
+\begin{minipage}[t]{10.5cm}
+\begin{enumerate}
+    \item Le RH accède à la page «Liste des candidats».
+    \item Par défaut, le système affiche tous les candidats.
+    \item Le RH peut affiner la liste en saisissant des critères de filtrage : statut de candidature, offre d’emploi, seuil de score, nom ou email.
+    \item Le système applique ces paramètres et actualise la liste dynamiquement.
+    \item L'utilisateur peut sélectionner plusieurs candidats pour effectuer une mise à jour de masse .
+    \vspace{0.3cm}
+\end{enumerate}
+\end{minipage} \\
+\hline
+\textbf{Scénarios alternatifs} &
+\begin{minipage}[t]{10.5cm}
+Aucun résultat : message « Aucun candidat ne correspond aux critères ».
+\end{minipage} \\
+\hline
+\end{tabular}
+\end{table}
+
+
+
+
+\begin{table}[H]
+\centering
+\caption{\textbf{Consulter Analyse}} \\
+\vspace{0.3cm}
+\begin{tabular}{|p{3.5cm}|p{11cm}|}
+\hline
+\textbf{Acteur principal} & Utilisateur RH \\
+\hline
+\textbf{Précondition} & Des offres d’emploi et des candidatures existent dans la base. \\
+\hline
+\textbf{Postcondition} & Le RH visualise les indicateurs clés et les graphiques. \\
+\hline
+\textbf{Scénario nominal} &
+\begin{minipage}[t]{10.5cm}
+\begin{enumerate}
+    \item Le RH accède à la page « Analytique » / « Tableau de bord ».
+    \item Le système calcule et affiche : le nombre total d’offres et de candidats, le Score moyen de compatibilité, la distribution des statuts, l'histogramme des scores et l'evolution des candidatures dans le temps sous forme de courbe.
+        
+    \item Le RH peut comparer les offres entre elles (graphique comparatif).
+\end{enumerate}
+\end{minipage} \\
+\hline
+\textbf{Scénarios alternatifs} &
+\begin{minipage}[t]{10.5cm}
+Données insuffisantes : les graphiques affichent un message «Pas assez de données».
+\end{minipage} \\
+\hline
+\end{tabular}
+
+\end{table}
+
+% ---------------------------------------------------------------------
+% Cas principal 4 : Configurer l’évaluation IA par poste
+% ---------------------------------------------------------------------
+\begin{table}[H]
+\centering
+\caption{\textbf{Configurer l’évaluation IA par poste}} \\
+\vspace{0.3cm}
+\begin{tabular}{|p{3.5cm}|p{11cm}|}
+\hline
+\textbf{Acteur principal} & Utilisateur RH \\
+\hline
+\textbf{Précondition} & Une offre d’emploi est en cours de création ou d’édition. \\
+\hline
+\textbf{Postcondition} & Les critères de scoring sont personnalisés pour cette offre. \\
+\hline
+\textbf{Scénario nominal} &
+\begin{minipage}[t]{10.5cm}
+\begin{enumerate}
+    \item Le RH ouvre le formulaire d’une offre d’emploi.
+    \item Dans la section « Configuration IA », il ajuste : la pondération des compétences requises, l’importance de l’expérience minimale, les seuils de qualité (bon, excellent, etc).
+    
+    \item Il enregistre la configuration.
+    \item Les futurs calculs de score pour cette offre utiliseront ces paramètres.
+    \vspace{0.3cm}
+\end{enumerate}
+\end{minipage} \\
+\hline
+\textbf{Scénarios alternatifs} &
+\begin{minipage}[t]{10.5cm}
+Configuration non enregistrée : les paramètres par défaut sont appliqués.
+\end{minipage} \\
+\hline
+\end{tabular}
+\end{table}
+
+% ---------------------------------------------------------------------
+% Cas principal 5 : Discuter avec l’assistant IA (chatbot)
+% ---------------------------------------------------------------------
+\begin{table}[H]
+\centering
+\caption{\textbf{Discuter avec l’assistant IA}} \\
+\vspace{0.3cm}
+\begin{tabular}{|p{3.5cm}|p{11cm}|}
+\hline
+\textbf{Acteur principal} & Candidat \\
+\hline
+\textbf{Précondition} &Accéder à la platforme IoHire. \\
+\hline
+\textbf{Postcondition} & L’utilisateur reçoit une réponse contextuelle. \\
+\hline
+\textbf{Scénario nominal} &
+\begin{minipage}[t]{10.5cm}
+\begin{enumerate}
+    \item L’utilisateur clique sur l’icône du chatbot .
+    \item Il saisit sa question.
+    \item Le système envoie la requête à l’API Ollama avec le contexte de session.
+    \item Le chatbot affiche la réponse générée.
+    \vspace{0.3cm}
+\end{enumerate}
+\end{minipage} \\
+\hline
+
+\textbf{Scénarios alternatifs} &
+\begin{minipage}[t]{10.5cm}
+\begin{itemize}
+    \item Question hors contexte: le chatbot répond «Je ne peux pas répondre à cette question. Veuillez reformuler.»
+    \vspace{0.2cm}
+\end{itemize}
+\end{minipage} \\
+\hline
+\end{tabular}
+\end{table}
+
+% ---------------------------------------------------------------------
+% Cas principal 6 : Obtenir des recommandations d’offres (candidat)
+% ---------------------------------------------------------------------
+\begin{table}[H]
+\centering
+\caption{\textbf{Demander des recommandations de poste}} \\
+\vspace{0.3cm}
+\begin{tabular}{|p{3.5cm}|p{11cm}|}
+\hline
+\textbf{Acteur principal} & Candidat \\
+\hline
+\textbf{Précondition} & Le candidat a soumis un CV . \\
+\hline
+\textbf{Postcondition} & Le système affiche une liste d’offres pertinentes classées par compatibilité. \\
+\hline
+\textbf{Scénario nominal} &
+\begin{minipage}[t]{10.5cm}
+\begin{enumerate}
+    \item Le candidat accède à la page «Recommandations».
+    \item  Le candidat soumettre leur CV .
+    \item Le Système IA analyse le profil du candidat par rapport aux offres actives dans l'entreprise.
+    \item Les offres sont affichées triées par score décroissant.
+    \item Le candidat peut postuler à l'offre d'emploi compatible selon la résultat .
+    \vspace{0.3cm}
+\end{enumerate}
+\end{minipage} \\
+\hline
+\end{tabular}
+\end{table}
+
+
+
+\section{Conception}
+
+\subsection{Diagramme de classe}
+Le Diagramme de classes - Sprint 4 (illustré par \textbf{la Figure 6.2}) présente l'extension des classes existantes. La classe OffreEmploi intègre désormais une configuration d’évaluation optionnelle permettant de personnaliser les pondérations du score (compétences requises, souhaitées, expérience et complétude). De plus, de nouvelles classes structurent la gestion des recommandations, des instantanés analytiques et des sessions de chat.
+
+\begin{figure}[H]
+    \centering
+    % J'ai mis 1.1 pour qu'il soit bien lisible, quitte à déborder un peu sur les marges
+    \includegraphics[width=1.1\linewidth]{sprint4Class.png}
+    \caption{Diagramme de classes - Sprint 4}
+    \label{fig:class-sprint4}
+\end{figure}
+
+\subsection{Diagramme de séquences}
+\subsubsection{Diagramme de séquence - Moteur de recommandation d'offres d'emplois}
+
+Ce diagramme de séquence (\textbf{figure 6.3}) montre le flux de recommandation d'offres : après validation du CV par le contrôleur, le moteur IA (AI Engine) analyse son texte face aux postes ouverts de la base de données (JobPosting). Il calcule les scores de compatibilité et renvoie à la vue le top 3 des meilleures correspondances pour le candidat.
+
+
+\begin{figure}[H]
+    \includegraphics[width=18cm, height=17cm]{diag-seq-recommandation-s4.png}
+    \caption{Diagramme de séquence : Moteur de recommandation }
+    \label{fig:seq-rec-sprint4}
+\end{figure}
+\subsubsection{Diagramme de séquence - Tableau de bord Analytique}
+Ce diagramme de séquence (\textbf{figure 6.4}) présente le flux de consultation du tableau de bord analytique par l'utilisateur RH. Après vérification du jeton JWT, le contrôleur central interroge les modèles Candidate et JobPosting pour extraire les agrégats, calculer les indicateurs clés (KPI) et renvoyer les données à la vue, qui génère alors les graphiques et statistiques correspondants.
+
+\begin{figure}[H]
+    \includegraphics[width=18cm, height=17cm]{diag-seq-tableauDeBord-s4.png}
+    \caption{Diagramme de séquence :Tableau de bord Analytique }
+    \label{fig:dashboard-sprint4}
+\end{figure}
+
+
+\subsection{Réalisation}
+
+\subsubsection{Portail candidat – Recommandation d’offres et chatbot}
+
+Le candidat peut télécharger son CV ; le système extrait les compétences (ex. Docker, Kubernetes, AWS) et affiche les offres les plus compatibles avec leur score et les compétences matchées. Un widget de chatbot intégré (Ollama) permet de poser des questions en langage naturel sur le processus de recrutement.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{recommendation-chatbot.png}
+    \caption{Page de recommandation et assistant IA}
+    \label{fig:recommendation-chatbot}
+\end{figure}
+
+
+\subsubsection{Configuration de l’évaluation IA (RH)}
+
+Le recruteur peut personnaliser le calcul du score pour chaque offre. Il définit la pondération entre le « Fit Score » (adéquation) et la « Complétude ». Les sous-critères (compétences requises, souhaitées, expérience) sont également pondérables.
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{ai-evaluation-config.png}
+    \caption{Configuration des scores – Poids et sous-critères}
+    \label{fig:ai-config-weights}
+\end{figure}
+Une grille permet d’attribuer des points à chaque champ du CV (nom, email, expérience, formation, etc.). Le score de complétude est normalisé sur 100. Cette configuration influence le score global du candidat.
+Le RH peut ajouter des règles de bonus ou de pénalité déclenchées par des mots‑clés (ex. +5 points si le CV contient « Docker »). Chaque critère est nommé, typé (bonus/malus), avec un nombre de points et un mode de correspondance.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{completeness-points.png}
+    \caption{Configuration des points de complétude}
+    \label{fig:completeness-points}
+\end{figure}
+
+Les intervalles de score déterminent l’étiquette de qualité affichée sur la fiche candidat (ex. « Excellent » pour un score ≥ 80). Ces seuils sont paramétrables.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{quality.png}
+    \caption{Seuils de qualité (Excellent, Good, Fair, Poor)}
+    \label{fig:quality-thresholds}
+\end{figure}
+
+
+\subsubsection{Tableau de bord analytique et comparaison d’offres}
+
+Cette vue permet de comparer deux offres d'emplois : nombre de candidats, score moyen, pourcentage de shortlistés, distribution des scores (histogramme superposé), répartition par statut, radar de qualité et champs manquants les plus fréquents.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{compare-job-postings.png}
+    \caption{Comparaison de deux offres d’emploi}
+    \label{fig:compare-jobs}
+\end{figure}
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{compare-job-postings2.png}
+    \caption{histogrammes}
+    \label{fig:compare-jobs}
+\end{figure}
+
+La partie Analyse affiche les indicateurs clés : nombre d’offres ouvertes, candidats dans le pipeline, candidats traités, score moyen, temps moyen de traitement, et l’évolution des soumissions sur les 14 derniers jours (courbe). Un graphique en anneau montre la répartition des statuts.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{analytics-kpis.png}
+    \caption{Tableau de bord – KPIs globaux}
+    \label{fig:analytics-kpis}
+\end{figure}
+
+
+\subsubsection{Filtrage avancé et actions groupées dans la liste des candidats}
+
+La liste des candidats intègre une barre de filtres permettant de rechercher par nom, email, statut, offre associée, ou seuil de score (ex. score < 25 Pourcent). Les cases à cocher autorisent la sélection multiple ; un menu « Set status... » applique la modification en masse (ex. passer plusieurs candidats au statut « processed »).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{candidates-filter-bulk.png}
+    \caption{Filtrage multicritères et sélection multiple}
+    \label{fig:filter-bulk}
+\end{figure}
+
+
+
+
+\section{Test et validation}
+Les tests du Sprint 4 ont permis de valider :
+\begin{itemize}
+    \item Le filtrage des candidats par statut, score, offre, nom et email.
+    \item La mise à jour groupée des statuts.
+    \item Le calcul correct des indicateurs analytiques.
+    \item L'affichage des graphiques du tableau de bord.
+    \item La sauvegarde de la configuration d'évaluation par offre.
+    \item La génération des recommandations d'offres.
+    \item Le fonctionnement du chatbot avec conservation de l'historique.
+\end{itemize}
+
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{|c|p{9cm}|c|}
+\hline
+\textbf{ID} & \textbf{Scénario testé} & \textbf{Résultat} \\ \hline
+T1 & Filtrage par statut et score & Succès \\ \hline
+T2 & Mise à jour groupée de plusieurs candidats & Succès \\ \hline
+T3 & Affichage des KPIs du tableau de bord & Succès \\ \hline
+T4 & Sauvegarde d'une configuration d'évaluation & Succès \\ \hline
+T5 & Recommandation d'offres selon un CV candidat & Succès \\ \hline
+T6 & Réponse du chatbot avec historique de session & Succès \\ \hline
+\end{tabular}
+\caption{Matrice des tests fonctionnels - Sprint 4}
+\label{tab:tests-sprint4}
+\end{table}
+
+\section*{Conclusion}
+\addcontentsline{toc}{section}{Conclusion}
+Le Sprint 4 a permis de transformer IOhire en une plateforme complète d'aide à la décision RH. Les recruteurs disposent désormais d'outils de filtrage, de scoring configurable, d'actions groupées et de visualisation analytique. Les candidats bénéficient de recommandations personnalisées et d'une assistance conversationnelle. Ce sprint clôture le développement fonctionnel de la solution et prépare son amélioration future.
+
+% ======================================================
+% CONCLUSION GÉNÉRALE
+% ======================================================
+
+
+\chapter*{\vspace*{-2.5cm}Conclusion générale}
+\addcontentsline{toc}{chapter}{Conclusion générale}
+\vspace*{-1.5cm}
+Ce projet de fin d’études a porté sur la conception et le développement d’IOhire, une plateforme intelligente dédiée à la gestion, l’analyse et l’évaluation automatisée des candidatures, répondant ainsi directement au flux massif et à l’hétérogénéité des CV reçus par les entreprises. L'analyse rigoureuse du contexte et de l'existant a mis en lumière plusieurs verrous majeurs, tels que la lourde charge administrative du tri manuel, la difficulté de comparer des profils non standardisés, l'absence de scoring configurable et le manque de transparence pour les postulants. Pour y remédier, la solution s'appuie sur une architecture robuste et modulaire combinant les technologies Angular, Strapi, PostgreSQL et Docker, tout en intégrant l'intelligence artificielle via Ollama afin de garantir la stricte confidentialité des données des candidats. Conduit suivant une méthodologie agile structurée sur 4 sprints, la plateforme englobe un espace RH sécurisé pour une bonne gestion, un portail candidat moderne avec pipeline d'analyse avancé pour le parsing JSON et le calcul des scores de compatibilité, ainsi que des outils d'aide à la décision incluant des tableaux de bord analytiques et un chatbot intelligent. Les résultats obtenus démontrent qu'IOhire remplit pleinement ses objectifs en transformant des documents non structurés en données exploitables, optimisant ainsi le pipeline de recrutement de manière rapide, équitable et transparente pour toutes les parties prenantes. Enfin, ce travail s’est révélé particulièrement formateur, tant sur le plan technique à travers la maîtrise du développement full-stack et de l'intelligence artificielle que sur le plan méthodologique en consolidant une approche rigoureuse de la conception logicielle face à des contraintes métier concrètes.
+
+
+\subsection*{Perspectives d’évolution}
+
+À court terme , IOhire prévoit une intégration basique avec des plateformes externes comme LinkedIn pour automatiser la publication des offres. À moyen terme , la solution intégrera un module de planification d’entretiens comme synchronisation calendrier, envoi automatique d’invitations et enrichira le chatbot en lui donnant accès, sous droits contrôlés, aux données RH . À long terme , la plateforme sera déployée sur un cloud avec orchestration Kubernetes pour gagner en robustesse et évolutivité, une version mobile native (React Native ou Flutter) sera proposée, et des API publiques permettront à des partenaires de soumettre des candidatures par voie programmatique.
+
+% ======================================================
+% BIBLIOGRAPHIE
+% ======================================================
+\addcontentsline{toc}{chapter}{Bibliographie}
+
+\begin{thebibliography}{18}
+
+\bibitem{iovision_site} Site officiel de l'entreprise IOVISION -- Solutions logicielles et IA, \url{https://iovision.io/fr/}.
+\bibitem{linkedIn} LinkedIn Talent Solutions -- Plateforme de Recrutement et Solutions RH, \url{https://fr.linkedin.com/}
+\bibitem{lever} Lever ATS -- Enterprise Applicant Tracking System, \url{https://www.lever.co/}
+
+\bibitem{tanitjob} Plateforme de recrutement TanitJob, \url{https://www.tanitjobs.com/}
+
+\bibitem{uml} OMG Unified Modeling Language (UML), \url{https://www.omg.org/spec/UML/}
+
+\bibitem{scrum} scrum, \url{https://facemweb.com/wp-content/uploads/2025/08/processus-scrum.jpg}
+
+\bibitem{VS-Code}Documentation de Visual Studio Code , \url{https://code.visualstudio.com/docs}
+
+\bibitem{postman} Postman, \url{https://www.postman.com/}
+
+\bibitem{github} Documentation de GitHub, \url{https://docs.github.com/fr}
+
+\bibitem{docker} Documentation Docker, \url{https://docs.docker.com/}
+
+\bibitem{angular} Documentation Angular, \url{https://angular.dev/}
+
+\bibitem{nodeJs} Documentation Node.js, \url{https://nodejs.org/}
+
+\bibitem{strapi} Documentation Strapi, \url{https://docs.strapi.io/}
+
+\bibitem{postGreSql} Documentation PostgreSQL, \url{https://www.postgresql.org/docs/}
+
+\bibitem{ollama} Documentation Ollama, \url{https://ollama.com/}
+
+\bibitem{starUml} Documentation de StarUML , \url{https://staruml.io/}
+
+\bibitem{plantUml} Documentation de PlantUML, \url{https://plantuml.com/fr/guide}
+
+\bibitem{figma} Documentation de Figma , \url{https://help.figma.com/hc/fr}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\end{thebibliography}
+
+
+
+\end{document}
+
