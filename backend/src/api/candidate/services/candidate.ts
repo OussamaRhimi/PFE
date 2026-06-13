@@ -38,7 +38,6 @@ export {
   
   // Ollama
   ollamaChat,
-  parseResumeWithOllama,
   
   // PDF generation
   convertHtmlToPdf,

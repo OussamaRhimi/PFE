@@ -12,7 +12,7 @@ export * from './types';
 export { extractJsonFromText, safeParseJson, parseJsonWithRecovery, validateExtractedData, ensureArray, ensureString } from './json';
 
 // Ollama LLM integration
-export { ollamaChat, parseResumeWithOllama, PARSER_SYSTEM_PROMPT } from './ollama';
+export { ollamaChat } from './ollama';
 
 // Resume text extraction
 export { extractTextFromResume } from './resume-text';
